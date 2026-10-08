@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { api, hydrateImages } from "../api";
 import { ProductGrid } from "../components/ProductCard";
+import { ProductGridSkeleton } from "../components/Skeleton";
 import { useStore } from "../state";
 import type { Color, PageMeta, ProductCardData } from "../types";
 
@@ -157,8 +158,9 @@ export function ShopPage() {
             </select>
           </div>
           {error ? <p className="error">{error}</p> : null}
-          {!loading && items.length === 0 ? <p className="empty">Sorry! No result.</p> : null}
-          <ProductGrid products={items} />
+          {loading ? <ProductGridSkeleton /> : null}
+          {!loading && items.length === 0 && !error ? <p className="empty">Sorry! No result.</p> : null}
+          {!loading && items.length > 0 ? <ProductGrid products={items} /> : null}
           {meta && meta.totalPages > 1 ? (
             <div className="pager">
               {Array.from({ length: meta.totalPages }, (_, index) => index + 1).map((page) => (

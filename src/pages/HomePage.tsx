@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, hydrateImages } from "../api";
 import { categoryTiles } from "../components/Chrome";
-import { ProductCard } from "../components/ProductCard";
+import { ProductCarousel } from "../components/ProductCard";
 import { useStore } from "../state";
 import type { HomeBlock, ProductCardData } from "../types";
 
@@ -12,8 +12,30 @@ function blockHref(block: HomeBlock) {
   return "/shop";
 }
 
+function HomeSkeleton() {
+  return (
+    <div className="home-skeleton" aria-hidden="true">
+      <div className="skeleton-hero" />
+      <section className="skeleton-section">
+        <div className="skeleton-heading" />
+        <div className="skeleton-categories">
+          {Array.from({ length: 6 }, (_, index) => <div className="skeleton-category" key={index} />)}
+        </div>
+      </section>
+      {Array.from({ length: 3 }, (_, row) => (
+        <section className="skeleton-section" key={row}>
+          <div className="skeleton-heading" />
+          <div className="skeleton-products">
+            {Array.from({ length: 5 }, (_, index) => <div className="skeleton-product" key={index} />)}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function HomePage() {
-  const { catalog, categoryImages } = useStore();
+  const { catalog, catalogReady, categoryImages } = useStore();
   const [banners, setBanners] = useState<HomeBlock[]>([]);
   const [campaigns, setCampaigns] = useState<HomeBlock[]>([]);
   const [arrivals, setArrivals] = useState<ProductCardData[]>([]);
@@ -22,6 +44,21 @@ export function HomePage() {
   const [best, setBest] = useState<ProductCardData[]>([]);
   const [slide, setSlide] = useState(0);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const categoryRow = useRef<HTMLDivElement>(null);
+  const skeletonRef = useRef<HTMLDivElement>(null);
+  const [reservedHeight, setReservedHeight] = useState(0);
+  const isLoading = loading || !catalogReady;
+
+  useLayoutEffect(() => {
+    if (!isLoading || !skeletonRef.current) return;
+    const skeleton = skeletonRef.current;
+    const measure = () => setReservedHeight(skeleton.getBoundingClientRect().height);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(skeleton);
+    return () => observer.disconnect();
+  }, [isLoading]);
 
   useEffect(() => {
     let active = true;
@@ -38,6 +75,9 @@ export function HomePage() {
       })
       .catch((reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : "Home could not be loaded");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
@@ -60,6 +100,9 @@ export function HomePage() {
   const tiles = categoryTiles(catalog.categories, categoryImages);
   const deals = trending.filter((product) => product.onSale).length > 0 ? trending.filter((product) => product.onSale) : trending;
   const collection = arrivals.length > 0 ? arrivals : trending;
+  const hasHomeContent = Boolean(
+    current || sideWide || tiles.length || deals.length || mosaicLarge.length || mosaicSmall.length || collection.length || best.length,
+  );
 
   function BlockLink({ block, className }: { block: HomeBlock; className?: string }) {
     return (
@@ -74,8 +117,14 @@ export function HomePage() {
     );
   }
 
+  function moveCategories(direction: -1 | 1) {
+    categoryRow.current?.scrollBy({ left: direction * categoryRow.current.clientWidth * 0.75, behavior: "smooth" });
+  }
+
   return (
-    <div className="home">
+    <div className="home" style={!isLoading && !error && hasHomeContent && reservedHeight ? { minHeight: reservedHeight } : undefined}>
+      {isLoading ? <div className="home-skeleton-measure" ref={skeletonRef}><HomeSkeleton /></div> : (
+        <>
       {error ? <p className="error">{error}</p> : null}
       {current || sideWide ? (
         <div className="hero-board">
@@ -83,17 +132,21 @@ export function HomePage() {
             <div className="hero-main">
               <BlockLink block={current} />
               {banners.length > 1 ? (
-                <div className="dots">
-                  {banners.map((banner, index) => (
-                    <button
-                      key={banner.id}
-                      type="button"
-                      className={index === slide ? "dot active" : "dot"}
-                      aria-label={String(index + 1)}
-                      onClick={() => setSlide(index)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <button type="button" className="hero-arrow hero-prev" aria-label="Previous banner" onClick={() => setSlide((slide - 1 + banners.length) % banners.length)}>‹</button>
+                  <button type="button" className="hero-arrow hero-next" aria-label="Next banner" onClick={() => setSlide((slide + 1) % banners.length)}>›</button>
+                  <div className="dots">
+                    {banners.map((banner, index) => (
+                      <button
+                        key={banner.id}
+                        type="button"
+                        className={index === slide ? "dot active" : "dot"}
+                        aria-label={`Show banner ${index + 1}`}
+                        onClick={() => setSlide(index)}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : null}
             </div>
           ) : null}
@@ -116,8 +169,14 @@ export function HomePage() {
         <section className="section">
           <div className="section-head">
             <h2>Popular Categories</h2>
+            {tiles.length > 5 ? (
+              <div className="shelf-controls">
+                <button type="button" aria-label="Previous categories" onClick={() => moveCategories(-1)}>‹</button>
+                <button type="button" aria-label="Next categories" onClick={() => moveCategories(1)}>›</button>
+              </div>
+            ) : null}
           </div>
-          <div className="cat-row">
+          <div className="cat-row" ref={categoryRow}>
             {tiles.map(({ category, image }) => (
               <Link key={category.id} to={`/shop?categoryId=${category.id}`} className="cat-tile">
                 <div className="cat-photo">
@@ -138,11 +197,7 @@ export function HomePage() {
               See More
             </Link>
           </div>
-          <div className="product-row">
-            {deals.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ProductCarousel products={deals} />
         </section>
       ) : null}
 
@@ -170,11 +225,7 @@ export function HomePage() {
               See More
             </Link>
           </div>
-          <div className="product-row">
-            {collection.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ProductCarousel products={collection} />
         </section>
       ) : null}
 
@@ -186,13 +237,11 @@ export function HomePage() {
               See More
             </Link>
           </div>
-          <div className="product-row">
-            {best.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <ProductCarousel products={best} />
         </section>
       ) : null}
+        </>
+      )}
     </div>
   );
 }

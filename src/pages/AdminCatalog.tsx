@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ApiError, api } from "../api";
+import { RowsSkeleton } from "../components/Skeleton";
 import type { AdminHomeBlock, Category } from "../types";
 
 const fieldClass =
@@ -24,6 +25,7 @@ function parentName(categories: Category[], parentId: string | null) {
 
 export function AdminCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -36,10 +38,12 @@ export function AdminCategories() {
   const [formKey, setFormKey] = useState(0);
 
   function load() {
+    setLoading(true);
     api
       .adminCategories()
       .then(setCategories)
-      .catch((reason) => setError(messageOf(reason, "Could not load categories")));
+      .catch((reason) => setError(messageOf(reason, "Could not load categories")))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -165,7 +169,7 @@ export function AdminCategories() {
             </tr>
           </thead>
           <tbody>
-            {categories.map((category) => (
+            {loading ? <tr><td colSpan={3} className="p-4"><RowsSkeleton rows={5} columns={3} /></td></tr> : categories.map((category) => (
               <tr key={category.id} className="border-t border-slate-100">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -195,7 +199,7 @@ export function AdminCategories() {
             ))}
           </tbody>
         </table>
-        {categories.length === 0 ? <p className="px-4 py-8 text-sm text-slate-500">No categories yet.</p> : null}
+        {!loading && categories.length === 0 && !error ? <p className="px-4 py-8 text-sm text-slate-500">No categories yet.</p> : null}
       </section>
     </div>
   );
@@ -204,6 +208,7 @@ export function AdminCategories() {
 export function AdminBanners() {
   const [blocks, setBlocks] = useState<AdminHomeBlock[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [kind, setKind] = useState<(typeof KINDS)[number]["id"]>("BANNER");
   const [title, setTitle] = useState("");
@@ -219,7 +224,8 @@ export function AdminBanners() {
   const [formKey, setFormKey] = useState(0);
 
   function load() {
-    api.homeBlocks().then(setBlocks).catch((reason) => setError(messageOf(reason, "Could not load banners")));
+    setLoading(true);
+    api.homeBlocks().then(setBlocks).catch((reason) => setError(messageOf(reason, "Could not load banners"))).finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -370,7 +376,7 @@ export function AdminBanners() {
             </tr>
           </thead>
           <tbody>
-            {blocks.map((block) => (
+            {loading ? <tr><td colSpan={5} className="p-4"><RowsSkeleton rows={5} columns={5} /></td></tr> : blocks.map((block) => (
               <tr key={block.id} className="border-t border-slate-100">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -398,7 +404,7 @@ export function AdminBanners() {
             ))}
           </tbody>
         </table>
-        {blocks.length === 0 ? <p className="px-4 py-8 text-sm text-slate-500">No banners yet. Add a slider banner to show it on the home page.</p> : null}
+        {!loading && blocks.length === 0 && !error ? <p className="px-4 py-8 text-sm text-slate-500">No banners yet. Add a slider banner to show it on the home page.</p> : null}
       </section>
     </div>
   );

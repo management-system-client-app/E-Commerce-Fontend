@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api";
+import { DetailSkeleton } from "../components/Skeleton";
 import { useStore } from "../state";
 
 type SizeRow = { sizeId: string; fabricId: string; stock: string };
@@ -124,7 +125,7 @@ export function AdminProductForm() {
     }
   }
 
-  if (!ready) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!ready) return <DetailSkeleton />;
 
   return (
     <form onSubmit={onSubmit} className="mx-auto max-w-3xl space-y-5">

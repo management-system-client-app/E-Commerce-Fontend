@@ -14,6 +14,7 @@ export type Settings = {
   instagramUrl: string | null;
   bkashNumber: string | null;
   nagadNumber: string | null;
+  rocketNumber: string | null;
 };
 
 export type Category = {
@@ -144,7 +145,7 @@ export type CartLine = {
 export type Cart = {
   id: string | null;
   sessionId: string | null;
-  paymentMethod: "COD" | "STRIPE" | "BKASH" | "NAGAD" | null;
+  paymentMethod: "COD" | "STRIPE" | "BKASH" | "NAGAD" | "ROCKET" | null;
   items: CartLine[];
   summary: { itemCount: number; subtotal: number };
 };
@@ -157,6 +158,20 @@ export type User = {
   phone: string | null;
   avatarUrl?: string | null;
   accountType?: "USER" | "ADMIN";
+};
+
+export type SavedAddress = {
+  id: string;
+  label: string | null;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string | null;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
 };
 
 export type DashboardOverview = {
