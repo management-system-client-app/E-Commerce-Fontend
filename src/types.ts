@@ -30,15 +30,17 @@ export type Category = {
 
 export type AdminHomeBlock = {
   id: string;
-  kind: "BANNER" | "CAMPAIGN" | "NEW_ARRIVAL";
+  kind: "BANNER" | "CAMPAIGN" | "NEW_ARRIVAL" | "TRENDING";
   title: string;
   subtitle: string | null;
   imageUrl: string | null;
+  productIds: string[];
   linkUrl: string | null;
   categoryId: string | null;
   sortOrder: number;
   isActive: boolean;
   category?: { id: string; name: string; slug: string } | null;
+  products?: ProductCardData[];
 };
 
 export type Brand = { id: string; name: string; slug: string };
@@ -108,7 +110,7 @@ export type ProductDetail = Omit<ProductCardData, "variants"> & {
 
 export type HomeBlock = {
   id: string;
-  kind: "BANNER" | "CAMPAIGN" | "NEW_ARRIVAL";
+  kind: "BANNER" | "CAMPAIGN" | "NEW_ARRIVAL" | "TRENDING";
   title: string;
   subtitle: string | null;
   imageUrl: string | null;
@@ -122,6 +124,7 @@ export type HomePayload = {
   banners: HomeBlock[];
   campaigns: HomeBlock[];
   newArrivals: HomeBlock[];
+  trendingProducts: ProductCardData[];
 };
 
 export type CartLine = {

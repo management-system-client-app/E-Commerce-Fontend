@@ -225,11 +225,21 @@ export const api = {
     for (const image of images) body.append("images", image);
     return request<ProductDetail>("/products", { method: "POST", body }).then((res) => res.data);
   },
-  updateProduct: (id: string, input: Record<string, unknown>) =>
-    request<ProductDetail>(`/products/${id}`, {
+  updateProduct: (id: string, input: Record<string, unknown>, images: File[] = []) => {
+    const body: BodyInit =
+      images.length > 0
+        ? (() => {
+            const form = new FormData();
+            form.append("data", JSON.stringify(input));
+            for (const image of images) form.append("images", image);
+            return form;
+          })()
+        : JSON.stringify(input);
+    return request<ProductDetail>(`/products/${id}`, {
       method: "PATCH",
-      body: JSON.stringify(input),
-    }).then((res) => res.data),
+      body,
+    }).then((res) => res.data);
+  },
   colors: async (): Promise<Color[]> => {
     const found = new Map<string, Color>();
     let page = 1;

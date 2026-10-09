@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ApiError, api } from "../api";
 import { RowsSkeleton } from "../components/Skeleton";
-import type { AdminHomeBlock, Category } from "../types";
+import type { AdminHomeBlock, Category, ProductCardData } from "../types";
 
 const fieldClass =
   "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2ec9a8]";
@@ -10,6 +10,7 @@ const KINDS = [
   { id: "BANNER", label: "Slider banner" },
   { id: "CAMPAIGN", label: "Offer banner" },
   { id: "NEW_ARRIVAL", label: "New arrivals" },
+  { id: "TRENDING", label: "Trending Now products" },
 ] as const;
 
 function messageOf(reason: unknown, fallback: string) {
@@ -21,6 +22,15 @@ function messageOf(reason: unknown, fallback: string) {
 function parentName(categories: Category[], parentId: string | null) {
   if (!parentId) return "—";
   return categories.find((category) => category.id === parentId)?.name ?? "—";
+}
+
+function hasAvailableStock(product: ProductCardData) {
+  return product.variants?.some((variant) => variant.stock - (variant.reserved ?? 0) > 0) ?? false;
+}
+
+function isVideoUrl(value: string | null | undefined) {
+  if (!value) return false;
+  return /(\.(mp4|webm|mov|m4v|ogv|avi))(\?.*)?$/i.test(value) || /(?:^|\/)(video|mp4|webm|quicktime)/i.test(value);
 }
 
 export function AdminCategories() {
@@ -219,6 +229,9 @@ export function AdminBanners() {
   const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<File | null>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [productSearch, setProductSearch] = useState("");
+  const [productOptions, setProductOptions] = useState<ProductCardData[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<ProductCardData[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -233,6 +246,27 @@ export function AdminBanners() {
     api.adminCategories().then(setCategories).catch(() => setCategories([]));
   }, []);
 
+  useEffect(() => {
+    if (kind !== "TRENDING") return;
+    let active = true;
+    api.products({
+      status: "ACTIVE",
+      inStock: true,
+      search: productSearch.trim() || undefined,
+      limit: 100,
+      page: 1,
+    })
+      .then(({ items }) => {
+        if (active) setProductOptions(items.filter(hasAvailableStock));
+      })
+      .catch((reason) => {
+        if (active) setError(messageOf(reason, "Could not load products"));
+      });
+    return () => {
+      active = false;
+    };
+  }, [kind, productSearch]);
+
   function reset() {
     setEditing(null);
     setKind("BANNER");
@@ -244,6 +278,8 @@ export function AdminBanners() {
     setIsActive(true);
     setImage(null);
     setCurrentImage(null);
+    setProductSearch("");
+    setSelectedProducts([]);
     setFormKey((key) => key + 1);
   }
 
@@ -258,6 +294,8 @@ export function AdminBanners() {
     setIsActive(block.isActive);
     setImage(null);
     setCurrentImage(block.imageUrl);
+    setProductSearch("");
+    setSelectedProducts(block.products ?? []);
     setError("");
   }
 
@@ -277,6 +315,7 @@ export function AdminBanners() {
           subtitle: subtitle.trim() || null,
           linkUrl: linkUrl.trim() || null,
           categoryId: categoryId || null,
+          productIds: kind === "TRENDING" ? selectedProducts.map((product) => product.id) : [],
           sortOrder: Number(sortOrder) || 0,
           isActive,
         },
@@ -318,6 +357,62 @@ export function AdminBanners() {
             ))}
           </select>
         </label>
+        {kind === "CAMPAIGN" ? (
+          <p className="text-xs leading-relaxed text-slate-500">
+            The first four active offer banners by Sort order appear in the homepage category collage as Man, Woman, Child, and Accessories. Edit each offer banner here to replace its image or video.
+          </p>
+        ) : null}
+        {kind === "TRENDING" ? (
+          <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+            <p className="text-xs leading-relaxed text-slate-500">Choose up to 24 active products with available stock. They will appear in Trending Now in the order selected.</p>
+            <input
+              className={fieldClass}
+              placeholder="Search products"
+              value={productSearch}
+              onChange={(event) => setProductSearch(event.target.value)}
+            />
+            {selectedProducts.length > 0 ? (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-slate-600">Selected ({selectedProducts.length}/24)</p>
+                {selectedProducts.map((product) => (
+                  <div key={product.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="truncate">{product.name}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-rose-700"
+                      onClick={() => setSelectedProducts((selected) => selected.filter((item) => item.id !== product.id))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            <div className="max-h-44 space-y-1 overflow-y-auto">
+              {productOptions.map((product) => {
+                const selected = selectedProducts.some((item) => item.id === product.id);
+                return (
+                  <label key={product.id} className="flex cursor-pointer items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      disabled={!selected && selectedProducts.length >= 24}
+                      onChange={(event) =>
+                        setSelectedProducts((current) =>
+                          event.target.checked
+                            ? [...current, product]
+                            : current.filter((item) => item.id !== product.id),
+                        )
+                      }
+                    />
+                    <span className="truncate">{product.name}</span>
+                  </label>
+                );
+              })}
+              {productOptions.length === 0 ? <p className="text-xs text-slate-500">No available products found.</p> : null}
+            </div>
+          </div>
+        ) : null}
         <label className="block text-xs text-slate-500">
           Title
           <input className={`${fieldClass} mt-1`} required minLength={2} value={title} onChange={(event) => setTitle(event.target.value)} />
@@ -345,11 +440,19 @@ export function AdminBanners() {
           Sort
           <input className={`${fieldClass} mt-1`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
-          Image
-          <input className="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
-        </label>
-        {currentImage ? <img src={currentImage} alt="" className="h-20 w-full rounded-lg object-cover" /> : null}
+        {kind !== "TRENDING" ? (
+          <label className="block text-xs text-slate-500">
+            Image or video
+            <input className="mt-1 block w-full text-sm" type="file" accept="image/*,video/*" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+          </label>
+        ) : null}
+        {currentImage ? (
+          isVideoUrl(currentImage) ? (
+            <video src={currentImage} controls className="h-20 w-full rounded-lg object-cover" />
+          ) : (
+            <img src={currentImage} alt="" className="h-20 w-full rounded-lg object-cover" />
+          )
+        ) : null}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
           Active
@@ -381,13 +484,20 @@ export function AdminBanners() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {block.imageUrl ? (
-                      <img src={block.imageUrl} alt="" className="h-12 w-20 rounded-lg object-cover" />
+                      isVideoUrl(block.imageUrl) ? (
+                        <video src={block.imageUrl} controls className="h-12 w-20 rounded-lg object-cover" />
+                      ) : (
+                        <img src={block.imageUrl} alt="" className="h-12 w-20 rounded-lg object-cover" />
+                      )
                     ) : (
                       <span className="grid h-12 w-20 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">None</span>
                     )}
                     <span>
                       <span className="block font-medium">{block.title}</span>
-                      <span className="text-xs text-slate-500">{block.isActive ? "Active" : "Hidden"}</span>
+                      <span className="text-xs text-slate-500">
+                        {block.isActive ? "Active" : "Hidden"}
+                        {block.kind === "TRENDING" ? ` · ${block.productIds.length} selected` : ""}
+                      </span>
                     </span>
                   </div>
                 </td>

@@ -55,6 +55,25 @@ function IconGrid() {
     </svg>
   );
 }
+function IconTracking() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="7.5" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="17.5" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+function IconOutlets() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="9" cy="6" r="2" fill="currentColor" />
+      <circle cx="15" cy="12" r="2" fill="currentColor" />
+      <circle cx="8" cy="18" r="2" fill="currentColor" />
+    </svg>
+  );
+}
 function IconUser({ size = 18 }: { size?: number } = {}) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -138,7 +157,7 @@ export function Header() {
 
   return (
     <>
-      <header className="header">
+      <header className={location.pathname === "/" ? "header home-header" : "header"}>
         {promo ? (
           <div className="promo">
             <Link to="/shop">{promo}</Link>
@@ -199,6 +218,12 @@ export function Header() {
               </div>
             ))}
           </nav>
+          {location.pathname === "/" ? (
+            <div className="category-nav-tools">
+              <Link to="/track"><IconTracking />Order Tracking</Link>
+              <Link to="/outlets"><IconOutlets />Outlets</Link>
+            </div>
+          ) : null}
         </nav>
       </header>
       <nav className="bottom-nav" aria-label="Mobile">

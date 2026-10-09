@@ -9,6 +9,20 @@ import type { ProductCardData, ProductDetail, Review, SizeGuide } from "../types
 
 const RECENT_PRODUCTS_KEY = "recently_viewed_products";
 
+const DEFAULT_SARI_SIZE_GUIDE: SizeGuide = {
+  id: "default-sari-size-guide",
+  title: "Sari / blouse size guide",
+  categoryId: "",
+  columns: ["Size", "Bust (in)", "Waist (in)", "Length (in)"],
+  rows: [
+    ["XS", "32", "26", "42"],
+    ["S", "34", "28", "44"],
+    ["M", "36", "30", "46"],
+    ["L", "38", "32", "48"],
+    ["XL", "40", "34", "50"],
+  ],
+};
+
 function recordRecentlyViewed(id: string) {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(RECENT_PRODUCTS_KEY) ?? "[]");
@@ -32,6 +46,7 @@ export function ProductPage() {
   const [guides, setGuides] = useState<SizeGuide[]>([]);
   const [guideOpen, setGuideOpen] = useState(false);
   const [image, setImage] = useState(0);
+  const displayGuides = guides.length > 0 ? guides : [DEFAULT_SARI_SIZE_GUIDE];
   const [sizeId, setSizeId] = useState<string | null>(null);
   const [colorId, setColorId] = useState<string | null>(null);
   const [fabricId, setFabricId] = useState<string | null>(null);
@@ -91,6 +106,22 @@ export function ProductPage() {
     setRelatedLoading(true);
     setReviewsLoading(true);
   }, [id]);
+
+  useEffect(() => {
+    if (recentProducts.length < 2) return;
+    const timer = window.setInterval(() => {
+      setRecentIndex((index) => (index + 1) % recentProducts.length);
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [recentProducts.length]);
+
+  useEffect(() => {
+    if (recentProducts.length === 0) {
+      setRecentIndex(0);
+      return;
+    }
+    setRecentIndex((current) => current % recentProducts.length);
+  }, [recentProducts.length]);
 
   const variants = useMemo(
     () => (product?.variants ?? []).filter((variant) => variant.isActive !== false),
@@ -192,7 +223,22 @@ export function ProductPage() {
       <div className="pdp">
         <div>
           <div className="gallery-main">
-            {photo ? <img src={photo.url} alt={photo.alt || product.name} /> : <div className="photo-fallback">Photo</div>}
+            {photo ? (
+              <img
+                src={photo.url}
+                alt={photo.alt || product.name}
+                onMouseMove={(event) => {
+                  const bounds = event.currentTarget.parentElement?.getBoundingClientRect();
+                  if (!bounds) return;
+                  const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+                  const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+                  event.currentTarget.style.setProperty("--zoom-x", `${x}%`);
+                  event.currentTarget.style.setProperty("--zoom-y", `${y}%`);
+                }}
+              />
+            ) : (
+              <div className="photo-fallback">Photo</div>
+            )}
           </div>
           <div className="thumbs">
             {gallery.map((item, index) => (
@@ -280,7 +326,7 @@ export function ProductPage() {
             <button className="btn-line wide" type="button" onClick={toggleWish}>
               {saved ? "Saved" : "Wishlist"}
             </button>
-            {guides.length > 0 ? (
+            {displayGuides.length > 0 ? (
               <button className="see-more" type="button" onClick={() => setGuideOpen(true)}>
                 Size guide
               </button>
@@ -292,27 +338,33 @@ export function ProductPage() {
         <aside className="recent-viewed" aria-label="Recently viewed products">
           <div className="recent-viewed-heading">
             <h2>Recently Viewed</h2>
-            {recentProducts.length > 1 ? (
-              <div className="recent-viewed-controls">
-                <button type="button" aria-label="Previous recently viewed product" onClick={() => setRecentIndex((index) => (index - 1 + recentProducts.length) % recentProducts.length)}>‹</button>
-                <button type="button" aria-label="Next recently viewed product" onClick={() => setRecentIndex((index) => (index + 1) % recentProducts.length)}>›</button>
-              </div>
-            ) : null}
           </div>
           {recentLoading ? <ProductGridSkeleton count={1} /> : null}
           {!recentLoading && recentProducts.length > 0 ? (() => {
-            const recent = recentProducts[recentIndex];
-            const recentImage = coverImage(recent);
             return (
               <>
-                <Link className="recent-viewed-card" to={`/product/${recent.id}`}>
-                  <div className="recent-viewed-photo">
-                    {recentImage ? <img src={recentImage} alt={recent.name} /> : <div className="photo-fallback" />}
-                    {productFlags(recent).isNew ? <span className="flag">New</span> : null}
-                  </div>
-                  <strong>{recent.name}</strong>
-                  <span className="price">{money(recent.basePrice)}</span>
-                </Link>
+                <div className="recent-viewed-slider">
+                  {recentProducts.map((recent, index) => {
+                    const active = index === recentIndex;
+                    const recentImage = coverImage(recent);
+                    return (
+                      <Link
+                        key={recent.id}
+                        className={`recent-viewed-card${active ? " is-active" : ""}`}
+                        to={`/product/${recent.id}`}
+                        aria-hidden={!active}
+                        inert={!active}
+                      >
+                        <div className="recent-viewed-photo">
+                          {recentImage ? <img src={recentImage} alt={recent.name} /> : <div className="photo-fallback" />}
+                          {productFlags(recent).isNew ? <span className="flag">New</span> : null}
+                        </div>
+                        <strong>{recent.name}</strong>
+                        <span className="price">{money(recent.basePrice)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
                 {recentProducts.length > 1 ? (
                   <div className="recent-viewed-dots" aria-label={`Product ${recentIndex + 1} of ${recentProducts.length}`}>
                     {recentProducts.map((item, index) => (
@@ -404,7 +456,7 @@ export function ProductPage() {
               </button>
             </header>
             <div style={{ padding: 16 }}>
-              {guides.map((guide) => (
+              {displayGuides.map((guide) => (
                 <div key={guide.id}>
                   <h2 className="label" style={{ marginBottom: 8 }}>
                     {guide.title}

@@ -6,10 +6,82 @@ import { ProductCarousel } from "../components/ProductCard";
 import { useStore } from "../state";
 import type { HomeBlock, ProductCardData } from "../types";
 
+const getCountdownParts = (milliseconds: number) => {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return { days, hours, minutes, seconds };
+};
+
+function isVideoUrl(value: string | null | undefined) {
+  if (!value) return false;
+  return /(\.(mp4|webm|mov|m4v|ogv|avi))(\?.*)?$/i.test(value) || /(?:^|\/)(video|mp4|webm|quicktime)/i.test(value);
+}
+
+function hasAvailableStock(product: ProductCardData) {
+  return product.variants?.some((variant) => variant.stock - (variant.reserved ?? 0) > 0) ?? false;
+}
+
+async function loadAvailableProducts() {
+  const products: ProductCardData[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const result = await api.products({
+      status: "ACTIVE",
+      sort: "latest",
+      inStock: true,
+      limit: 100,
+      page,
+    });
+    products.push(...result.items.filter(hasAvailableStock));
+    totalPages = result.meta.totalPages;
+    page += 1;
+  }
+
+  return products;
+}
+
 function blockHref(block: HomeBlock) {
   if (block.linkUrl) return block.linkUrl;
   if (block.categoryId) return `/shop?categoryId=${block.categoryId}`;
   return "/shop";
+}
+
+function BlockLink({
+  block,
+  className,
+  overlayText,
+  href,
+  active = true,
+}: {
+  block: HomeBlock;
+  className?: string;
+  overlayText?: string;
+  href?: string;
+  active?: boolean;
+}) {
+  return (
+    <Link className={className} to={href ?? blockHref(block)}>
+      {block.imageUrl ? (
+        isVideoUrl(block.imageUrl) ? (
+          <video src={block.imageUrl} autoPlay={active} muted loop playsInline preload={active ? "auto" : "none"} />
+        ) : (
+          <img src={block.imageUrl} alt={block.title} />
+        )
+      ) : (
+        <div className="banner-copy">
+          <strong>{block.title}</strong>
+          {block.subtitle ? <span>{block.subtitle}</span> : null}
+        </div>
+      )}
+      {overlayText ? <span className="collage-label">{overlayText}</span> : null}
+    </Link>
+  );
 }
 
 function HomeSkeleton() {
@@ -41,11 +113,13 @@ export function HomePage() {
   const [arrivals, setArrivals] = useState<ProductCardData[]>([]);
   const [arrivalHref, setArrivalHref] = useState("/shop?sort=latest");
   const [trending, setTrending] = useState<ProductCardData[]>([]);
+  const [selectedTrending, setSelectedTrending] = useState<ProductCardData[]>([]);
   const [best, setBest] = useState<ProductCardData[]>([]);
   const [slide, setSlide] = useState(0);
+  const [saleEndsAt] = useState(() => Date.now() + 1000 * 60 * 60 * 12 + 1000 * 30);
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, saleEndsAt - Date.now()));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const categoryRow = useRef<HTMLDivElement>(null);
   const skeletonRef = useRef<HTMLDivElement>(null);
   const [reservedHeight, setReservedHeight] = useState(0);
   const isLoading = loading || !catalogReady;
@@ -62,15 +136,16 @@ export function HomePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.home(), api.products({ status: "ACTIVE", sort: "latest", limit: 8, page: 1 }), api.bestSellers()])
-      .then(async ([home, latest, sellers]) => {
+    Promise.all([api.home(), loadAvailableProducts(), api.bestSellers()])
+      .then(async ([home, availableProducts, sellers]) => {
         if (!active) return;
         setBanners(home.banners);
         setCampaigns(home.campaigns);
         const arrivalBlock = home.newArrivals[0];
         setArrivals(arrivalBlock?.products ?? []);
         setArrivalHref(arrivalBlock?.categoryId ? `/shop?categoryId=${arrivalBlock.categoryId}` : "/shop?sort=latest");
-        setTrending(await hydrateImages(latest.items));
+        setTrending(await hydrateImages(availableProducts));
+        setSelectedTrending(home.trendingProducts);
         setBest(sellers);
       })
       .catch((reason: unknown) => {
@@ -92,74 +167,70 @@ export function HomePage() {
     return () => window.clearInterval(timer);
   }, [banners.length]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTimeLeft(Math.max(0, saleEndsAt - Date.now()));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [saleEndsAt]);
+
   const current = banners[slide] ?? banners[0];
-  const sideWide = campaigns[0];
-  const sidePair = campaigns.slice(1, 3);
+  const sideBanners = campaigns.slice(0, 3);
   const mosaicLarge = campaigns.slice(3, 5);
   const mosaicSmall = campaigns.slice(5, 9);
+  const featureCollage = campaigns.slice(0, 4);
   const tiles = categoryTiles(catalog.categories, categoryImages);
   const deals = trending.filter((product) => product.onSale).length > 0 ? trending.filter((product) => product.onSale) : trending;
   const collection = arrivals.length > 0 ? arrivals : trending;
+  const countdown = getCountdownParts(timeLeft);
   const hasHomeContent = Boolean(
-    current || sideWide || tiles.length || deals.length || mosaicLarge.length || mosaicSmall.length || collection.length || best.length,
+    current || sideBanners.length || tiles.length || deals.length || mosaicLarge.length || mosaicSmall.length || collection.length || best.length || selectedTrending.length,
   );
-
-  function BlockLink({ block, className }: { block: HomeBlock; className?: string }) {
-    return (
-      <Link className={className} to={blockHref(block)}>
-        {block.imageUrl ? <img src={block.imageUrl} alt={block.title} /> : (
-          <div className="banner-copy">
-            <strong>{block.title}</strong>
-            {block.subtitle ? <span>{block.subtitle}</span> : null}
-          </div>
-        )}
-      </Link>
-    );
-  }
-
-  function moveCategories(direction: -1 | 1) {
-    categoryRow.current?.scrollBy({ left: direction * categoryRow.current.clientWidth * 0.75, behavior: "smooth" });
-  }
 
   return (
     <div className="home" style={!isLoading && !error && hasHomeContent && reservedHeight ? { minHeight: reservedHeight } : undefined}>
       {isLoading ? <div className="home-skeleton-measure" ref={skeletonRef}><HomeSkeleton /></div> : (
         <>
       {error ? <p className="error">{error}</p> : null}
-      {current || sideWide ? (
+      {current || sideBanners.length > 0 ? (
         <div className="hero-board">
           {current ? (
             <div className="hero-main">
-              <BlockLink block={current} />
+              <div className="hero-slides">
+                {banners.map((banner, index) => {
+                  const active = index === slide;
+                  return (
+                    <div
+                      key={banner.id}
+                      className={`hero-slide${active ? " is-active" : ""}`}
+                      aria-hidden={!active}
+                      inert={!active}
+                    >
+                      <BlockLink block={banner} active={active} />
+                    </div>
+                  );
+                })}
+              </div>
               {banners.length > 1 ? (
-                <>
-                  <button type="button" className="hero-arrow hero-prev" aria-label="Previous banner" onClick={() => setSlide((slide - 1 + banners.length) % banners.length)}>‹</button>
-                  <button type="button" className="hero-arrow hero-next" aria-label="Next banner" onClick={() => setSlide((slide + 1) % banners.length)}>›</button>
-                  <div className="dots">
-                    {banners.map((banner, index) => (
-                      <button
-                        key={banner.id}
-                        type="button"
-                        className={index === slide ? "dot active" : "dot"}
-                        aria-label={`Show banner ${index + 1}`}
-                        onClick={() => setSlide(index)}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-          {sideWide || sidePair.length > 0 ? (
-            <div className="hero-side">
-              {sideWide ? <BlockLink block={sideWide} className="hero-wide" /> : null}
-              {sidePair.length > 0 ? (
-                <div className="hero-pair">
-                  {sidePair.map((block) => (
-                    <BlockLink key={block.id} block={block} />
+                <div className="dots">
+                  {banners.map((banner, index) => (
+                    <button
+                      key={banner.id}
+                      type="button"
+                      className={index === slide ? "dot active" : "dot"}
+                      aria-label={`Show banner ${index + 1}`}
+                      onClick={() => setSlide(index)}
+                    />
                   ))}
                 </div>
               ) : null}
+            </div>
+          ) : null}
+          {sideBanners.length > 0 ? (
+            <div className="hero-side">
+              {sideBanners.map((block) => (
+                <BlockLink key={block.id} block={block} className="hero-wide" />
+              ))}
             </div>
           ) : null}
         </div>
@@ -169,14 +240,8 @@ export function HomePage() {
         <section className="section">
           <div className="section-head">
             <h2>Popular Categories</h2>
-            {tiles.length > 5 ? (
-              <div className="shelf-controls">
-                <button type="button" aria-label="Previous categories" onClick={() => moveCategories(-1)}>‹</button>
-                <button type="button" aria-label="Next categories" onClick={() => moveCategories(1)}>›</button>
-              </div>
-            ) : null}
-          </div>
-          <div className="cat-row" ref={categoryRow}>
+            </div>
+            <div className="cat-row">
             {tiles.map(({ category, image }) => (
               <Link key={category.id} to={`/shop?categoryId=${category.id}`} className="cat-tile">
                 <div className="cat-photo">
@@ -192,12 +257,29 @@ export function HomePage() {
       {deals.length > 0 ? (
         <section className="section deals">
           <div className="section-head">
-            <h2>Daily Deals</h2>
+            <div className="deal-header-wrap">
+              <h2>Daily Deals</h2>
+              <div className="countdown-box" aria-live="polite">
+                <span>Ends in</span>
+                <div className="countdown-stack">
+                  <strong>{String(countdown.hours).padStart(2, "0")}</strong>
+                  <small>H</small>
+                </div>
+                <div className="countdown-stack">
+                  <strong>{String(countdown.minutes).padStart(2, "0")}</strong>
+                  <small>M</small>
+                </div>
+                <div className="countdown-stack">
+                  <strong>{String(countdown.seconds).padStart(2, "0")}</strong>
+                  <small>S</small>
+                </div>
+              </div>
+            </div>
             <Link className="see-more" to="/shop?sort=price_asc">
               See More
             </Link>
           </div>
-          <ProductCarousel products={deals} />
+          <ProductCarousel products={deals} showAvailableStock />
         </section>
       ) : null}
 
@@ -214,6 +296,22 @@ export function HomePage() {
           {mosaicSmall.map((block) => (
             <BlockLink key={block.id} block={block} />
           ))}
+        </section>
+      ) : null}
+
+      {featureCollage.length >= 4 ? (
+        <section className="section collage-wrap">
+          <div className="collage-grid">
+            {featureCollage.map((block, index) => (
+              <BlockLink
+                key={block.id}
+                block={block}
+                className="collage-card"
+                overlayText={["Man", "Woman", "Child", "Accessories"][index]}
+                href={index === 1 ? "/women" : undefined}
+              />
+            ))}
+          </div>
         </section>
       ) : null}
 
@@ -238,6 +336,18 @@ export function HomePage() {
             </Link>
           </div>
           <ProductCarousel products={best} />
+        </section>
+      ) : null}
+
+      {selectedTrending.length > 0 ? (
+        <section className="section">
+          <div className="section-head">
+            <h2>Trending Now</h2>
+            <Link className="see-more" to="/shop">
+              See More
+            </Link>
+          </div>
+          <ProductCarousel products={selectedTrending} />
         </section>
       ) : null}
         </>
