@@ -8,6 +8,13 @@ import { useAuth, useCart } from "../state";
 import type { ProductCardData, ProductDetail, Review, SizeGuide } from "../types";
 
 const RECENT_PRODUCTS_KEY = "recently_viewed_products";
+const GENDER_LABELS: Record<string, string> = {
+  MEN: "Male",
+  WOMEN: "Female",
+  UNISEX: "Unisex",
+  KIDS: "Kids",
+};
+type ProductInfoTab = "description" | "specification" | "return-policy" | "reviews";
 
 const DEFAULT_SARI_SIZE_GUIDE: SizeGuide = {
   id: "default-sari-size-guide",
@@ -43,6 +50,7 @@ export function ProductPage() {
   const [related, setRelated] = useState<ProductCardData[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [average, setAverage] = useState(0);
+  const [infoTab, setInfoTab] = useState<ProductInfoTab>("specification");
   const [guides, setGuides] = useState<SizeGuide[]>([]);
   const [guideOpen, setGuideOpen] = useState(false);
   const [image, setImage] = useState(0);
@@ -55,11 +63,11 @@ export function ProductPage() {
   const [saved, setSaved] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
+  const [reviewMessage, setReviewMessage] = useState("");
   const [recentProducts, setRecentProducts] = useState<ProductCardData[]>([]);
   const [recentIndex, setRecentIndex] = useState(0);
   const [recentLoading, setRecentLoading] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
-  const [reviewMessage, setReviewMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -207,6 +215,7 @@ export function ProductPage() {
         comment: reviewForm.comment,
       });
       setReviews((current) => [created, ...current]);
+      setAverage((current) => (current * reviews.length + created.rating) / (reviews.length + 1));
       setReviewForm({ rating: 5, title: "", comment: "" });
       setReviewMessage("Review posted.");
     } catch (reason) {
@@ -221,6 +230,7 @@ export function ProductPage() {
         {product.name}
       </p>
       <div className="pdp">
+        <div className="pdp-main">
         <div>
           <div className="gallery-main">
             {photo ? (
@@ -335,14 +345,139 @@ export function ProductPage() {
           <div className="prose">{product.description}</div>
           {product.careInstructions ? <p className="note">Care: {product.careInstructions}</p> : null}
         </div>
-        <aside className="recent-viewed" aria-label="Recently viewed products">
-          <div className="recent-viewed-heading">
-            <h2>Recently Viewed</h2>
+        <section className="section product-info-section">
+          <div className="product-info-tabs" role="tablist" aria-label="Product information">
+            {([
+              ["description", "Description"],
+              ["specification", "Specification"],
+              ["return-policy", "Return Policy"],
+              ["reviews", `Reviews (${reviews.length})`],
+            ] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                id={`product-tab-${tab}`}
+                type="button"
+                role="tab"
+                aria-selected={infoTab === tab}
+                aria-controls="product-info-panel"
+                className={infoTab === tab ? "active" : ""}
+                onClick={() => setInfoTab(tab)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          {recentLoading ? <ProductGridSkeleton count={1} /> : null}
-          {!recentLoading && recentProducts.length > 0 ? (() => {
-            return (
-              <>
+          <div id="product-info-panel" className="product-info-panel" role="tabpanel" aria-labelledby={`product-tab-${infoTab}`}>
+            {infoTab === "description" ? (
+              <div className="product-description">{product.description || "No description found for this product."}</div>
+            ) : null}
+            {infoTab === "specification" ? (
+              <div className="product-specs" aria-label="Product details">
+                <p><span>Brand:</span> {product.brand.name}</p>
+                <p><span>Fabric:</span> {selected?.fabric.name ?? "—"}</p>
+                <p><span>Gender:</span> {GENDER_LABELS[product.gender] ?? product.gender}</p>
+                <p><span>Color:</span> {selected?.color?.name ?? "—"}</p>
+                <p><span>Size:</span> {selected?.size.name ?? "—"}</p>
+                <p className="product-specs-note">
+                  <span>Note:</span> The color is the same as the picture. However, it may slightly differ due to lighting.
+                </p>
+              </div>
+            ) : null}
+            {infoTab === "return-policy" ? (
+              <div className="product-policy">
+                <p>15 Days replacement policy only for SaRa Lifestyle manufacture products.</p>
+                <p>Please contact customer support to request a replacement.</p>
+              </div>
+            ) : null}
+            {infoTab === "reviews" ? (
+              <div className="product-reviews">
+                {average > 0 ? <p className="product-average">Average rating: {average.toFixed(1)} / 5</p> : null}
+                {reviewsLoading ? <RowsSkeleton rows={3} /> : null}
+                {!reviewsLoading && reviews.length === 0 ? <p className="note">No reviews found for this product.</p> : null}
+                {reviews.map((review) => (
+                  <article key={review.id} className="product-review">
+                    <p className="stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
+                    {review.title ? <strong>{review.title}</strong> : null}
+                    <p>{review.comment}</p>
+                    <p className="note">{review.user.firstName} {review.user.lastName}</p>
+                  </article>
+                ))}
+                {user ? (
+                  <form onSubmit={onReview}>
+                    <label className="field">
+                      <span>Rating</span>
+                      <div className="rating-input" role="radiogroup" aria-label="Rating">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <button
+                            key={rating}
+                            type="button"
+                            role="radio"
+                            aria-checked={reviewForm.rating === rating}
+                            aria-label={`${rating} star${rating === 1 ? "" : "s"}`}
+                            className={rating <= reviewForm.rating ? "selected" : ""}
+                            onClick={() => setReviewForm({ ...reviewForm, rating })}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </label>
+                    <label className="field">
+                      <span>Title</span>
+                      <input value={reviewForm.title} onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })} />
+                    </label>
+                    <label className="field">
+                      <span>Review</span>
+                      <textarea required minLength={2} value={reviewForm.comment} onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })} />
+                    </label>
+                    {reviewMessage ? <p className="note">{reviewMessage}</p> : null}
+                    <button className="btn" type="submit">Post review</button>
+                  </form>
+                ) : (
+                  <p className="note"><Link to="/login">Login</Link> to review a product you have bought.</p>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </section>
+        </div>
+        <aside className="recent-viewed" aria-label="Delivery benefits and recently viewed products">
+          <section className="delivery-benefits" aria-label="Delivery and shopping benefits">
+            <ul>
+              <li>
+                <span aria-hidden="true">🚚</span>
+                <p>Free shipping inside dhaka city only for <strong>SaRa Lifestyle</strong> products</p>
+              </li>
+              <li>
+                <span aria-hidden="true">🇧🇩</span>
+                <p>Home delivery all over Bangladesh</p>
+              </li>
+              <li>
+                <span aria-hidden="true">💳</span>
+                <p>Various payment methods</p>
+              </li>
+              <li>
+                <span aria-hidden="true">📦</span>
+                <p><strong>15 Days</strong> replacement policy only for <strong>SaRa Lifestyle</strong> manufacture products</p>
+              </li>
+              <li>
+                <span aria-hidden="true">🎧</span>
+                <p>Dedicated Customer Support</p>
+              </li>
+              <li>
+                <span aria-hidden="true">🌐</span>
+                <p>Verified and Trusted Sellers</p>
+              </li>
+            </ul>
+          </section>
+          <section className="recent-viewed-products" aria-label="Recently viewed products">
+            <div className="recent-viewed-heading">
+              <h2>Recently Viewed</h2>
+            </div>
+            {recentLoading ? <ProductGridSkeleton count={1} /> : null}
+            {!recentLoading && recentProducts.length > 0 ? (() => {
+              return (
+                <>
                 <div className="recent-viewed-slider">
                   {recentProducts.map((recent, index) => {
                     const active = index === recentIndex;
@@ -372,69 +507,12 @@ export function ProductPage() {
                     ))}
                   </div>
                 ) : null}
-              </>
-            );
-          })() : null}
+                </>
+              );
+            })() : null}
+          </section>
         </aside>
       </div>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Reviews {average ? `· ${average}` : ""}</h2>
-        </div>
-        <div className="reviews">
-          {reviewsLoading ? <RowsSkeleton rows={3} /> : null}
-          {!reviewsLoading && reviews.length === 0 ? <p className="note">No reviews yet.</p> : null}
-          {reviews.map((review) => (
-            <article key={review.id} className="review">
-              <p className="stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
-              {review.title ? <strong>{review.title}</strong> : null}
-              <p>{review.comment}</p>
-              <p className="note">
-                {review.user.firstName} {review.user.lastName}
-              </p>
-            </article>
-          ))}
-          {user ? (
-            <form onSubmit={onReview}>
-              <label className="field">
-                <span>Rating</span>
-                <select
-                  value={reviewForm.rating}
-                  onChange={(event) => setReviewForm({ ...reviewForm, rating: Number(event.target.value) })}
-                >
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <option key={rating} value={rating}>
-                      {rating}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>Title</span>
-                <input value={reviewForm.title} onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })} />
-              </label>
-              <label className="field">
-                <span>Review</span>
-                <textarea
-                  required
-                  minLength={2}
-                  value={reviewForm.comment}
-                  onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })}
-                />
-              </label>
-              {reviewMessage ? <p className="note">{reviewMessage}</p> : null}
-              <button className="btn" type="submit">
-                Post review
-              </button>
-            </form>
-          ) : (
-            <p className="note">
-              <Link to="/login">Login</Link> to review a product you have bought.
-            </p>
-          )}
-        </div>
-      </section>
 
       {relatedLoading ? <ProductGridSkeleton count={4} /> : null}
       {!relatedLoading && related.length > 0 ? (

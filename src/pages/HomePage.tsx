@@ -4,7 +4,7 @@ import { api, hydrateImages } from "../api";
 import { categoryTiles } from "../components/Chrome";
 import { ProductCarousel } from "../components/ProductCard";
 import { useStore } from "../state";
-import type { HomeBlock, ProductCardData } from "../types";
+import type { HomeBlock, HomePayload, ProductCardData } from "../types";
 
 const getCountdownParts = (milliseconds: number) => {
   const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
@@ -69,7 +69,14 @@ function BlockLink({
     <Link className={className} to={href ?? blockHref(block)}>
       {block.imageUrl ? (
         isVideoUrl(block.imageUrl) ? (
-          <video src={block.imageUrl} autoPlay={active} muted loop playsInline preload={active ? "auto" : "none"} />
+          <video
+            src={block.imageUrl}
+            autoPlay={active}
+            muted
+            loop
+            playsInline
+            preload={active ? "auto" : "none"}
+          />
         ) : (
           <img src={block.imageUrl} alt={block.title} />
         )
@@ -107,7 +114,7 @@ function HomeSkeleton() {
 }
 
 export function HomePage() {
-  const { catalog, catalogReady, categoryImages } = useStore();
+  const { catalog, catalogReady, categoryImages, settings } = useStore();
   const [banners, setBanners] = useState<HomeBlock[]>([]);
   const [campaigns, setCampaigns] = useState<HomeBlock[]>([]);
   const [arrivals, setArrivals] = useState<ProductCardData[]>([]);
@@ -124,6 +131,15 @@ export function HomePage() {
   const [reservedHeight, setReservedHeight] = useState(0);
   const isLoading = loading || !catalogReady;
 
+  async function applyHomePayload(home: HomePayload) {
+    setBanners(home.banners);
+    setCampaigns(home.campaigns);
+    const arrivalBlock = home.newArrivals[0];
+    setArrivals(arrivalBlock?.products ?? []);
+    setArrivalHref(arrivalBlock?.categoryId ? `/shop?categoryId=${arrivalBlock.categoryId}` : "/shop?sort=latest");
+    setSelectedTrending(await hydrateImages(home.trendingProducts));
+  }
+
   useLayoutEffect(() => {
     if (!isLoading || !skeletonRef.current) return;
     const skeleton = skeletonRef.current;
@@ -136,16 +152,11 @@ export function HomePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.home(), loadAvailableProducts(), api.bestSellers()])
+    Promise.all([api.home(true), loadAvailableProducts(), api.bestSellers()])
       .then(async ([home, availableProducts, sellers]) => {
         if (!active) return;
-        setBanners(home.banners);
-        setCampaigns(home.campaigns);
-        const arrivalBlock = home.newArrivals[0];
-        setArrivals(arrivalBlock?.products ?? []);
-        setArrivalHref(arrivalBlock?.categoryId ? `/shop?categoryId=${arrivalBlock.categoryId}` : "/shop?sort=latest");
+        await applyHomePayload(home);
         setTrending(await hydrateImages(availableProducts));
-        setSelectedTrending(home.trendingProducts);
         setBest(sellers);
       })
       .catch((reason: unknown) => {
@@ -156,6 +167,36 @@ export function HomePage() {
       });
     return () => {
       active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let refreshing = false;
+    const refreshHome = () => {
+      if (!active || refreshing || document.visibilityState !== "visible") return;
+      refreshing = true;
+      api.home(true)
+        .then(async (home) => {
+          if (!active) return;
+          await applyHomePayload(home);
+          setError("");
+        })
+        .catch((reason: unknown) => {
+          if (active) setError(reason instanceof Error ? reason.message : "Home could not be refreshed");
+        })
+        .finally(() => {
+          refreshing = false;
+        });
+    };
+    const timer = window.setInterval(refreshHome, 30_000);
+    window.addEventListener("focus", refreshHome);
+    document.addEventListener("visibilitychange", refreshHome);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshHome);
+      document.removeEventListener("visibilitychange", refreshHome);
     };
   }, []);
 
@@ -178,13 +219,18 @@ export function HomePage() {
   const sideBanners = campaigns.slice(0, 3);
   const mosaicLarge = campaigns.slice(3, 5);
   const mosaicSmall = campaigns.slice(5, 9);
-  const featureCollage = campaigns.slice(0, 4);
+  const categoryCollage = [
+    { imageUrl: settings.collageManImageUrl, label: "Man", href: "/shop?gender=MEN" },
+    { imageUrl: settings.collageWomanImageUrl, label: "Woman", href: "/women" },
+    { imageUrl: settings.collageChildImageUrl, label: "Child", href: "/shop?gender=KIDS" },
+    { imageUrl: settings.collageAccessoriesImageUrl, label: "Accessories", href: "/shop" },
+  ];
   const tiles = categoryTiles(catalog.categories, categoryImages);
   const deals = trending.filter((product) => product.onSale).length > 0 ? trending.filter((product) => product.onSale) : trending;
   const collection = arrivals.length > 0 ? arrivals : trending;
   const countdown = getCountdownParts(timeLeft);
   const hasHomeContent = Boolean(
-    current || sideBanners.length || tiles.length || deals.length || mosaicLarge.length || mosaicSmall.length || collection.length || best.length || selectedTrending.length,
+    current || sideBanners.length || mosaicLarge.length || mosaicSmall.length || tiles.length || deals.length || collection.length || best.length || selectedTrending.length,
   );
 
   return (
@@ -228,8 +274,8 @@ export function HomePage() {
           ) : null}
           {sideBanners.length > 0 ? (
             <div className="hero-side">
-              {sideBanners.map((block) => (
-                <BlockLink key={block.id} block={block} className="hero-wide" />
+              {sideBanners.map((campaign) => (
+                <BlockLink key={campaign.id} block={campaign} className="hero-wide" />
               ))}
             </div>
           ) : null}
@@ -299,17 +345,14 @@ export function HomePage() {
         </section>
       ) : null}
 
-      {featureCollage.length >= 4 ? (
+      {categoryCollage.some((item) => item.imageUrl) ? (
         <section className="section collage-wrap">
           <div className="collage-grid">
-            {featureCollage.map((block, index) => (
-              <BlockLink
-                key={block.id}
-                block={block}
-                className="collage-card"
-                overlayText={["Man", "Woman", "Child", "Accessories"][index]}
-                href={index === 1 ? "/women" : undefined}
-              />
+            {categoryCollage.map((item) => (
+              <Link key={item.label} to={item.href} className="collage-card">
+                {item.imageUrl ? <img src={item.imageUrl} alt={item.label} /> : <span className="collage-empty">{item.label}</span>}
+                <span className="collage-label">{item.label}</span>
+              </Link>
             ))}
           </div>
         </section>
