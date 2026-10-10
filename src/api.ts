@@ -32,7 +32,10 @@ import type {
   VariantRow,
 } from "./types";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1";
+const configuredApiUrl =
+  import.meta.env.VITE_API_URL?.trim() ||
+  "/api/v1";
+export const API_BASE = `${configuredApiUrl.replace(/\/+$/, "").replace(/\/api\/v1$/i, "")}/api/v1`;
 const TOKEN_KEY = "store_token";
 const SESSION_KEY = "cart_session";
 
@@ -93,7 +96,7 @@ async function performRequest<T>(path: string, init: RequestInit): Promise<Envel
   const cartSession = sessionStore.cartSession();
   if (cartSession) headers.set("x-cart-session", cartSession);
 
-  const response = await fetch(`${BASE}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers,
     credentials: "include",
@@ -413,8 +416,6 @@ export const api = {
     request<unknown>("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) }).then((res) => res.data),
   forgotAdminPassword: (email: string) =>
     request<unknown>("/auth/admin/forgot-password", { method: "POST", body: JSON.stringify({ email }) }).then((res) => res.data),
-  verifyResetCode: (email: string, code: string) =>
-    request<unknown>("/auth/verify-reset-code", { method: "POST", body: JSON.stringify({ email, code }) }).then((res) => res.data),
   resetPassword: (body: { email: string; code: string; password: string; confirmPassword: string }) =>
     request<unknown>("/auth/reset-password", { method: "POST", body: JSON.stringify(body) }).then((res) => res.data),
   updateMe: (body: Record<string, unknown>) =>

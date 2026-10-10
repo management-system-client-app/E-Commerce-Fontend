@@ -109,9 +109,10 @@ h1, h2, h3, p { margin: 0; }
   color: #fff;
 }
 .category-nav {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   min-height: 42px;
   width: 100%;
@@ -120,8 +121,8 @@ h1, h2, h3, p { margin: 0; }
   padding: 0 20px;
   border-top: 1px solid #edf0f2;
 }
-.category-nav .cat-btn { grid-column: 1; justify-self: start; display: flex; height: 30px; padding: 0 10px; border-radius: 4px; }
-.category-nav .top-nav { grid-column: 2; display: flex; justify-content: center; gap: 20px; min-width: 0; }
+.category-nav .cat-btn { position: absolute; left: 20px; display: flex; height: 30px; padding: 0 10px; border-radius: 4px; }
+.category-nav .top-nav { display: flex; flex: none; justify-content: center; gap: 20px; min-width: 0; }
 .category-nav .menu-item { position: relative; flex: none; }
 .category-nav .menu-item > a { display: block; padding: 10px 0; }
 .category-nav .menu-item > a:hover { color: #1d5f97; }
@@ -1645,7 +1646,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
   .home-header .category-nav .top-nav { gap: 16px; }
   .home-header .category-nav .top-nav a { font-size: 13px; font-weight: 500; }
   .home-header .category-nav .top-nav a.on { font-weight: 700; }
-  .category-nav-tools { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 16px; }
+  .category-nav-tools { position: absolute; right: 20px; display: flex; align-items: center; gap: 16px; }
   .category-nav-tools a {
     display: inline-flex;
     align-items: center;
@@ -1698,7 +1699,8 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
   .header-tools .theme-toggle { display: none; }
   .header-tools .search-toggle { display: none; }
   .account-chip { gap: 4px; font-size: 11px; }
-  .category-nav { display: flex; min-height: 42px; gap: 8px; padding: 0 10px; overflow-x: auto; }
+  .category-nav { justify-content: flex-start; min-height: 42px; gap: 8px; padding: 0 10px; overflow-x: auto; }
+  .category-nav .cat-btn { position: static; }
   .category-nav .cat-btn { gap: 5px; padding: 0 8px; font-size: 11px; }
   .category-nav .top-nav { gap: 16px; flex: none; }
   .category-nav .top-nav > a, .category-nav .menu-item > a { font-size: 11px; }

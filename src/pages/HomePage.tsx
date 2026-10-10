@@ -33,8 +33,6 @@ async function loadAvailableProducts() {
   while (page <= totalPages) {
     const result = await api.products({
       status: "ACTIVE",
-      sort: "latest",
-      inStock: true,
       limit: 100,
       page,
     });
@@ -152,12 +150,32 @@ export function HomePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.home(true), loadAvailableProducts(), api.bestSellers()])
-      .then(async ([home, availableProducts, sellers]) => {
+    Promise.allSettled([api.home(true), loadAvailableProducts(), api.bestSellers()])
+      .then(async ([homeResult, productsResult, sellersResult]) => {
         if (!active) return;
-        await applyHomePayload(home);
-        setTrending(await hydrateImages(availableProducts));
-        setBest(sellers);
+        const errors: string[] = [];
+        if (homeResult.status === "fulfilled") {
+          try {
+            await applyHomePayload(homeResult.value);
+          } catch (reason) {
+            errors.push(reason instanceof Error ? reason.message : "Home content could not be loaded");
+          }
+        } else {
+          errors.push(homeResult.reason instanceof Error ? homeResult.reason.message : "Home content could not be loaded");
+        }
+        if (productsResult.status === "fulfilled") {
+          const products = await hydrateImages(productsResult.value);
+          setTrending(products);
+          if (homeResult.status === "rejected") setSelectedTrending(products);
+        } else {
+          errors.push(productsResult.reason instanceof Error ? productsResult.reason.message : "Products could not be loaded");
+        }
+        if (sellersResult.status === "fulfilled") {
+          setBest(sellersResult.value);
+        } else {
+          errors.push(sellersResult.reason instanceof Error ? sellersResult.reason.message : "Best sellers could not be loaded");
+        }
+        setError(errors.join(" · "));
       })
       .catch((reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : "Home could not be loaded");

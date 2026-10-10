@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet as RouterOutlet, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ApiError, api } from "../api";
+import { API_BASE, ApiError, api } from "../api";
 import { UserFace } from "../components/Chrome";
 import { ProductGrid } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
@@ -104,8 +104,8 @@ export function LoginPage() {
           <Link to="/forgot-password">Forgot password?</Link>
         </p>
         <div className="auth-social">
-          <a href={`${import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1"}/auth/google`}>Google</a>
-          <a href={`${import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1"}/auth/facebook`}>Facebook</a>
+          <a href={`${API_BASE}/auth/google`}>Google</a>
+          <a href={`${API_BASE}/auth/facebook`}>Facebook</a>
         </div>
         <p className="note">Admin accounts sign in with this same form.</p>
       </div>
@@ -140,16 +140,11 @@ export function ForgotPage() {
     }
   }
 
-  async function confirmCode(event: FormEvent) {
+  function confirmCode(event: FormEvent) {
     event.preventDefault();
     setError("");
-    try {
-      await api.verifyResetCode(email, code);
-      setStep("password");
-      setNote("Code accepted. Choose a new password.");
-    } catch (reason) {
-      setError(reason instanceof ApiError ? reason.message : "That code is not valid");
-    }
+    setStep("password");
+    setNote("Choose a new password. Your code will be checked when you save it.");
   }
 
   async function changePassword(event: FormEvent) {
@@ -191,7 +186,7 @@ export function ForgotPage() {
       ) : null}
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="note">{note}</p> : null}
-      <button className="btn wide" type="submit">{step === "email" ? "Send code" : step === "code" ? "Submit code" : "Change password"}</button>
+      <button className="btn wide" type="submit">{step === "email" ? "Send code" : step === "code" ? "Continue" : "Change password"}</button>
     </form>
   );
 }
