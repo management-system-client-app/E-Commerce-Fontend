@@ -109,12 +109,14 @@ function BlockLink({
   overlayText,
   href,
   active = true,
+  priority = false,
 }: {
   block: HomeBlock;
   className?: string;
   overlayText?: string;
   href?: string;
   active?: boolean;
+  priority?: boolean;
 }) {
   return (
     <Link className={className} to={href ?? blockHref(block)}>
@@ -129,7 +131,13 @@ function BlockLink({
             preload={active ? "auto" : "none"}
           />
         ) : (
-          <img src={block.imageUrl} alt={block.title} />
+          <img
+            src={block.imageUrl}
+            alt={block.title}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            decoding="async"
+          />
         )
       ) : (
         <div className="banner-copy">
@@ -241,6 +249,7 @@ export function HomePage() {
       .then((home) => {
         if (!active) return;
         applyHomePayload(home, () => active);
+        setLoading(false);
       })
       .catch((reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : "Home could not be loaded");
@@ -254,6 +263,7 @@ export function HomePage() {
         if (!active) return;
         setTrending((current) => mergeProducts(current, result.items));
         updateDailyDeals(result.items);
+        setLoading(false);
         const products = await hydrateImages(result.items);
         if (active) {
           setTrending((current) => mergeProducts(current, products));
@@ -337,11 +347,13 @@ export function HomePage() {
     const timer = window.setInterval(refreshHome, DATA_REFRESH_INTERVAL);
     window.addEventListener("focus", refreshHome);
     document.addEventListener("visibilitychange", refreshHome);
+    window.addEventListener("app:products-changed", refreshHome);
     return () => {
       active = false;
       window.clearInterval(timer);
       window.removeEventListener("focus", refreshHome);
       document.removeEventListener("visibilitychange", refreshHome);
+      window.removeEventListener("app:products-changed", refreshHome);
     };
   }, []);
 
@@ -397,7 +409,7 @@ export function HomePage() {
                       aria-hidden={!active}
                       inert={!active}
                     >
-                      <BlockLink block={banner} active={active} />
+                      <BlockLink block={banner} active={active} priority={active} />
                     </div>
                   );
                 })}
@@ -436,7 +448,7 @@ export function HomePage() {
             {tiles.map(({ category, image }) => (
               <Link key={category.id} to={`/shop?categoryId=${category.id}`} className="cat-tile">
                 <div className="cat-photo">
-                  {image ? <img src={image} alt="" /> : <span>{category.name.slice(0, 1)}</span>}
+                  {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span>{category.name.slice(0, 1)}</span>}
                 </div>
                 <span>{category.name}</span>
               </Link>
@@ -495,7 +507,7 @@ export function HomePage() {
           <div className="collage-grid">
             {categoryCollage.map((item) => (
               <Link key={item.label} to={item.href} className="collage-card">
-                {item.imageUrl ? <img src={item.imageUrl} alt={item.label} /> : <span className="collage-empty">{item.label}</span>}
+                {item.imageUrl ? <img src={item.imageUrl} alt={item.label} loading="lazy" decoding="async" /> : <span className="collage-empty">{item.label}</span>}
                 <span className="collage-label">{item.label}</span>
               </Link>
             ))}

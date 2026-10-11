@@ -194,6 +194,9 @@ function request<T>(
     if (method !== "GET") {
       clearApiCache();
       dispatchToast("success", mutationSuccessMessage(path, method));
+      if (/^\/products(?:\/[^/?]+)?\/?$/i.test(path)) {
+        window.dispatchEvent(new Event("app:products-changed"));
+      }
     } else if (
       cacheable &&
       version === cacheVersion &&

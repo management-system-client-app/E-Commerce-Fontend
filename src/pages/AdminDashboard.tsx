@@ -807,15 +807,30 @@ export function AdminProducts() {
   }, [search]);
 
   useEffect(() => {
-    setLoading(true);
-    api
-      .products({ page, limit: 12, sort: "latest", search: search || undefined })
-      .then((result) => {
-        setItems(result.items as AdminProduct[]);
-        setMeta(result.meta);
-      })
-      .catch((reason) => setError(reason instanceof ApiError ? reason.message : "Could not load products"))
-      .finally(() => setLoading(false));
+    let active = true;
+    const loadProducts = () => {
+      setLoading(true);
+      setError("");
+      api
+        .products({ page, limit: 12, sort: "latest", search: search || undefined }, true)
+        .then((result) => {
+          if (!active) return;
+          setItems(result.items as AdminProduct[]);
+          setMeta(result.meta);
+        })
+        .catch((reason) => {
+          if (active) setError(reason instanceof ApiError ? reason.message : "Could not load products");
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    };
+    loadProducts();
+    window.addEventListener("app:products-changed", loadProducts);
+    return () => {
+      active = false;
+      window.removeEventListener("app:products-changed", loadProducts);
+    };
   }, [page, search]);
 
   return (

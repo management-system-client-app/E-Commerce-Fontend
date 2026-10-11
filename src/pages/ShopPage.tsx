@@ -91,9 +91,14 @@ export function ShopPage() {
     let active = true;
     let loadingInitial = true;
     let refreshing = false;
+    let refreshQueued = false;
 
     const loadProducts = async (fresh = false) => {
-      if (!active || refreshing) return;
+      if (!active) return;
+      if (refreshing) {
+        if (fresh) refreshQueued = true;
+        return;
+      }
       refreshing = true;
       if (loadingInitial) {
         setLoading(true);
@@ -131,6 +136,10 @@ export function ShopPage() {
           setLoading(false);
         }
         refreshing = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void loadProducts(true);
+        }
       }
     };
 
@@ -142,11 +151,13 @@ export function ShopPage() {
       if (document.visibilityState === "visible") void loadProducts(true);
     };
     window.addEventListener("focus", refreshOnFocus);
+    window.addEventListener("app:products-changed", refreshOnFocus);
 
     return () => {
       active = false;
       window.clearInterval(timer);
       window.removeEventListener("focus", refreshOnFocus);
+      window.removeEventListener("app:products-changed", refreshOnFocus);
     };
   }, [query]);
 

@@ -20,7 +20,7 @@ export function ProductCard({
     <article className="card">
       <Link to={`/product/${product.id}`}>
         <div className="card-photo">
-          {image ? <img src={image} alt={product.name} /> : <div className="photo-fallback" />}
+          {image ? <img src={image} alt={product.name} loading="lazy" decoding="async" /> : <div className="photo-fallback" />}
           {flags.isNew || flags.onSale || soldOut ? (
             <div className="flags">
               {soldOut ? <span className="flag sold-out-flag">Sold out</span> : null}
