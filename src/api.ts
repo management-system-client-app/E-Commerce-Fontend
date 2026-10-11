@@ -317,14 +317,24 @@ export const api = {
     request<ProductCardData[]>(`/products/${id}/related`).then((res) => res.data),
   product: (id: string, fresh = false) =>
     request<ProductDetail>(`/products/${id}`, {}, { fresh }).then((res) => res.data),
-  createProduct: async (input: Record<string, unknown>, images: File[]) => {
+  createProduct: async (
+    input: Record<string, unknown>,
+    images: File[],
+    imageColorIds: (string | null)[] = [],
+  ) => {
     const preparedImages = await Promise.all(images.map(prepareImageForUpload));
     const body = new FormData();
     body.append("data", JSON.stringify(input));
     for (const image of preparedImages) body.append("images", image);
+    if (preparedImages.length > 0) body.append("imageColorIds", JSON.stringify(imageColorIds));
     return request<ProductDetail>("/products", { method: "POST", body }).then((res) => res.data);
   },
-  updateProduct: async (id: string, input: Record<string, unknown>, images: File[] = []) => {
+  updateProduct: async (
+    id: string,
+    input: Record<string, unknown>,
+    images: File[] = [],
+    imageColorIds: (string | null)[] = [],
+  ) => {
     const preparedImages = await Promise.all(images.map(prepareImageForUpload));
     const body: BodyInit =
       preparedImages.length > 0
@@ -332,6 +342,7 @@ export const api = {
             const form = new FormData();
             form.append("data", JSON.stringify(input));
             for (const image of preparedImages) form.append("images", image);
+            form.append("imageColorIds", JSON.stringify(imageColorIds));
             return form;
           })()
         : JSON.stringify(input);

@@ -305,6 +305,7 @@ export function ProductPage() {
 
   function chooseColor(nextColorId: string) {
     setColorId(nextColorId);
+    setImage(0);
     const matches = variants.filter(
       (variant) => variant.size.id === sizeId && variant.color?.id === nextColorId,
     );
@@ -426,25 +427,35 @@ export function ProductPage() {
           </div>
           {colors.length > 0 ? (
             <>
-              <p className="option-label">Color</p>
+              <p className="option-label">
+                Color{colors.find((color) => color.id === colorId) ? `: ${colors.find((color) => color.id === colorId)?.name}` : ""}
+              </p>
               <div className="swatches">
-                {colors.map((color) => (
-                  <button
-                    key={color.id}
-                    type="button"
-                    className={colorId === color.id ? "swatch on" : "swatch"}
-                    style={{ background: color.hexCode }}
-                    aria-label={color.name}
-                    title={color.name}
-                    disabled={!hasAvailableVariant(
-                      variants.filter(
-                        (variant) =>
-                          variant.size.id === sizeId && variant.color?.id === color.id,
-                      ),
-                    )}
-                    onClick={() => chooseColor(color.id)}
-                  />
-                ))}
+                {colors.map((color) => {
+                  const colorImage = product.images.find((item) => item.colorId === color.id);
+                  return (
+                    <button
+                      key={color.id}
+                      type="button"
+                      className={colorId === color.id ? "swatch on" : "swatch"}
+                      aria-label={color.name}
+                      title={color.name}
+                      disabled={!hasAvailableVariant(
+                        variants.filter(
+                          (variant) =>
+                            variant.size.id === sizeId && variant.color?.id === color.id,
+                        ),
+                      )}
+                      onClick={() => chooseColor(color.id)}
+                    >
+                      {colorImage ? (
+                        <img src={colorImage.url} alt="" loading="lazy" decoding="async" />
+                      ) : (
+                        <span style={{ backgroundColor: color.hexCode }} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </>
           ) : null}

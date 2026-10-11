@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api";
 import { DetailSkeleton } from "../components/Skeleton";
@@ -15,6 +15,71 @@ function messageOf(reason: unknown, fallback: string) {
   if (!(reason instanceof ApiError)) return fallback;
   const detail = reason.errors?.[0]?.message;
   return detail ? `${reason.message}. ${detail}` : reason.message;
+}
+
+function ColorImagePicker({
+  colors,
+  selectedIds,
+  previews,
+  existingImages,
+  disabled,
+  onSelect,
+  onUpload,
+}: {
+  colors: Color[];
+  selectedIds: string[];
+  previews: Record<string, string>;
+  existingImages: ProductImage[];
+  disabled: boolean;
+  onSelect?: (colorId: string) => void;
+  onUpload: (colorId: string, files: File[]) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-x-5 gap-y-3">
+      {colors.map((color) => {
+        const selected = selectedIds.includes(color.id);
+        const image = previews[color.id] ?? existingImages.find((photo) => photo.colorId === color.id)?.url;
+        return (
+          <div key={color.id} className="flex items-center gap-2.5">
+            <label className="relative block h-12 w-12 shrink-0 cursor-pointer" title={`Upload ${color.name} photo`}>
+              <span className={`grid h-12 w-12 place-items-center overflow-hidden rounded-full border-2 bg-slate-100 ${selected ? "border-[#7b3f55] ring-2 ring-[#e8c9d4]" : "border-slate-200"}`}>
+                {image ? (
+                  <img src={image} alt={`${color.name} color`} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="h-full w-full" style={{ backgroundColor: color.hexCode }} />
+                )}
+              </span>
+              <span className="absolute right-0 bottom-0 grid h-5 w-5 place-items-center rounded-full border-2 border-white bg-[#7b3f55] text-xs font-bold leading-none text-white">+</span>
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/avif,image/jpeg,image/png,image/webp"
+                multiple
+                disabled={disabled}
+                aria-label={`Upload ${color.name} photos`}
+                onChange={(event) => {
+                  onUpload(color.id, [...(event.target.files ?? [])]);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+            {onSelect ? (
+              <button
+                type="button"
+                aria-pressed={selected}
+                className={`text-sm font-medium ${selected ? "text-[#7b3f55]" : "text-slate-600"}`}
+                onClick={() => onSelect(color.id)}
+              >
+                {color.name}{selected ? " ✓" : ""}
+              </button>
+            ) : (
+              <span className="text-sm font-medium text-slate-700">{color.name}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function AdminProductForm() {
@@ -35,18 +100,23 @@ export function AdminProductForm() {
   const [selectedColorIds, setSelectedColorIds] = useState<string[]>([]);
   const [bulkFabricId, setBulkFabricId] = useState("");
   const [colors, setColors] = useState<Color[]>([]);
+  const [productColorIds, setProductColorIds] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
+  const [imageColorIds, setImageColorIds] = useState<(string | null)[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
+  const previewUrls = useRef<string[]>([]);
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(!editing);
 
+  useEffect(() => () => previewUrls.current.forEach((url) => URL.revokeObjectURL(url)), []);
+
   useEffect(() => {
-    if (editing) return;
     api.colorList().then(setColors).catch((reason) => {
       setError(messageOf(reason, "Could not load colors"));
     });
-  }, [editing]);
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -62,6 +132,9 @@ export function AdminProductForm() {
         setBrandId(product.brand.id);
         setCategoryId(product.category.id);
         setExistingImages(product.images);
+        setProductColorIds([
+          ...new Set(product.variants.flatMap((variant) => variant.color ? [variant.color.id] : [])),
+        ]);
         setReady(true);
       })
       .catch((reason) => {
@@ -73,6 +146,30 @@ export function AdminProductForm() {
   function updateRowStock(index: number, stock: string) {
     setRows((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, stock } : row)));
   }
+
+  function addImages(files: File[], colorId: string | null = null) {
+    const available = MAX_PRODUCT_IMAGES - existingImages.length - images.length;
+    if (files.length > available) {
+      setError(`You can add only ${available} more image${available === 1 ? "" : "s"} to this product.`);
+    } else {
+      setError("");
+    }
+    const additions = files.slice(0, available);
+    setImages((current) => [...current, ...additions]);
+    setImageColorIds((current) => [...current, ...additions.map(() => colorId)]);
+    if (colorId && additions[0]) {
+      const preview = URL.createObjectURL(additions[0]);
+      previewUrls.current.push(preview);
+      setImagePreviews((current) => ({ ...current, [colorId]: preview }));
+      if (!editing) {
+        setSelectedColorIds((current) => current.includes(colorId) ? current : [...current, colorId]);
+      }
+    }
+  }
+
+  const photoColors = editing
+    ? colors.filter((color) => productColorIds.includes(color.id))
+    : colors.filter((color) => selectedColorIds.includes(color.id));
 
   function addSelectedCombinations() {
     setError("");
@@ -144,7 +241,7 @@ export function AdminProductForm() {
           compareAtPrice: compare ?? null,
           brandId,
           categoryId,
-        }, images);
+        }, images, imageColorIds);
         navigate("/admin/products");
         return;
       }
@@ -176,6 +273,7 @@ export function AdminProductForm() {
           sizes,
         },
         images,
+        imageColorIds,
       );
       navigate("/admin/products");
     } catch (reason) {
@@ -305,27 +403,16 @@ export function AdminProductForm() {
             </div>
             <div>
               <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Colors <span className="font-normal normal-case tracking-normal">(optional)</span></p>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color) => {
-                  const selected = selectedColorIds.includes(color.id);
-                  return (
-                    <button
-                      key={color.id}
-                      type="button"
-                      aria-pressed={selected}
-                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition-colors ${selected ? "border-[#d39aac] bg-[#342630] font-semibold text-[#f0bdcc] shadow-sm" : "border-slate-600 text-slate-300 hover:border-[#b98b9b] hover:text-white"}`}
-                      onClick={() => toggleSelection(selectedColorIds, color.id, setSelectedColorIds)}
-                    >
-                      <span className="h-5 w-5 rounded-full border border-black/10 shadow-inner" style={{ backgroundColor: color.hexCode }} />
-                      {color.name}
-                      {selected ? <span className="text-[10px]">✓</span> : null}
-                    </button>
-                  );
-                })}
-                {colors.length === 0 ? (
-                  <span className="text-xs text-slate-400">No colors available. Add colors in Admin → Colors.</span>
-                ) : null}
-              </div>
+              <ColorImagePicker
+                colors={colors}
+                selectedIds={selectedColorIds}
+                previews={imagePreviews}
+                existingImages={existingImages}
+                disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
+                onSelect={(colorId) => toggleSelection(selectedColorIds, colorId, setSelectedColorIds)}
+                onUpload={(colorId, files) => addImages(files, colorId)}
+              />
+              {colors.length === 0 ? <span className="mt-2 block text-xs text-slate-400">No colors available. Add colors in Admin → Colors.</span> : null}
             </div>
             <div className="grid gap-2 border-t border-slate-700 pt-4 sm:grid-cols-[1fr_auto]">
               <select className={`${fieldClass} border-slate-600 bg-[#171c24] text-white`} value={bulkFabricId} onChange={(event) => setBulkFabricId(event.target.value)}>
@@ -397,7 +484,25 @@ export function AdminProductForm() {
           </div>
           </div>
         </section>
+
       )}
+
+      {editing && photoColors.length > 0 ? (
+        <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div>
+            <h2 className="text-sm font-semibold">Color photos</h2>
+            <p className="mt-1 text-xs text-slate-500">Upload from the circle beside each color name.</p>
+          </div>
+          <ColorImagePicker
+            colors={photoColors}
+            selectedIds={productColorIds}
+            previews={imagePreviews}
+            existingImages={existingImages}
+            disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
+            onUpload={(colorId, files) => addImages(files, colorId)}
+          />
+        </section>
+      ) : null}
 
       <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
@@ -405,11 +510,17 @@ export function AdminProductForm() {
           <p className="mt-1 text-xs text-slate-500">
             Add up to {MAX_PRODUCT_IMAGES} images per product. {existingImages.length + images.length} of {MAX_PRODUCT_IMAGES} selected.
           </p>
+          <p className="mt-1 text-xs text-slate-500">Use the color circles above to add photos for a specific color. Photos added below apply to all colors.</p>
         </div>
         {existingImages.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {existingImages.map((photo) => (
-              <img key={photo.id ?? photo.url} src={photo.url} alt={photo.alt ?? name} className="aspect-square w-full rounded-lg object-cover" />
+              <div key={photo.id ?? photo.url} className="space-y-1.5">
+                <img src={photo.url} alt={photo.alt ?? name} className="aspect-square w-full rounded-lg object-cover" />
+                <span className="block truncate text-xs text-slate-500">
+                  {photo.colorId ? colors.find((color) => color.id === photo.colorId)?.name ?? "Color image" : "All colors"}
+                </span>
+              </div>
             ))}
           </div>
         ) : null}
@@ -423,23 +534,27 @@ export function AdminProductForm() {
             disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
             onChange={(event) => {
               const chosen = [...(event.target.files ?? [])];
-              const available = MAX_PRODUCT_IMAGES - existingImages.length - images.length;
-              if (chosen.length > available) {
-                setError(`You can add only ${available} more image${available === 1 ? "" : "s"} to this product.`);
-              } else {
-                setError("");
-              }
-              setImages((current) => [...current, ...chosen.slice(0, available)]);
+              addImages(chosen);
               event.target.value = "";
             }}
           />
         </label>
         {images.length > 0 ? (
-          <ul className="space-y-1 text-xs text-slate-600">
+          <ul className="space-y-2">
             {images.map((photo, index) => (
-              <li key={`${photo.name}-${photo.lastModified}-${index}`} className="flex items-center justify-between gap-3">
-                <span className="truncate">{photo.name}</span>
-                <button type="button" className="shrink-0 text-rose-700" onClick={() => setImages((current) => current.filter((_, photoIndex) => photoIndex !== index))}>
+              <li key={`${photo.name}-${photo.lastModified}-${index}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5">
+                <span className="min-w-0 flex-1 truncate text-xs text-slate-600">{photo.name}</span>
+                <span className="shrink-0 text-xs text-slate-500">
+                  {imageColorIds[index] ? colors.find((color) => color.id === imageColorIds[index])?.name ?? "Color photo" : "All colors"}
+                </span>
+                <button
+                  type="button"
+                  className="shrink-0 text-xs text-rose-700"
+                  onClick={() => {
+                    setImages((current) => current.filter((_, photoIndex) => photoIndex !== index));
+                    setImageColorIds((current) => current.filter((_, photoIndex) => photoIndex !== index));
+                  }}
+                >
                   Remove
                 </button>
               </li>
