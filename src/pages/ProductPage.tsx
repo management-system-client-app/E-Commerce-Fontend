@@ -276,9 +276,8 @@ export function ProductPage() {
   );
   const gallery = useMemo(() => {
     if (!product) return [];
-    const matched = product.images.filter((item) => !colorId || item.colorId === colorId || !item.colorId);
-    return matched.length > 0 ? matched : product.images;
-  }, [product, colorId]);
+    return product.images.filter((item) => !item.colorId);
+  }, [product]);
 
   if (error) return <p className="error">{error}</p>;
   if (!product) return <DetailSkeleton />;
