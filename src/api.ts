@@ -38,15 +38,35 @@ const configuredApiUrl =
 export const API_BASE = `${configuredApiUrl.replace(/\/+$/, "").replace(/\/api\/v1$/i, "")}/api/v1`;
 const TOKEN_KEY = "store_token";
 const SESSION_KEY = "cart_session";
+export const DATA_REFRESH_INTERVAL = 60_000;
 
 const getCache = new Map<string, Envelope<unknown>>();
 const pendingGets = new Map<string, Promise<Envelope<unknown>>>();
+const latestGetRequest = new Map<string, number>();
 let cacheVersion = 0;
+let nextGetRequest = 0;
 
 function clearApiCache() {
   cacheVersion += 1;
   getCache.clear();
   pendingGets.clear();
+  latestGetRequest.clear();
+}
+
+function dispatchToast(type: "success" | "error", message: string) {
+  window.dispatchEvent(new CustomEvent("app:toast", { detail: { type, message } }));
+}
+
+function mutationSuccessMessage(path: string, method: string) {
+  if (/\/auth\/(admin\/)?login$/i.test(path)) return "Logged in successfully";
+  if (/\/auth\/logout$/i.test(path)) return "Logged out successfully";
+  if (/\/users\/register$/i.test(path)) return "Account created successfully";
+  if (/\/cart\/items/i.test(path)) return "Cart updated successfully";
+  if (/\/orders\/?$/i.test(path) && method === "POST") return "Order placed successfully";
+  if (/\/payments\//i.test(path)) return "Payment updated successfully";
+  if (method === "DELETE") return "Deleted successfully";
+  if (method === "POST") return "Added successfully";
+  return "Changes saved successfully";
 }
 
 function shouldCacheGet(path: string) {
@@ -58,7 +78,14 @@ export class ApiError extends Error {
   errors?: { path: string; message: string }[];
 
   constructor(message: string, status: number, errors?: { path: string; message: string }[]) {
-    super(message);
+    const isGenericPermissionMessage =
+      status === 403 &&
+      /^(you do not have permission to perform this action|forbidden|access denied)\.?$/i.test(message.trim());
+    super(
+      isGenericPermissionMessage
+        ? "You don’t have access to this action. Please sign in with the right account or contact support if you think this is a mistake."
+        : message,
+    );
     this.status = status;
     this.errors = errors;
   }
@@ -74,10 +101,39 @@ type Envelope<T> = {
 
 export const sessionStore = {
   token: () => localStorage.getItem(TOKEN_KEY),
+  userSnapshot: (): User | null => {
+    try {
+      const value = sessionStorage.getItem("store_user");
+      if (!value) return null;
+      const user = JSON.parse(value) as User;
+      if (
+        typeof user.id !== "string" ||
+        typeof user.firstName !== "string" ||
+        typeof user.lastName !== "string" ||
+        typeof user.email !== "string" ||
+        (user.accountType !== "ADMIN" && user.accountType !== "USER")
+      ) {
+        return null;
+      }
+      return user;
+    } catch {
+      return null;
+    }
+  },
+  setUserSnapshot: (user: User | null) => {
+    if (user) sessionStorage.setItem("store_user", JSON.stringify(user));
+    else sessionStorage.removeItem("store_user");
+  },
   setToken: (token: string | null) => {
-    if (localStorage.getItem(TOKEN_KEY) !== token) clearApiCache();
+    if (localStorage.getItem(TOKEN_KEY) !== token) {
+      clearApiCache();
+      sessionStorage.removeItem("store_user");
+    }
     if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
+    else {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem("store_user");
+    }
   },
   cartSession: () => localStorage.getItem(SESSION_KEY),
   setCartSession: (id: string | null) => {
@@ -120,6 +176,7 @@ function request<T>(
   const useCache = cacheable && !options.fresh;
   const key = `${sessionStore.token() ?? "guest"}:${path}`;
 
+  if (cacheable && options.fresh) pendingGets.delete(key);
   if (useCache) {
     const cached = getCache.get(key);
     if (cached) return Promise.resolve(cached as Envelope<T>);
@@ -128,13 +185,35 @@ function request<T>(
   }
 
   const version = cacheVersion;
-  const requestPromise = performRequest<T>(path, init).then((result) => {
+  const requestId = cacheable ? ++nextGetRequest : 0;
+  if (cacheable) latestGetRequest.set(key, requestId);
+  const requestPromise = performRequest<T>(
+    path,
+    options.fresh ? { ...init, cache: "no-store" } : init,
+  ).then((result) => {
     if (method !== "GET") {
       clearApiCache();
-    } else if (useCache && version === cacheVersion) {
+      dispatchToast("success", mutationSuccessMessage(path, method));
+    } else if (
+      cacheable &&
+      version === cacheVersion &&
+      latestGetRequest.get(key) === requestId
+    ) {
       getCache.set(key, result as Envelope<unknown>);
     }
     return result;
+  }).catch((reason: unknown) => {
+    const expectedAdminLoginFallback =
+      path === "/auth/login" && reason instanceof ApiError && reason.status === 401;
+    if (method !== "GET" && !expectedAdminLoginFallback) {
+      if (!(reason instanceof ApiError && reason.status === 403)) {
+        dispatchToast(
+          "error",
+          reason instanceof Error ? reason.message : "The action could not be completed",
+        );
+      }
+    }
+    throw reason;
   });
 
   if (useCache) {
@@ -185,10 +264,10 @@ export async function hydrateImages(products: ProductCardData[]): Promise<Produc
 }
 
 export const api = {
-  settings: () => request<Settings>("/settings").then((res) => res.data),
-  catalog: () => request<Catalog>("/catalog").then((res) => res.data),
-  categories: () =>
-    request<Category[]>("/categories?limit=100&isActive=true").then((res) => res.data),
+  settings: (fresh = false) => request<Settings>("/settings", {}, { fresh }).then((res) => res.data),
+  catalog: (fresh = false) => request<Catalog>("/catalog", {}, { fresh }).then((res) => res.data),
+  categories: (fresh = false) =>
+    request<Category[]>("/categories?limit=100&isActive=true", {}, { fresh }).then((res) => res.data),
   adminCategories: () => request<Category[]>("/categories?limit=100").then((res) => res.data),
   saveCategory: (input: Record<string, unknown>, image?: File | null, id?: string) => {
     const body = new FormData();
@@ -214,19 +293,24 @@ export const api = {
   deleteHomeBlock: (id: string) =>
     request<unknown>(`/home/${id}`, { method: "DELETE" }).then((res) => res.data),
   home: (fresh = false) => request<HomePayload>("/home", {}, { fresh }).then((res) => res.data),
-  promotions: () => request<Promotion[]>("/promotions/active").then((res) => res.data),
-  pages: () => request<CmsPage[]>("/pages").then((res) => res.data),
-  page: (slug: string) => request<CmsPage>(`/pages/${encodeURIComponent(slug)}`).then((res) => res.data),
-  outlets: () => request<Outlet[]>("/outlets").then((res) => res.data),
-  products: (params: Record<string, string | number | boolean | undefined | null>) =>
-    request<ProductCardData[]>(`/products${qs(params)}`).then((res) => ({
+  promotions: (fresh = false) => request<Promotion[]>("/promotions/active", {}, { fresh }).then((res) => res.data),
+  pages: (fresh = false) => request<CmsPage[]>("/pages", {}, { fresh }).then((res) => res.data),
+  page: (slug: string, fresh = false) =>
+    request<CmsPage>(`/pages/${encodeURIComponent(slug)}`, {}, { fresh }).then((res) => res.data),
+  outlets: (fresh = false) => request<Outlet[]>("/outlets", {}, { fresh }).then((res) => res.data),
+  products: (
+    params: Record<string, string | number | boolean | undefined | null>,
+    fresh = false,
+  ) =>
+    request<ProductCardData[]>(`/products${qs(params)}`, {}, { fresh }).then((res) => ({
       items: res.data,
       meta: res.meta ?? { page: 1, limit: 20, total: res.data.length, totalPages: 1 },
     })),
-  bestSellers: () => request<ProductCardData[]>("/products/best-sellers").then((res) => res.data),
+  bestSellers: (fresh = false) => request<ProductCardData[]>("/products/best-sellers", {}, { fresh }).then((res) => res.data),
   related: (id: string) =>
     request<ProductCardData[]>(`/products/${id}/related`).then((res) => res.data),
-  product: (id: string) => request<ProductDetail>(`/products/${id}`).then((res) => res.data),
+  product: (id: string, fresh = false) =>
+    request<ProductDetail>(`/products/${id}`, {}, { fresh }).then((res) => res.data),
   createProduct: (input: Record<string, unknown>, images: File[]) => {
     const body = new FormData();
     body.append("data", JSON.stringify(input));
@@ -248,14 +332,14 @@ export const api = {
       body,
     }).then((res) => res.data);
   },
-  colors: async (): Promise<Color[]> => {
+  colors: async (fresh = false): Promise<Color[]> => {
     const found = new Map<string, Color>();
     let page = 1;
     let totalPages = 1;
     while (page <= totalPages && page <= 4) {
       const res = await request<
         { color: Color | null }[]
-      >(`/variants${qs({ limit: 100, page, isActive: true })}`);
+      >(`/variants${qs({ limit: 100, page, isActive: true })}`, {}, { fresh });
       for (const variant of res.data) {
         if (variant.color) found.set(variant.color.id, variant.color);
       }
@@ -264,6 +348,14 @@ export const api = {
     }
     return [...found.values()].sort((a, b) => a.name.localeCompare(b.name));
   },
+  colorList: (limit = 100) => request<Color[]>(`/colors${qs({ limit })}`).then((res) => res.data),
+  createColor: (body: { name: string; hexCode: string }) =>
+    request<Color>("/colors", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }).then((res) => res.data),
+  searchColors: (search: string) =>
+    request<Color[]>(`/colors${qs({ search })}`).then((res) => res.data),
   reviews: (productId: string) =>
     request<Review[]>(`/reviews/products/${productId}`).then((res) => ({
       items: res.data,

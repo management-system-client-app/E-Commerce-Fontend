@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet as RouterOutlet, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { API_BASE, ApiError, api } from "../api";
+import { API_BASE, ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { UserFace } from "../components/Chrome";
 import { ProductGrid } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
@@ -426,9 +426,43 @@ export function OutletsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.outlets().then(setOutlets).catch((reason: unknown) => {
-      setError(reason instanceof Error ? reason.message : "Could not load outlets");
-    }).finally(() => setLoading(false));
+    let active = true;
+    let refreshing = false;
+    let initialLoad = true;
+    const loadOutlets = async (fresh = false) => {
+      if (!active || refreshing) return;
+      refreshing = true;
+      try {
+        const result = await api.outlets(fresh);
+        if (active) {
+          setOutlets(result);
+          setError("");
+        }
+      } catch (reason: unknown) {
+        if (active && initialLoad) {
+          setError(reason instanceof Error ? reason.message : "Could not load outlets");
+        } else if (active) {
+          console.warn("Outlets could not be refreshed", reason);
+        }
+      } finally {
+        if (active && initialLoad) {
+          initialLoad = false;
+          setLoading(false);
+        }
+        refreshing = false;
+      }
+    };
+    void loadOutlets();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadOutlets(true);
+    }, DATA_REFRESH_INTERVAL);
+    const refreshOnFocus = () => void loadOutlets(true);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, []);
 
   return (
@@ -463,14 +497,46 @@ export function CmsPageView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    let refreshing = false;
+    let initialLoad = true;
     setPage(null);
     setError("");
     setLoading(true);
-    api
-      .page(slug)
-      .then(setPage)
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Page not found"))
-      .finally(() => setLoading(false));
+    const loadPage = async (fresh = false) => {
+      if (!active || refreshing) return;
+      refreshing = true;
+      try {
+        const result = await api.page(slug, fresh);
+        if (active) {
+          setPage(result);
+          setError("");
+        }
+      } catch (reason: unknown) {
+        if (active && initialLoad) {
+          setError(reason instanceof Error ? reason.message : "Page not found");
+        } else if (active) {
+          console.warn("Content page could not be refreshed", reason);
+        }
+      } finally {
+        if (active && initialLoad) {
+          initialLoad = false;
+          setLoading(false);
+        }
+        refreshing = false;
+      }
+    };
+    void loadPage();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadPage(true);
+    }, DATA_REFRESH_INTERVAL);
+    const refreshOnFocus = () => void loadPage(true);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, [slug]);
 
   if (error) return <p className="empty">{error}</p>;

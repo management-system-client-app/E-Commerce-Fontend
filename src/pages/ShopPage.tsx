@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { api, hydrateImages } from "../api";
+import { api, DATA_REFRESH_INTERVAL, hydrateImages } from "../api";
 import { ProductGrid } from "../components/ProductCard";
 import { ProductGridSkeleton } from "../components/Skeleton";
 import { useStore } from "../state";
@@ -55,7 +55,31 @@ export function ShopPage() {
   );
 
   useEffect(() => {
-    api.colors().then(setColors).catch(() => setColors([]));
+    let active = true;
+    let refreshing = false;
+    const refreshColors = async (fresh = false) => {
+      if (!active || refreshing) return;
+      refreshing = true;
+      try {
+        const result = await api.colors(fresh);
+        if (active) setColors(result);
+      } catch (reason) {
+        if (active) console.warn("Product colors could not be refreshed", reason);
+      } finally {
+        refreshing = false;
+      }
+    };
+    void refreshColors();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshColors(true);
+    }, DATA_REFRESH_INTERVAL);
+    const refreshOnFocus = () => void refreshColors(true);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
   }, []);
 
   useEffect(() => {
@@ -65,26 +89,64 @@ export function ShopPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setError("");
-    api
-      .products(query)
-      .then(async (result) => {
-        const withImages = await hydrateImages(result.items);
+    let loadingInitial = true;
+    let refreshing = false;
+
+    const loadProducts = async (fresh = false) => {
+      if (!active || refreshing) return;
+      refreshing = true;
+      if (loadingInitial) {
+        setLoading(true);
+        setError("");
+      }
+      try {
+        const result = await api.products(query, fresh);
         if (!active) return;
-        setItems(withImages);
+        setItems(result.items);
         setMeta(result.meta);
-      })
-      .catch((reason: unknown) => {
+        setError("");
+        void hydrateImages(result.items)
+          .then((withImages) => {
+            if (!active) return;
+            const hydrated = new Map(withImages.map((product) => [product.id, product]));
+            setItems((current) =>
+              current.map((product) => {
+                const hydratedProduct = hydrated.get(product.id);
+                return hydratedProduct?.imageUrl && !product.imageUrl
+                  ? { ...product, imageUrl: hydratedProduct.imageUrl }
+                  : product;
+              }),
+            );
+          })
+          .catch((reason: unknown) => {
+            console.warn("Product images could not be hydrated", reason);
+          });
+      } catch (reason: unknown) {
         if (!active) return;
-        setItems([]);
         setError(reason instanceof Error ? reason.message : "Could not load products");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+        if (loadingInitial) setItems([]);
+      } finally {
+        if (active && loadingInitial) {
+          loadingInitial = false;
+          setLoading(false);
+        }
+        refreshing = false;
+      }
+    };
+
+    void loadProducts();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadProducts(true);
+    }, DATA_REFRESH_INTERVAL);
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") void loadProducts(true);
+    };
+    window.addEventListener("focus", refreshOnFocus);
+
     return () => {
       active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
     };
   }, [query]);
 
@@ -238,12 +300,22 @@ function Filters({
         selected={selected("categoryId")}
         onPick={(id) => setParam("categoryId", id)}
       />
-      <FilterList
-        title="Brand"
-        options={catalog.brands.map((item) => ({ id: item.id, label: item.name }))}
-        selected={selected("brandId")}
-        onPick={(id) => setParam("brandId", id)}
-      />
+      <div className="filter-block">
+        <h3>Brand</h3>
+        <select
+          className="size-filter"
+          aria-label="Filter by brand"
+          value={selected("brandId") ?? ""}
+          onChange={(event) => setParam("brandId", event.target.value || null)}
+        >
+          <option value="">All brands</option>
+          {catalog.brands.map((brand) => (
+            <option key={brand.id} value={brand.id}>
+              {brand.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <FilterList
         title="Gender"
         options={genders.map((item) => ({ id: item.id, label: item.label }))}
@@ -252,18 +324,19 @@ function Filters({
       />
       <div className="filter-block">
         <h3>Size</h3>
-        <div className="sizes">
+        <select
+          className="size-filter"
+          aria-label="Filter by size"
+          value={selected("sizeId") ?? ""}
+          onChange={(event) => setParam("sizeId", event.target.value || null)}
+        >
+          <option value="">All sizes</option>
           {catalog.sizes.map((size) => (
-            <button
-              key={size.id}
-              type="button"
-              className={selected("sizeId") === size.id ? "size-btn on" : "size-btn"}
-              onClick={() => setParam("sizeId", selected("sizeId") === size.id ? null : size.id)}
-            >
+            <option key={size.id} value={size.id}>
               {size.name}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
       <div className="filter-block">
         <h3>Color</h3>

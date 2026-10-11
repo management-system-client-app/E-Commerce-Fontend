@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ApiError, api } from "../api";
+import { ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { ProductCarousel } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
 import { coverImage, money, productFlags } from "../format";
@@ -89,7 +89,10 @@ export function ProductPage() {
           .finally(() => {
             if (active) setRecentLoading(false);
           });
-        const first = next.variants.find((variant) => variant.isActive !== false) ?? next.variants[0];
+        const activeVariants = next.variants.filter((variant) => variant.isActive !== false);
+        const first =
+          activeVariants.find((variant) => Math.max(variant.stock - (variant.reserved ?? 0), 0) > 0) ??
+          activeVariants[0];
         setSizeId(first?.size.id ?? null);
         setColorId(first?.color?.id ?? null);
         setFabricId(first?.fabric.id ?? null);
@@ -107,6 +110,34 @@ export function ProductPage() {
       });
     return () => {
       active = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    let active = true;
+    let refreshing = false;
+    const refreshProduct = () => {
+      if (!active || refreshing || document.visibilityState !== "visible") return;
+      refreshing = true;
+      api.product(id, true)
+        .then((next) => {
+          if (active) setProduct(next);
+        })
+        .catch((reason: unknown) => {
+          if (active) console.warn("Product details could not be refreshed", reason);
+        })
+        .finally(() => {
+          refreshing = false;
+        });
+    };
+    const timer = window.setInterval(refreshProduct, DATA_REFRESH_INTERVAL);
+    window.addEventListener("focus", refreshProduct);
+    document.addEventListener("visibilitychange", refreshProduct);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshProduct);
+      document.removeEventListener("visibilitychange", refreshProduct);
     };
   }, [id]);
 
@@ -139,6 +170,9 @@ export function ProductPage() {
     const map = new Map(variants.map((variant) => [variant.size.id, variant.size]));
     return [...map.values()];
   }, [variants]);
+  const isAvailable = (variant: (typeof variants)[number]) =>
+    Math.max(variant.stock - (variant.reserved ?? 0), 0) > 0;
+  const hasAvailableVariant = (matches: (typeof variants)[number][]) => matches.some(isAvailable);
   const colors = useMemo(() => {
     const pool = variants.filter((variant) => !sizeId || variant.size.id === sizeId);
     const map = new Map(pool.flatMap((variant) => (variant.color ? [[variant.color.id, variant.color] as const] : [])));
@@ -172,6 +206,32 @@ export function ProductPage() {
   const unit = selected?.price != null ? Number(selected.price) : flags.price;
   const available = selected ? Math.max(selected.stock - (selected.reserved ?? 0), 0) : 0;
   const photo = gallery[image] ?? gallery[0];
+
+  function chooseSize(nextSizeId: string) {
+    setSizeId(nextSizeId);
+    const matches = variants.filter((variant) => variant.size.id === nextSizeId);
+    const availableMatches = matches.filter(isAvailable);
+    const candidates = availableMatches.length > 0 ? availableMatches : matches;
+    const preferred =
+      candidates.find((variant) => variant.color?.id === colorId && variant.fabric.id === fabricId) ??
+      candidates.find((variant) => variant.color?.id === colorId) ??
+      candidates[0];
+    if (preferred) {
+      setColorId(preferred.color?.id ?? null);
+      setFabricId(preferred.fabric.id);
+    }
+  }
+
+  function chooseColor(nextColorId: string) {
+    setColorId(nextColorId);
+    const matches = variants.filter(
+      (variant) => variant.size.id === sizeId && variant.color?.id === nextColorId,
+    );
+    const availableMatches = matches.filter(isAvailable);
+    const candidates = availableMatches.length > 0 ? availableMatches : matches;
+    const preferred = candidates.find((variant) => variant.fabric.id === fabricId) ?? candidates[0];
+    if (preferred) setFabricId(preferred.fabric.id);
+  }
 
   async function onAdd() {
     if (!selected) {
@@ -276,7 +336,8 @@ export function ProductPage() {
                 key={size.id}
                 type="button"
                 className={sizeId === size.id ? "size-btn on" : "size-btn"}
-                onClick={() => setSizeId(size.id)}
+                disabled={!hasAvailableVariant(variants.filter((variant) => variant.size.id === size.id))}
+                onClick={() => chooseSize(size.id)}
               >
                 {size.name}
               </button>
@@ -293,7 +354,14 @@ export function ProductPage() {
                     className={colorId === color.id ? "swatch on" : "swatch"}
                     style={{ background: color.hexCode }}
                     aria-label={color.name}
-                    onClick={() => setColorId(color.id)}
+                    title={color.name}
+                    disabled={!hasAvailableVariant(
+                      variants.filter(
+                        (variant) =>
+                          variant.size.id === sizeId && variant.color?.id === color.id,
+                      ),
+                    )}
+                    onClick={() => chooseColor(color.id)}
                   />
                 ))}
               </div>
@@ -307,6 +375,14 @@ export function ProductPage() {
                   key={fabric.id}
                   type="button"
                   className={fabricId === fabric.id ? "size-btn on" : "size-btn"}
+                  disabled={!hasAvailableVariant(
+                    variants.filter(
+                      (variant) =>
+                        variant.size.id === sizeId &&
+                        (variant.color?.id ?? null) === colorId &&
+                        variant.fabric.id === fabric.id,
+                    ),
+                  )}
                   onClick={() => setFabricId(fabric.id)}
                 >
                   {fabric.name}

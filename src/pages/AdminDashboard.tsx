@@ -86,6 +86,7 @@ const NAV = [
   { to: "/admin/banners", label: "Banners", end: false, icon: "M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" },
   { to: "/admin/orders", label: "Orders", end: false, icon: "M6 6h15l-1.5 9h-12L6 6zM6 6 5 3H2" },
   { to: "/admin/variants", label: "Variants", end: false, icon: "M4 7h16M4 12h16M4 17h10" },
+  { to: "/admin/colors", label: "Colors", end: false, icon: "M12 3a9 9 0 1 0 9 9h-4a2 2 0 0 1-2-2V8a5 5 0 0 0-3-5zM7 12h.01M10 7h.01M15 7h.01" },
   { to: "/admin/catalog", label: "Brands & sizes", end: false, icon: "M4 6h16v12H4z" },
   { to: "/admin/coupons", label: "Coupons", end: false, icon: "M4 8h16v8H4z" },
   { to: "/admin/promotions", label: "Promotions", end: false, icon: "M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" },
@@ -130,7 +131,7 @@ export function AdminLayout() {
       <div className="admin-theme-panel relative flex min-h-[calc(100vh-1rem)] overflow-hidden rounded-[28px] shadow-[0_20px_50px_rgba(16,24,40,0.08)] sm:min-h-[calc(100vh-2rem)]">
         <aside className={`admin-theme-sidebar absolute inset-y-0 left-0 z-40 flex w-[232px] flex-col transition-transform lg:static lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex items-center gap-3 px-5 pt-6 pb-5">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#2ec9a8] text-lg font-semibold text-white">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#7b3f55] text-lg font-semibold text-white">
               {settings.storeName.slice(0, 1)}
             </span>
             <span className="leading-tight">
@@ -146,7 +147,7 @@ export function AdminLayout() {
                 end={link.end}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${isActive ? "bg-[#2ec9a8] text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-800"}`
+                  `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${isActive ? "bg-[#7b3f55] text-white shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-800"}`
                 }
               >
                 {({ isActive }) => (
@@ -269,12 +270,12 @@ function AreaChart({ points, labels }: { points: number[]; labels: string[] }) {
       <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label="Revenue over the last 8 days">
         <defs>
           <linearGradient id="sales-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2ec9a8" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#2ec9a8" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#b58b4b" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#b58b4b" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={fill} fill="url(#sales-fill)" />
-        <path d={line} fill="none" stroke="#2ec9a8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={line} fill="none" stroke="#7b3f55" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <div className="mt-1 flex justify-between text-[11px] text-slate-400">
         {labels.map((label) => (
@@ -301,7 +302,7 @@ function StatusRing({ delivered, open }: { delivered: number; open: number }) {
         cy="80"
         r={radius}
         fill="none"
-        stroke="#2ec9a8"
+        stroke="#7b3f55"
         strokeWidth="14"
         strokeLinecap="round"
         strokeDasharray={`${circumference * outer} ${circumference}`}
@@ -385,7 +386,7 @@ export function AdminOverview() {
     <div className="space-y-4">
       {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon="M12 8c-2.2 0-4 .9-4 2.5S9.8 13 12 13s4 .9 4 2.5S14.2 18 12 18m0-14v2m0 12v2" tone="bg-[#e7f8f3] text-[#14a888]" label="Total Revenue" value={overview ? money(overview.totalRevenue) : "—"} hint="Paid orders" />
+        <Metric icon="M12 8c-2.2 0-4 .9-4 2.5S9.8 13 12 13s4 .9 4 2.5S14.2 18 12 18m0-14v2m0 12v2" tone="bg-[#f5eee3] text-[#8e6b38]" label="Total Revenue" value={overview ? money(overview.totalRevenue) : "—"} hint="Paid orders" />
         <Metric icon="M4 7h16v11H4zM8 7V5h8v2" tone="bg-[#e8f1fb] text-[#3b82c4]" label="Total Order" value={overview ? String(overview.totalOrders) : "—"} hint="All statuses" />
         <Metric icon="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 8v6M16 11h6" tone="bg-[#e9f8ef] text-[#22a06b]" label="Total Customer" value={overview ? String(overview.activeUsers) : "—"} hint="Active accounts" />
         <Metric icon="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.5 1.5 0 1 0 0.01 0M17 18a1.5 1.5 0 1 0 0.01 0" tone="bg-[#fff4e8] text-[#e08a2c]" label="Pending Delivery" value={overview ? String(pendingDelivery) : "—"} hint="Not delivered yet" />
@@ -393,7 +394,7 @@ export function AdminOverview() {
       <section className="rounded-2xl bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold">Return requests</h2>
-          <Link to="/admin/returns" className="text-sm font-medium text-[#14a888]">All returns</Link>
+          <Link to="/admin/returns" className="text-sm font-medium text-[#8e6b38]">All returns</Link>
         </div>
         <label className="mt-3 block text-xs text-slate-500">
           Note for the next decision
@@ -412,7 +413,7 @@ export function AdminOverview() {
               </div>
               {item.status === "REQUESTED" ? (
                 <div className="flex gap-2">
-                  <button type="button" className="rounded-lg bg-[#2ec9a8] px-3 py-1.5 text-xs font-semibold text-white" onClick={() => api.reviewReturn(item.id, { decision: "APPROVED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Approve</button>
+                  <button type="button" className="rounded-lg bg-[#7b3f55] px-3 py-1.5 text-xs font-semibold text-white" onClick={() => api.reviewReturn(item.id, { decision: "APPROVED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Approve</button>
                   <button type="button" className="rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700" onClick={() => api.reviewReturn(item.id, { decision: "REJECTED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Reject</button>
                 </div>
               ) : null}
@@ -458,7 +459,7 @@ export function AdminOverview() {
               <span className="font-semibold text-slate-800">{pendingDelivery}</span>
             </p>
             <p className="flex items-center justify-between text-slate-500">
-              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#2ec9a8]" /> Delivered</span>
+              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#7b3f55]" /> Delivered</span>
               <span className="font-semibold text-slate-800">{delivered}</span>
             </p>
           </div>
@@ -501,7 +502,7 @@ export function AdminOverview() {
                   </div>
                   <p className="mt-1 text-xs text-slate-400">{label}</p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-[#2ec9a8]" style={{ width: `${progress}%` }} />
+                    <div className="h-full rounded-full bg-[#7b3f55]" style={{ width: `${progress}%` }} />
                   </div>
                 </li>
               );
@@ -684,7 +685,7 @@ export function AdminOrderDetail() {
           {order.paymentMethod === "COD" ? (
             <button
               type="button"
-              className="rounded-xl bg-[#2ec9a8] px-3 py-2 text-sm font-semibold text-white"
+              className="rounded-xl bg-[#7b3f55] px-3 py-2 text-sm font-semibold text-white"
               onClick={() => {
                 api.collectCash(order.id).then(() => setNote("Cash collected")).catch((reasonError) => setError(reasonError instanceof ApiError ? reasonError.message : "Could not collect cash"));
               }}
@@ -822,7 +823,7 @@ export function AdminProducts() {
           <h1 className="text-lg font-semibold tracking-tight">Catalog</h1>
           <p className="mt-1 text-sm text-slate-500">{search ? `Results for “${search}”` : meta ? `${meta.total} products` : loading ? <SkeletonBlock className="h-4 w-24" /> : ""}</p>
         </div>
-        <Link to="/admin/products/new" className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white">
+        <Link to="/admin/products/new" className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white">
           Add product
         </Link>
       </div>

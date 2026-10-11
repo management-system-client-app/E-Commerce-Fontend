@@ -129,15 +129,66 @@ function navClass(href: string, isActive: boolean, pathname: string, search: str
   return isActive ? "on" : "";
 }
 
+function CategoryList({
+  categories,
+  expandedCategory,
+  onToggle,
+  onNavigate,
+}: {
+  categories: Category[];
+  expandedCategory: string | null;
+  onToggle: (id: string) => void;
+  onNavigate: () => void;
+}) {
+  const roots = categories.filter((category) => !category.parentId);
+  return (
+    <div className="category-menu-list">
+      {roots.map((category) => {
+        const children = categories.filter((item) => item.parentId === category.id);
+        const expanded = expandedCategory === category.id;
+        return (
+          <div className="category-menu-group" key={category.id}>
+            <div className="category-menu-row">
+              <Link to={`/shop?categoryId=${category.id}`} onClick={onNavigate}>
+                {category.name}
+              </Link>
+              {children.length > 0 ? (
+                <button
+                  type="button"
+                  aria-label={`${expanded ? "Collapse" : "Expand"} ${category.name}`}
+                  aria-expanded={expanded}
+                  onClick={() => onToggle(category.id)}
+                >
+                  <span aria-hidden="true">›</span>
+                </button>
+              ) : null}
+            </div>
+            {expanded ? (
+              <div className="category-menu-children">
+                {children.map((child) => (
+                  <Link key={child.id} to={`/shop?categoryId=${child.id}`} onClick={onNavigate}>
+                    {child.name}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Header() {
-  const { promo } = useStore();
-  const { user } = useAuth();
+  const { promo, catalog } = useStore();
+  const { user, ready } = useAuth();
   const { cart, setDrawer } = useCart();
   const menus = useMenus();
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   function onSearch(event: FormEvent) {
     event.preventDefault();
@@ -176,16 +227,33 @@ export function Header() {
                 <UserFace user={user} />
                 <span>{user.accountType === "ADMIN" ? "Dashboard" : user.firstName}</span>
               </Link>
+            ) : !ready ? (
+              <span className="account-chip" aria-label="Checking account status">Account</span>
             ) : (
-              <span className="account-chip">
+              <span className="account-chip account-actions">
                 <Link to="/login">Login</Link>
                 <Link to="/register">Register</Link>
               </span>
             )}
           </div>
         </div>
-        <nav className="category-nav" aria-label="Product categories">
-          <button type="button" className="cat-btn" onClick={() => setMenuOpen(true)}>
+        <nav
+          className="category-nav"
+          aria-label="Product categories"
+          onMouseLeave={() => {
+            if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(false);
+          }}
+        >
+          <button
+            type="button"
+            className="cat-btn"
+            aria-expanded={menuOpen}
+            aria-controls="category-menu-panel"
+            onMouseEnter={() => {
+              if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(true);
+            }}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
             <IconGrid />
             <span>Shop by category</span>
           </button>
@@ -213,6 +281,29 @@ export function Header() {
               <Link to="/track"><IconTracking />Order Tracking</Link>
             </div>
           ) : null}
+          {menuOpen ? (
+            <>
+              <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
+              <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="Shop by category">
+                <header className="category-menu-heading">
+                  <span><IconGrid /> Shop By Category</span>
+                  <button type="button" onClick={() => setMenuOpen(false)}>
+                    ×
+                  </button>
+                </header>
+                <div className="category-menu-body">
+                  <CategoryList
+                    categories={catalog.categories}
+                    expandedCategory={expandedCategory}
+                    onToggle={(categoryId) =>
+                      setExpandedCategory((current) => (current === categoryId ? null : categoryId))
+                    }
+                    onNavigate={() => setMenuOpen(false)}
+                  />
+                </div>
+              </aside>
+            </>
+          ) : null}
         </nav>
       </header>
       <nav className="bottom-nav" aria-label="Mobile">
@@ -233,35 +324,6 @@ export function Header() {
           Account
         </NavLink>
       </nav>
-      {menuOpen ? (
-        <>
-          <button className="sheet-back" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
-          <div className="sheet" role="dialog" aria-label="Category">
-            <header>
-              Category
-              <button type="button" onClick={() => setMenuOpen(false)}>
-                Close
-              </button>
-            </header>
-            <div className="sheet-body menu-list">
-              {menus.map((item) => (
-                <div key={item.label}>
-                  <Link to={item.href} onClick={() => setMenuOpen(false)}>
-                    {item.label}
-                  </Link>
-                  <div className="sub-links">
-                    {item.items.map((child) => (
-                      <Link key={child.href + child.label} to={child.href} onClick={() => setMenuOpen(false)}>
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      ) : null}
       <CartDrawer />
     </>
   );

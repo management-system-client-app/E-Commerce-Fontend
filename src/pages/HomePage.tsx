@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, hydrateImages } from "../api";
+import { api, DATA_REFRESH_INTERVAL, hydrateImages } from "../api";
 import { categoryTiles } from "../components/Chrome";
 import { ProductCarousel } from "../components/ProductCard";
 import { useStore } from "../state";
@@ -16,32 +16,42 @@ const getCountdownParts = (milliseconds: number) => {
   return { days, hours, minutes, seconds };
 };
 
+const HOME_CACHE_KEY = "store_home_payload";
+
+function readCachedHome(): HomePayload | null {
+  try {
+    const cached: unknown = JSON.parse(localStorage.getItem(HOME_CACHE_KEY) ?? "null");
+    if (
+      typeof cached === "object" &&
+      cached !== null &&
+      "banners" in cached &&
+      Array.isArray(cached.banners) &&
+      "campaigns" in cached &&
+      Array.isArray(cached.campaigns) &&
+      "newArrivals" in cached &&
+      Array.isArray(cached.newArrivals) &&
+      "trendingProducts" in cached &&
+      Array.isArray(cached.trendingProducts)
+    ) {
+      return cached as HomePayload;
+    }
+  } catch (reason) {
+    console.warn("Cached home content could not be read", reason);
+  }
+  return null;
+}
+
+function cacheHome(home: HomePayload) {
+  try {
+    localStorage.setItem(HOME_CACHE_KEY, JSON.stringify(home));
+  } catch (reason) {
+    console.warn("Home content could not be cached", reason);
+  }
+}
+
 function isVideoUrl(value: string | null | undefined) {
   if (!value) return false;
   return /(\.(mp4|webm|mov|m4v|ogv|avi))(\?.*)?$/i.test(value) || /(?:^|\/)(video|mp4|webm|quicktime)/i.test(value);
-}
-
-function hasAvailableStock(product: ProductCardData) {
-  return product.variants?.some((variant) => variant.stock - (variant.reserved ?? 0) > 0) ?? false;
-}
-
-async function loadAvailableProducts() {
-  const products: ProductCardData[] = [];
-  let page = 1;
-  let totalPages = 1;
-
-  while (page <= totalPages) {
-    const result = await api.products({
-      status: "ACTIVE",
-      limit: 100,
-      page,
-    });
-    products.push(...result.items.filter(hasAvailableStock));
-    totalPages = result.meta.totalPages;
-    page += 1;
-  }
-
-  return products;
 }
 
 function blockHref(block: HomeBlock) {
@@ -112,30 +122,47 @@ function HomeSkeleton() {
 }
 
 export function HomePage() {
-  const { catalog, catalogReady, categoryImages, settings } = useStore();
-  const [banners, setBanners] = useState<HomeBlock[]>([]);
-  const [campaigns, setCampaigns] = useState<HomeBlock[]>([]);
-  const [arrivals, setArrivals] = useState<ProductCardData[]>([]);
-  const [arrivalHref, setArrivalHref] = useState("/shop?sort=latest");
-  const [trending, setTrending] = useState<ProductCardData[]>([]);
-  const [selectedTrending, setSelectedTrending] = useState<ProductCardData[]>([]);
+  const { catalog, categoryImages, settings } = useStore();
+  const [initialHome] = useState(readCachedHome);
+  const initialArrival = initialHome?.newArrivals[0];
+  const [banners, setBanners] = useState<HomeBlock[]>(initialHome?.banners ?? []);
+  const [campaigns, setCampaigns] = useState<HomeBlock[]>(initialHome?.campaigns ?? []);
+  const [arrivals, setArrivals] = useState<ProductCardData[]>(initialArrival?.products ?? []);
+  const [arrivalHref, setArrivalHref] = useState(
+    initialArrival?.categoryId ? `/shop?categoryId=${initialArrival.categoryId}` : "/shop?sort=latest",
+  );
+  const [trending, setTrending] = useState<ProductCardData[]>(initialHome?.trendingProducts ?? []);
+  const [selectedTrending, setSelectedTrending] = useState<ProductCardData[]>(initialHome?.trendingProducts ?? []);
   const [best, setBest] = useState<ProductCardData[]>([]);
   const [slide, setSlide] = useState(0);
   const [saleEndsAt] = useState(() => Date.now() + 1000 * 60 * 60 * 12 + 1000 * 30);
   const [timeLeft, setTimeLeft] = useState(() => Math.max(0, saleEndsAt - Date.now()));
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialHome === null);
   const skeletonRef = useRef<HTMLDivElement>(null);
   const [reservedHeight, setReservedHeight] = useState(0);
-  const isLoading = loading || !catalogReady;
+  const isLoading = loading;
 
-  async function applyHomePayload(home: HomePayload) {
+  function applyHomePayload(home: HomePayload, isActive: () => boolean = () => true) {
+    cacheHome(home);
     setBanners(home.banners);
     setCampaigns(home.campaigns);
     const arrivalBlock = home.newArrivals[0];
     setArrivals(arrivalBlock?.products ?? []);
     setArrivalHref(arrivalBlock?.categoryId ? `/shop?categoryId=${arrivalBlock.categoryId}` : "/shop?sort=latest");
-    setSelectedTrending(await hydrateImages(home.trendingProducts));
+    setTrending(home.trendingProducts);
+    setSelectedTrending(home.trendingProducts);
+    void hydrateImages(home.trendingProducts).then(
+      (products) => {
+        if (isActive()) {
+          setSelectedTrending(products);
+          cacheHome({ ...home, trendingProducts: products });
+        }
+      },
+      (reason: unknown) => {
+        if (isActive()) setError(reason instanceof Error ? reason.message : "Product images could not be loaded");
+      },
+    );
   }
 
   useLayoutEffect(() => {
@@ -150,32 +177,10 @@ export function HomePage() {
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled([api.home(true), loadAvailableProducts(), api.bestSellers()])
-      .then(async ([homeResult, productsResult, sellersResult]) => {
+    api.home(true)
+      .then((home) => {
         if (!active) return;
-        const errors: string[] = [];
-        if (homeResult.status === "fulfilled") {
-          try {
-            await applyHomePayload(homeResult.value);
-          } catch (reason) {
-            errors.push(reason instanceof Error ? reason.message : "Home content could not be loaded");
-          }
-        } else {
-          errors.push(homeResult.reason instanceof Error ? homeResult.reason.message : "Home content could not be loaded");
-        }
-        if (productsResult.status === "fulfilled") {
-          const products = await hydrateImages(productsResult.value);
-          setTrending(products);
-          if (homeResult.status === "rejected") setSelectedTrending(products);
-        } else {
-          errors.push(productsResult.reason instanceof Error ? productsResult.reason.message : "Products could not be loaded");
-        }
-        if (sellersResult.status === "fulfilled") {
-          setBest(sellersResult.value);
-        } else {
-          errors.push(sellersResult.reason instanceof Error ? sellersResult.reason.message : "Best sellers could not be loaded");
-        }
-        setError(errors.join(" · "));
+        applyHomePayload(home, () => active);
       })
       .catch((reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : "Home could not be loaded");
@@ -183,6 +188,34 @@ export function HomePage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+
+    api.products({ status: "ACTIVE", inStock: true, limit: 20, page: 1, sort: "latest" })
+      .then(async (result) => {
+        if (!active) return;
+        setTrending(result.items);
+        const products = await hydrateImages(result.items);
+        if (active) setTrending(products);
+      })
+      .catch((reason: unknown) => {
+        if (active) {
+          setError((current) =>
+            [current, reason instanceof Error ? reason.message : "Products could not be loaded"].filter(Boolean).join(" · "),
+          );
+        }
+      });
+
+    api.bestSellers()
+      .then((products) => {
+        if (active) setBest(products);
+      })
+      .catch((reason: unknown) => {
+        if (active) {
+          setError((current) =>
+            [current, reason instanceof Error ? reason.message : "Best sellers could not be loaded"].filter(Boolean).join(" · "),
+          );
+        }
+      });
+
     return () => {
       active = false;
     };
@@ -191,23 +224,49 @@ export function HomePage() {
   useEffect(() => {
     let active = true;
     let refreshing = false;
+    let refreshingProducts = false;
     const refreshHome = () => {
-      if (!active || refreshing || document.visibilityState !== "visible") return;
-      refreshing = true;
-      api.home(true)
-        .then(async (home) => {
-          if (!active) return;
-          await applyHomePayload(home);
-          setError("");
-        })
-        .catch((reason: unknown) => {
-          if (active) setError(reason instanceof Error ? reason.message : "Home could not be refreshed");
-        })
-        .finally(() => {
-          refreshing = false;
-        });
+      if (!active || document.visibilityState !== "visible") return;
+      if (!refreshing) {
+        refreshing = true;
+        api.home(true)
+          .then((home) => {
+            if (!active) return;
+            applyHomePayload(home, () => active);
+            setError("");
+          })
+          .catch((reason: unknown) => {
+            if (active) setError(reason instanceof Error ? reason.message : "Home could not be refreshed");
+          })
+          .finally(() => {
+            refreshing = false;
+          });
+      }
+
+      if (!refreshingProducts) {
+        refreshingProducts = true;
+        Promise.all([
+          api.products({ status: "ACTIVE", inStock: true, limit: 20, page: 1, sort: "latest" }, true),
+          api.bestSellers(true),
+        ])
+          .then(async ([result, bestSellers]) => {
+            if (!active) return;
+            setTrending(result.items);
+            setBest(bestSellers);
+            const products = await hydrateImages(result.items);
+            if (active) setTrending(products);
+          })
+          .catch((reason: unknown) => {
+            if (active) {
+              setError(reason instanceof Error ? reason.message : "Products could not be refreshed");
+            }
+          })
+          .finally(() => {
+            refreshingProducts = false;
+          });
+      }
     };
-    const timer = window.setInterval(refreshHome, 30_000);
+    const timer = window.setInterval(refreshHome, DATA_REFRESH_INTERVAL);
     window.addEventListener("focus", refreshHome);
     document.addEventListener("visibilitychange", refreshHome);
     return () => {

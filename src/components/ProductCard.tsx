@@ -14,13 +14,15 @@ export function ProductCard({
   const discount = flags.compare != null ? Math.round(((flags.compare - flags.price) / flags.compare) * 100) : null;
   const availableStock =
     product.variants?.reduce((total, variant) => total + Math.max(variant.stock - (variant.reserved ?? 0), 0), 0) ?? 0;
+  const soldOut = Boolean(product.variants?.length) && availableStock === 0;
   return (
     <article className="card">
       <Link to={`/product/${product.id}`}>
         <div className="card-photo">
           {image ? <img src={image} alt={product.name} /> : <div className="photo-fallback" />}
-          {flags.isNew || flags.onSale ? (
+          {flags.isNew || flags.onSale || soldOut ? (
             <div className="flags">
+              {soldOut ? <span className="flag sold-out-flag">Sold out</span> : null}
               {flags.isNew ? <span className="flag">New</span> : null}
               {flags.onSale ? <span className="flag sale-flag">{discount ? `-${discount}%` : "Sale"}</span> : null}
             </div>

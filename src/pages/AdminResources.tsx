@@ -1,9 +1,9 @@
-import { FormEvent, useEffect, useState, type ReactNode } from "react";
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError, api } from "../api";
 import { RowsSkeleton } from "../components/Skeleton";
 import { titleCaseStatus } from "../format";
 import { useAuth, useStore } from "../state";
-import type { Catalog, Category, CmsPage, Coupon, DeliveryZone, ManualPayment, Outlet, Promotion, Settings, SizeGuide, StoreReturn, Subscriber, VariantRow } from "../types";
+import type { Catalog, Category, CmsPage, Color, Coupon, DeliveryZone, ManualPayment, Outlet, Promotion, Settings, SizeGuide, StoreReturn, Subscriber, VariantRow } from "../types";
 
 const field = "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2ec9a8]";
 
@@ -177,45 +177,304 @@ export function AdminCatalogExtras() {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       {error ? <p className="text-sm text-rose-700 lg:col-span-3">{error}</p> : null}
-      <MiniCreate title="Brand" value={brand} setValue={setBrand} onSave={() => api.createBrand({ name: brand }).then(load)} rows={(catalog?.brands ?? []).map((item) => item.name)} loading={loading} />
-      <MiniCreate title="Size" value={size} setValue={setSize} onSave={() => api.createSize({ name: size }).then(load)} rows={(catalog?.sizes ?? []).map((item) => item.name)} loading={loading} />
+      <MiniCreate
+        title="Brand"
+        value={brand}
+        setValue={setBrand}
+        onSave={() =>
+          api.createBrand({ name: brand.trim() }).then((created) => {
+            setCatalog((current) => current && { ...current, brands: [...current.brands, created] });
+          })
+        }
+        rows={(catalog?.brands ?? []).map((item) => item.name)}
+        loading={loading}
+        isDuplicate={(value) =>
+          (catalog?.brands ?? []).some(
+            (item) => item.name.trim().toLocaleLowerCase() === value.trim().toLocaleLowerCase(),
+          )
+        }
+      />
+      <MiniCreate
+        title="Size"
+        value={size}
+        setValue={setSize}
+        onSave={() =>
+          api.createSize({ name: size.trim() }).then((created) => {
+            setCatalog((current) => current && { ...current, sizes: [...current.sizes, created] });
+          })
+        }
+        rows={(catalog?.sizes ?? []).map((item) => item.name)}
+        loading={loading}
+        options={["Free Size", "XS", "S", "M", "L", "XL", "XXL", "XXXL"]}
+        isDuplicate={(value) =>
+          (catalog?.sizes ?? []).some(
+            (item) => item.name.trim().toLocaleLowerCase() === value.trim().toLocaleLowerCase(),
+          )
+        }
+      />
       <form
         className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
         onSubmit={(event) => {
           event.preventDefault();
-          api.createFabric({ name: fabric, composition: composition || null }).then(() => {
+          const normalizedFabric = fabric.trim().toLocaleLowerCase();
+          const duplicateFabric = (catalog?.fabrics ?? []).some(
+            (item) => item.name.trim().toLocaleLowerCase() === normalizedFabric,
+          );
+          if (duplicateFabric) {
+            setError("Fabric already exists");
+            return;
+          }
+          setError("");
+          api.createFabric({ name: fabric.trim(), composition: composition.trim() || null }).then((created) => {
+            setCatalog((current) => current && { ...current, fabrics: [...current.fabrics, created] });
             setFabric("");
             setComposition("");
-            load();
           }).catch((reason) => setError(messageOf(reason, "Could not add the fabric")));
         }}
       >
         <h2 className="text-sm font-semibold">Fabric</h2>
         <input className={field} required placeholder="Name" value={fabric} onChange={(event) => setFabric(event.target.value)} />
         <input className={field} placeholder="Composition" value={composition} onChange={(event) => setComposition(event.target.value)} />
-        <button className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white">Add</button>
-        {loading ? <RowsSkeleton rows={3} /> : <ul className="text-sm text-slate-600">{(catalog?.fabrics ?? []).map((item) => <li key={item.id}>{item.name}</li>)}</ul>}
+        {(catalog?.fabrics ?? []).some(
+          (item) => item.name.trim().toLocaleLowerCase() === fabric.trim().toLocaleLowerCase() && fabric.trim() !== "",
+        ) ? <p className="text-sm text-amber-700">Fabric already exists.</p> : null}
+        {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+        <button
+          disabled={loading || (catalog?.fabrics ?? []).some(
+            (item) => item.name.trim().toLocaleLowerCase() === fabric.trim().toLocaleLowerCase() && fabric.trim() !== "",
+          )}
+          className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Add
+        </button>
+        {loading ? (
+          <RowsSkeleton rows={3} />
+        ) : (
+          <details className="rounded-xl border border-slate-200 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">
+              Existing fabrics ({catalog?.fabrics.length ?? 0})
+            </summary>
+            {(catalog?.fabrics.length ?? 0) > 0 ? (
+              <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto border-t border-slate-100 pt-2 text-sm text-slate-600">
+                {catalog?.fabrics.map((item) => <li key={item.id}>{item.name}</li>)}
+              </ul>
+            ) : (
+              <p className="mt-2 border-t border-slate-100 pt-2 text-sm text-slate-500">
+                No fabrics added yet.
+              </p>
+            )}
+          </details>
+        )}
       </form>
     </div>
   );
 }
 
-function MiniCreate({ title, value, setValue, onSave, rows, loading = false }: { title: string; value: string; setValue: (value: string) => void; onSave: () => Promise<unknown>; rows: string[]; loading?: boolean }) {
+export function AdminColors() {
+  const [colors, setColors] = useState<Color[]>([]);
+  const [name, setName] = useState("");
+  const [hexCode, setHexCode] = useState("#0000FF");
   const [error, setError] = useState("");
+  const [permissionRequired, setPermissionRequired] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api.colorList()
+      .then((result) => {
+        if (active) setColors(result);
+      })
+      .catch((reason) => {
+        if (active) setError(messageOf(reason, "Could not load colors"));
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const duplicate = colors.some(
+    (color) => color.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase(),
+  );
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <form
+        className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setError("");
+          setPermissionRequired(false);
+          if (duplicate) {
+            setError("A color with this name already exists.");
+            return;
+          }
+          setSaving(true);
+          try {
+            const created = await api.createColor({ name: name.trim(), hexCode });
+            setColors((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+            setName("");
+          } catch (reason) {
+            setPermissionRequired(reason instanceof ApiError && reason.status === 403);
+            setError(messageOf(reason, "Could not add color"));
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <h2 className="text-sm font-semibold">Add color</h2>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-slate-500">Color name</span>
+          <input
+            className={field}
+            required
+            minLength={2}
+            maxLength={120}
+            placeholder="Blue"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <label className="grid gap-1.5 text-sm">
+          <span className="text-slate-500">Choose color</span>
+          <input
+            className="h-12 w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-1"
+            type="color"
+            value={hexCode}
+            aria-label="Choose color swatch"
+            onChange={(event) => setHexCode(event.target.value.toUpperCase())}
+          />
+        </label>
+        {duplicate ? <p className="text-sm text-amber-700">A color with this name already exists.</p> : null}
+        {error ? (
+          permissionRequired ? (
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-950" role="alert">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-base" aria-hidden="true">🔒</span>
+              <div>
+                <p className="text-sm font-semibold">Admin access required</p>
+                <p className="mt-0.5 text-xs leading-relaxed">Sign in with an admin account to add colors. If you already have admin access, sign out and sign in again.</p>
+              </div>
+            </div>
+          ) : <p className="text-sm text-rose-700" role="alert">{error}</p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={loading || saving || duplicate}
+          className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Add color"}
+        </button>
+      </form>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold">Colors</h2>
+        {loading ? <RowsSkeleton rows={4} /> : colors.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">No colors added yet.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-slate-100">
+            {colors.map((color) => (
+              <li key={color.id} className="flex items-center gap-3 py-3 text-sm">
+                <span
+                  className="h-7 w-7 shrink-0 rounded-full border border-slate-200"
+                  style={{ backgroundColor: color.hexCode }}
+                  aria-label={`${color.name} swatch`}
+                />
+                <span className="font-medium text-slate-700">{color.name}</span>
+                <span className="ml-auto text-xs text-slate-500">{color.hexCode}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function MiniCreate({
+  title,
+  value,
+  setValue,
+  onSave,
+  rows,
+  loading = false,
+  options,
+  isDuplicate,
+}: {
+  title: string;
+  value: string;
+  setValue: (value: string) => void;
+  onSave: () => Promise<unknown>;
+  rows: string[];
+  loading?: boolean;
+  options?: string[];
+  isDuplicate?: (value: string) => boolean;
+}) {
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const duplicate = isDuplicate?.(value) ?? false;
   return (
     <form
       className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
+        if (submittingRef.current) return;
         setError("");
-        onSave().then(() => setValue("")).catch((reason) => setError(messageOf(reason, "Could not save")));
+        if (duplicate) {
+          setError(`${title} already exists`);
+          return;
+        }
+        submittingRef.current = true;
+        setSubmitting(true);
+        try {
+          await onSave();
+          setValue("");
+        } catch (reason) {
+          setError(messageOf(reason, "Could not save"));
+        } finally {
+          submittingRef.current = false;
+          setSubmitting(false);
+        }
       }}
     >
       <h2 className="text-sm font-semibold">{title}</h2>
-      <input className={field} required placeholder="Name" value={value} onChange={(event) => setValue(event.target.value)} />
+      {options ? (
+        <select className={field} required value={value} onChange={(event) => setValue(event.target.value)}>
+          <option value="">Choose size</option>
+          {options.map((option) => (
+            <option key={option} value={option} disabled={isDuplicate?.(option)}>
+              {option}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input className={field} required placeholder="Name" value={value} onChange={(event) => setValue(event.target.value)} />
+      )}
+      {duplicate ? <p className="text-sm text-amber-700">{title} already exists.</p> : null}
       {error ? <p className="text-sm text-rose-700">{error}</p> : null}
-      <button className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white">Add</button>
-      {loading ? <RowsSkeleton rows={3} /> : <ul className="text-sm text-slate-600">{rows.map((row) => <li key={row}>{row}</li>)}</ul>}
+      <button disabled={duplicate || loading || submitting} className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Add</button>
+      {loading ? (
+        <RowsSkeleton rows={3} />
+      ) : (
+        <details className="rounded-xl border border-slate-200 px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium text-slate-700">
+            {title === "Size" && rows.length > 0
+              ? rows.join("  ")
+              : `Existing ${title.toLowerCase()}s (${rows.length})`}
+          </summary>
+          {rows.length > 0 ? (
+            <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto border-t border-slate-100 pt-2 text-sm text-slate-600">
+              {rows.map((row, index) => <li key={`${row}-${index}`}>{row}</li>)}
+            </ul>
+          ) : (
+            <p className="mt-2 border-t border-slate-100 pt-2 text-sm text-slate-500">
+              No {title.toLowerCase()}s added yet.
+            </p>
+          )}
+        </details>
+      )}
     </form>
   );
 }
@@ -633,6 +892,12 @@ export function AdminVariants() {
   const [productId, setProductId] = useState("");
   const [sizeId, setSizeId] = useState("");
   const [fabricId, setFabricId] = useState("");
+  const [colorId, setColorId] = useState("");
+  const [colorQuery, setColorQuery] = useState("");
+  const [selectedColor, setSelectedColor] = useState<Color | null>(null);
+  const [colorResults, setColorResults] = useState<Color[]>([]);
+  const [colorLoading, setColorLoading] = useState(false);
+  const [colorError, setColorError] = useState("");
   const [sku, setSku] = useState("");
   const [stock, setStock] = useState("0");
   const [error, setError] = useState("");
@@ -646,14 +911,50 @@ export function AdminVariants() {
     load();
     api.catalog().then(setCatalog).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const search = colorQuery.trim();
+    setColorLoading(false);
+    if (!search || colorId) {
+      setColorResults([]);
+      setColorError("");
+      return;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setColorLoading(true);
+      setColorError("");
+      try {
+        const results = await api.searchColors(search);
+        if (active) setColorResults(results);
+      } catch (reason) {
+        if (active) {
+          setColorResults([]);
+          setColorError(messageOf(reason, "Could not search colors"));
+        }
+      } finally {
+        if (active) setColorLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [colorQuery, colorId]);
+
   return (
     <Panel title="Variants" error={error}>
       <form
         className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
         onSubmit={(event) => {
           event.preventDefault();
-          api.saveVariant({ productId, sizeId, fabricId, sku, stock: Number(stock) }).then(() => {
+          api.saveVariant({ productId, sizeId, fabricId, colorId: colorId || null, sku, stock: Number(stock) }).then(() => {
             setSku("");
+            setColorId("");
+            setColorQuery("");
+            setSelectedColor(null);
             load();
           }).catch((reason) => setError(messageOf(reason, "Could not save the variant")));
         }}
@@ -668,6 +969,60 @@ export function AdminVariants() {
           <option value="">Fabric</option>
           {(catalog?.fabrics ?? []).map((fabric) => <option key={fabric.id} value={fabric.id}>{fabric.name}</option>)}
         </select>
+        <div className="relative">
+          <label className="mb-1 block text-sm text-slate-600" htmlFor="variant-color-search">Color (optional)</label>
+          <input
+            id="variant-color-search"
+            className={field}
+            autoComplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={colorResults.length > 0 && !colorId}
+            aria-controls="variant-color-options"
+            placeholder="Search color name (e.g. blue)"
+            value={colorQuery}
+            onChange={(event) => {
+              setColorId("");
+              setSelectedColor(null);
+              setColorQuery(event.target.value);
+              setColorError("");
+            }}
+          />
+          {colorLoading ? <p className="mt-1 text-sm text-slate-500" role="status">Searching colors…</p> : null}
+          {colorError ? <p className="mt-1 text-sm text-rose-700" role="alert">{colorError}</p> : null}
+          {!colorLoading && !colorError && colorQuery.trim() && !colorId && colorResults.length === 0
+            ? <p className="mt-1 text-sm text-slate-500">No colors found.</p>
+            : null}
+          {colorId && selectedColor ? (
+            <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+              <span className="h-4 w-4 rounded-full border border-slate-300" style={{ backgroundColor: selectedColor.hexCode }} />
+              Selected: {colorQuery}
+            </p>
+          ) : null}
+          {!colorId && colorResults.length > 0 ? (
+            <ul id="variant-color-options" className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg" role="listbox" aria-label="Color suggestions">
+              {colorResults.map((color) => (
+                <li key={color.id} role="option" aria-selected={false}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setColorId(color.id);
+                      setSelectedColor(color);
+                      setColorQuery(color.name);
+                      setColorResults([color]);
+                      setColorError("");
+                    }}
+                  >
+                    <span className="h-5 w-5 shrink-0 rounded-full border border-slate-300" style={{ backgroundColor: color.hexCode }} aria-hidden="true" />
+                    <span>{color.name}</span>
+                    <span className="ml-auto text-xs text-slate-500">{color.hexCode}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
         <input className={field} required placeholder="SKU" value={sku} onChange={(event) => setSku(event.target.value)} />
         <input className={field} inputMode="numeric" value={stock} onChange={(event) => setStock(event.target.value)} />
         <button className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white">Add</button>

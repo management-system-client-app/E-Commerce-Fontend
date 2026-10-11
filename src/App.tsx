@@ -6,6 +6,7 @@ import { AdminLayout, AdminOrderDetail, AdminOrders, AdminOverview, AdminProduct
 import { AdminBanners, AdminCategories } from "./pages/AdminCatalog";
 import {
   AdminCatalogExtras,
+  AdminColors,
   AdminCoupons,
   AdminDelivery,
   AdminNewsletter,
@@ -23,6 +24,7 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
 import { ProductPage } from "./pages/ProductPage";
 import { ShopPage } from "./pages/ShopPage";
+import { ToastViewport } from "./components/ToastViewport";
 
 function StoreShell() {
   const [theme] = useState<"light" | "dark">(() => {
@@ -60,6 +62,7 @@ export function App() {
   return (
     <>
       <RouteScrollReset />
+      <ToastViewport />
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminOverview />} />
@@ -82,6 +85,7 @@ export function App() {
         <Route path="payments" element={<AdminPayments />} />
         <Route path="size-guides" element={<AdminSizeGuides />} />
         <Route path="variants" element={<AdminVariants />} />
+        <Route path="colors" element={<AdminColors />} />
         </Route>
         <Route element={<StoreShell />}>
         <Route path="/" element={<HomePage />} />

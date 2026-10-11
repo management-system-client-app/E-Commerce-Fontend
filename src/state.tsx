@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, sessionStore } from "./api";
+import { ApiError, api, DATA_REFRESH_INTERVAL, sessionStore } from "./api";
 import type { Cart, CartLine, Catalog, Category, Settings, User } from "./types";
 
 type AuthValue = {
@@ -32,7 +32,9 @@ type AuthValue = {
 const AuthContext = createContext<AuthValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() =>
+    sessionStore.token() ? sessionStore.userSnapshot() : null,
+  );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -43,8 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     api
       .me()
-      .then(setUser)
-      .catch(() => sessionStore.setToken(null))
+      .then((account) => {
+        setUser(account);
+        sessionStore.setUserSnapshot(account);
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof ApiError && reason.status === 401) {
+          sessionStore.setToken(null);
+          setUser(null);
+        } else {
+          console.warn("Saved session could not be verified; keeping the current session", reason);
+        }
+      })
       .finally(() => setReady(true));
   }, []);
 
@@ -53,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStore.setToken(result.token);
     sessionStore.setCartSession(null);
     setUser(result.user);
+    sessionStore.setUserSnapshot(result.user);
     return result.user;
   }, []);
 
@@ -65,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accountType: next.accountType === "ADMIN" ? ("ADMIN" as const) : ("USER" as const),
     };
     setUser(userNext);
+    sessionStore.setUserSnapshot(userNext);
     return userNext;
   }, []);
 
@@ -85,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const next = await api.uploadAvatar(image);
       const userNext = { ...next, phone: next.phone ?? null, accountType: "USER" as const };
       setUser(userNext);
+      sessionStore.setUserSnapshot(userNext);
       return userNext;
     },
     [login],
@@ -94,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const next = await api.updateMe(input);
     const userNext = { ...next, phone: next.phone ?? null, accountType: user?.accountType ?? "USER" };
     setUser(userNext);
+    sessionStore.setUserSnapshot(userNext);
     return userNext;
   }, [user?.accountType]);
 
@@ -101,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const next = await api.uploadAvatar(image);
     const userNext = { ...next, phone: next.phone ?? null, accountType: user?.accountType ?? "USER" };
     setUser(userNext);
+    sessionStore.setUserSnapshot(userNext);
     return userNext;
   }, [user?.accountType]);
 
@@ -275,24 +292,57 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [promo, setPromo] = useState("New arrivals are in");
 
   useEffect(() => {
-    api.settings().then((next) => {
-      setSettings(next);
-      document.title = next.storeName;
-    }).catch(() => undefined).finally(() => setSettingsReady(true));
-    api.catalog().then(setCatalog).catch(() => undefined).finally(() => setCatalogReady(true));
-    api
-      .categories()
-      .then((items) => {
-        setCategoryImages(new Map(items.map((item) => [item.id, item.imageUrl ?? null])));
-      })
-      .catch(() => undefined);
-    api
-      .promotions()
-      .then((items) => {
-        const first = items[0];
-        if (first) setPromo(first.description || first.name);
-      })
-      .catch(() => undefined);
+    let active = true;
+    let refreshing = false;
+
+    const refresh = async (fresh = false) => {
+      if (!active || refreshing || document.visibilityState !== "visible") return;
+      refreshing = true;
+      const results = await Promise.allSettled([
+        api.settings(fresh),
+        api.catalog(fresh),
+        api.categories(fresh),
+        api.promotions(fresh),
+      ]);
+      if (active) {
+        const [settingsResult, catalogResult, categoriesResult, promotionsResult] = results;
+        if (settingsResult.status === "fulfilled") {
+          setSettings(settingsResult.value);
+          document.title = settingsResult.value.storeName;
+        } else {
+          console.warn("Store settings could not be refreshed", settingsResult.reason);
+        }
+        if (catalogResult.status === "fulfilled") setCatalog(catalogResult.value);
+        else console.warn("Store catalog could not be refreshed", catalogResult.reason);
+        if (categoriesResult.status === "fulfilled") {
+          setCategoryImages(new Map(categoriesResult.value.map((item) => [item.id, item.imageUrl ?? null])));
+        } else {
+          console.warn("Store categories could not be refreshed", categoriesResult.reason);
+        }
+        if (promotionsResult.status === "fulfilled") {
+          const first = promotionsResult.value[0];
+          setPromo(first ? first.description || first.name : "New arrivals are in");
+        } else {
+          console.warn("Store promotions could not be refreshed", promotionsResult.reason);
+        }
+        setSettingsReady(true);
+        setCatalogReady(true);
+      }
+      refreshing = false;
+    };
+
+    void refresh();
+    const timer = window.setInterval(() => void refresh(true), DATA_REFRESH_INTERVAL);
+    const refreshOnFocus = () => void refresh(true);
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+    };
   }, []);
 
   const value = useMemo(
