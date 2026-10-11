@@ -8,6 +8,8 @@ import { useAuth, useCart } from "../state";
 import type { ProductCardData, ProductDetail, Review, SizeGuide } from "../types";
 
 const RECENT_PRODUCTS_KEY = "recently_viewed_products";
+const PRODUCT_CACHE_KEY = "store_product_details";
+const PRODUCT_CACHE_LIMIT = 12;
 const GENDER_LABELS: Record<string, string> = {
   MEN: "Male",
   WOMEN: "Female",
@@ -30,15 +32,70 @@ const DEFAULT_SARI_SIZE_GUIDE: SizeGuide = {
   ],
 };
 
-function recordRecentlyViewed(id: string) {
+function recentlyViewedIds(id: string) {
   try {
     const stored: unknown = JSON.parse(localStorage.getItem(RECENT_PRODUCTS_KEY) ?? "[]");
     const ids = Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : [];
-    const previous = ids.filter((productId) => productId !== id).slice(0, 5);
-    localStorage.setItem(RECENT_PRODUCTS_KEY, JSON.stringify([id, ...previous]));
-    return previous;
+    return ids.filter((productId) => productId !== id).slice(0, 5);
   } catch {
     return [];
+  }
+}
+
+function recordRecentlyViewed(id: string) {
+  const previous = recentlyViewedIds(id);
+  try {
+    localStorage.setItem(RECENT_PRODUCTS_KEY, JSON.stringify([id, ...previous]));
+  } catch (reason) {
+    console.warn("Recently viewed products could not be saved", reason);
+  }
+  return previous;
+}
+
+function readProductCache(): Record<string, ProductDetail> {
+  try {
+    const cached: unknown = JSON.parse(localStorage.getItem(PRODUCT_CACHE_KEY) ?? "{}");
+    if (typeof cached !== "object" || cached === null || Array.isArray(cached)) return {};
+    return Object.fromEntries(
+      Object.entries(cached).filter((entry): entry is [string, ProductDetail] => {
+        const product = entry[1];
+        return (
+          typeof product === "object" &&
+          product !== null &&
+          "id" in product &&
+          product.id === entry[0] &&
+          "name" in product &&
+          typeof product.name === "string" &&
+          "variants" in product &&
+          Array.isArray(product.variants) &&
+          "images" in product &&
+          Array.isArray(product.images) &&
+          "category" in product &&
+          typeof product.category === "object" &&
+          product.category !== null &&
+          "brand" in product &&
+          typeof product.brand === "object" &&
+          product.brand !== null
+        );
+      }),
+    );
+  } catch (reason) {
+    console.warn("Recently viewed product cache could not be read", reason);
+    return {};
+  }
+}
+
+function cacheProduct(product: ProductDetail) {
+  try {
+    const products = readProductCache();
+    const ids = [product.id, ...Object.keys(products).filter((id) => id !== product.id)]
+      .slice(0, PRODUCT_CACHE_LIMIT);
+    localStorage.setItem(
+      PRODUCT_CACHE_KEY,
+      JSON.stringify(Object.fromEntries(ids.map((id) => [id, id === product.id ? product : products[id]]))),
+    );
+  } catch (reason) {
+    console.warn("Product details could not be cached", reason);
   }
 }
 
@@ -46,7 +103,7 @@ export function ProductPage() {
   const { id = "" } = useParams();
   const { user } = useAuth();
   const { add, busy } = useCart();
-  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [product, setProduct] = useState<ProductDetail | null>(() => readProductCache()[id] ?? null);
   const [related, setRelated] = useState<ProductCardData[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [average, setAverage] = useState(0);
@@ -65,49 +122,70 @@ export function ProductPage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
   const [reviewMessage, setReviewMessage] = useState("");
-  const [recentProducts, setRecentProducts] = useState<ProductCardData[]>([]);
+  const [recentProducts, setRecentProducts] = useState<ProductCardData[]>(() => {
+    const cachedProducts = readProductCache();
+    const recentIds = recentlyViewedIds(id);
+    return recentIds.flatMap((productId) => cachedProducts[productId] ?? []);
+  });
   const [recentIndex, setRecentIndex] = useState(0);
   const [recentLoading, setRecentLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
-    setProduct(null);
+    const cachedProducts = readProductCache();
+    const cachedProduct = cachedProducts[id] ?? null;
+    setProduct(cachedProduct);
     setError("");
-    setRecentProducts([]);
     setRecentIndex(0);
-    api
-      .product(id)
-      .then((next) => {
+    const previousIds = recordRecentlyViewed(id);
+    const cachedRecent = previousIds.flatMap((productId) => cachedProducts[productId] ?? []);
+    setRecentProducts(cachedRecent);
+    setRecentLoading(previousIds.length > 0 && cachedRecent.length === 0);
+
+    const applyProduct = (next: ProductDetail) => {
+      setProduct(next);
+      cacheProduct(next);
+      const activeVariants = next.variants.filter((variant) => variant.isActive !== false);
+      const first =
+        activeVariants.find((variant) => Math.max(variant.stock - (variant.reserved ?? 0), 0) > 0) ??
+        activeVariants[0];
+      setSizeId(first?.size.id ?? null);
+      setColorId(first?.color?.id ?? null);
+      setFabricId(first?.fabric.id ?? null);
+      setImage(0);
+      api.related(id).then((items) => active && setRelated(items)).catch(() => undefined).finally(() => active && setRelatedLoading(false));
+      api.reviews(id).then((result) => {
         if (!active) return;
-        setProduct(next);
-        const previousIds = recordRecentlyViewed(id);
-        setRecentLoading(previousIds.length > 0);
-        Promise.all(previousIds.map((productId) => api.product(productId).catch(() => null)))
-          .then((items) => {
-            if (active) setRecentProducts(items.filter((item): item is ProductDetail => item !== null));
-          })
-          .finally(() => {
-            if (active) setRecentLoading(false);
-          });
-        const activeVariants = next.variants.filter((variant) => variant.isActive !== false);
-        const first =
-          activeVariants.find((variant) => Math.max(variant.stock - (variant.reserved ?? 0), 0) > 0) ??
-          activeVariants[0];
-        setSizeId(first?.size.id ?? null);
-        setColorId(first?.color?.id ?? null);
-        setFabricId(first?.fabric.id ?? null);
-        setImage(0);
-        api.related(id).then((items) => active && setRelated(items)).catch(() => undefined).finally(() => active && setRelatedLoading(false));
-        api.reviews(id).then((result) => {
-          if (!active) return;
-          setReviews(result.items);
-          setAverage(result.summary.averageRating);
-        }).catch(() => undefined).finally(() => active && setReviewsLoading(false));
-        api.sizeGuides(next.category.id).then((items) => active && setGuides(items)).catch(() => undefined);
+        setReviews(result.items);
+        setAverage(result.summary.averageRating);
+      }).catch(() => undefined).finally(() => active && setReviewsLoading(false));
+      api.sizeGuides(next.category.id).then((items) => active && setGuides(items)).catch(() => undefined);
+    };
+
+    api.product(id, Boolean(cachedProduct))
+      .then((next) => {
+        if (active) applyProduct(next);
       })
       .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Product not found");
+        if (active && !cachedProduct) setError(reason instanceof Error ? reason.message : "Product not found");
       });
+
+    if (previousIds.length > 0) {
+      Promise.all(previousIds.map((productId) => api.product(productId).catch(() => null)))
+        .then((items) => {
+          if (!active) return;
+          const products = items.filter((item): item is ProductDetail => item !== null);
+          products.forEach(cacheProduct);
+          setRecentProducts(products);
+          setRecentLoading(false);
+        })
+        .catch((reason: unknown) => {
+          if (active) {
+            console.warn("Recently viewed products could not be refreshed", reason);
+            setRecentLoading(false);
+          }
+        });
+    }
     return () => {
       active = false;
     };
@@ -121,7 +199,10 @@ export function ProductPage() {
       refreshing = true;
       api.product(id, true)
         .then((next) => {
-          if (active) setProduct(next);
+          if (active) {
+            setProduct(next);
+            cacheProduct(next);
+          }
         })
         .catch((reason: unknown) => {
           if (active) console.warn("Product details could not be refreshed", reason);
@@ -550,7 +631,7 @@ export function ProductPage() {
             <div className="recent-viewed-heading">
               <h2>Recently Viewed</h2>
             </div>
-            {recentLoading ? <ProductGridSkeleton count={1} /> : null}
+            {recentLoading && recentProducts.length === 0 ? <ProductGridSkeleton count={1} /> : null}
             {!recentLoading && recentProducts.length > 0 ? (() => {
               return (
                 <>

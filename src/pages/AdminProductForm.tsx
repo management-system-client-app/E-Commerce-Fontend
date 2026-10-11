@@ -418,7 +418,7 @@ export function AdminProductForm() {
           <input
             className="text-sm"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             multiple
             disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
             onChange={(event) => {

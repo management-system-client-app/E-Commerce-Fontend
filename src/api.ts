@@ -31,6 +31,7 @@ import type {
   SavedAddress,
   VariantRow,
 } from "./types";
+import { prepareImageForUpload } from "./imageUpload";
 
 const configuredApiUrl =
   import.meta.env.VITE_API_URL?.trim() ||
@@ -272,10 +273,10 @@ export const api = {
   categories: (fresh = false) =>
     request<Category[]>("/categories?limit=100&isActive=true", {}, { fresh }).then((res) => res.data),
   adminCategories: () => request<Category[]>("/categories?limit=100").then((res) => res.data),
-  saveCategory: (input: Record<string, unknown>, image?: File | null, id?: string) => {
+  saveCategory: async (input: Record<string, unknown>, image?: File | null, id?: string) => {
     const body = new FormData();
     body.append("data", JSON.stringify(input));
-    if (image) body.append("image", image);
+    if (image) body.append("image", await prepareImageForUpload(image));
     return request<Category>(id ? `/categories/${id}` : "/categories", {
       method: id ? "PATCH" : "POST",
       body,
@@ -284,10 +285,10 @@ export const api = {
   deleteCategory: (id: string) =>
     request<unknown>(`/categories/${id}`, { method: "DELETE" }).then((res) => res.data),
   homeBlocks: () => request<AdminHomeBlock[]>("/home/blocks").then((res) => res.data),
-  saveHomeBlock: (input: Record<string, unknown>, image?: File | null, id?: string) => {
+  saveHomeBlock: async (input: Record<string, unknown>, image?: File | null, id?: string) => {
     const body = new FormData();
     body.append("data", JSON.stringify(input));
-    if (image) body.append("image", image);
+    if (image) body.append("image", await prepareImageForUpload(image));
     return request<AdminHomeBlock>(id ? `/home/${id}` : "/home", {
       method: id ? "PATCH" : "POST",
       body,
@@ -314,19 +315,21 @@ export const api = {
     request<ProductCardData[]>(`/products/${id}/related`).then((res) => res.data),
   product: (id: string, fresh = false) =>
     request<ProductDetail>(`/products/${id}`, {}, { fresh }).then((res) => res.data),
-  createProduct: (input: Record<string, unknown>, images: File[]) => {
+  createProduct: async (input: Record<string, unknown>, images: File[]) => {
+    const preparedImages = await Promise.all(images.map(prepareImageForUpload));
     const body = new FormData();
     body.append("data", JSON.stringify(input));
-    for (const image of images) body.append("images", image);
+    for (const image of preparedImages) body.append("images", image);
     return request<ProductDetail>("/products", { method: "POST", body }).then((res) => res.data);
   },
-  updateProduct: (id: string, input: Record<string, unknown>, images: File[] = []) => {
+  updateProduct: async (id: string, input: Record<string, unknown>, images: File[] = []) => {
+    const preparedImages = await Promise.all(images.map(prepareImageForUpload));
     const body: BodyInit =
-      images.length > 0
+      preparedImages.length > 0
         ? (() => {
             const form = new FormData();
             form.append("data", JSON.stringify(input));
-            for (const image of images) form.append("images", image);
+            for (const image of preparedImages) form.append("images", image);
             return form;
           })()
         : JSON.stringify(input);
@@ -515,10 +518,10 @@ export const api = {
     request<unknown>("/auth/reset-password", { method: "POST", body: JSON.stringify(body) }).then((res) => res.data),
   updateMe: (body: Record<string, unknown>) =>
     request<User>("/users/me", { method: "PATCH", body: JSON.stringify(body) }).then((res) => res.data),
-  uploadAvatar: (image: File) => {
+  uploadAvatar: async (image: File) => {
     const body = new FormData();
     body.append("data", JSON.stringify({}));
-    body.append("image", image);
+    body.append("image", await prepareImageForUpload(image));
     return request<User>("/users/me", { method: "PATCH", body }).then((res) => res.data);
   },
   user: (id: string) => request<User>(`/users/${id}`).then((res) => res.data),
@@ -580,9 +583,9 @@ export const api = {
     request<unknown>(`/newsletter/${id}`, { method: "DELETE" }).then((res) => res.data),
   updateSettings: (body: Partial<Settings>) =>
     request<Settings>("/settings", { method: "PUT", body: JSON.stringify(body) }).then((res) => res.data),
-  uploadCollageImage: (slot: "man" | "woman" | "child" | "accessories", image: File) => {
+  uploadCollageImage: async (slot: "man" | "woman" | "child" | "accessories", image: File) => {
     const body = new FormData();
-    body.append("image", image);
+    body.append("image", await prepareImageForUpload(image));
     return request<{ slot: typeof slot; imageUrl: string }>(`/settings/collage-images/${slot}`, {
       method: "POST",
       body,

@@ -717,7 +717,7 @@ export function AdminSettings() {
         Photo
         <input
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/avif,image/jpeg,image/png,image/webp"
           className={`${field} mt-1`}
           onChange={(event) => {
             const file = event.target.files?.[0];

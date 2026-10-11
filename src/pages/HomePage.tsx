@@ -19,46 +19,59 @@ const getCountdownParts = (milliseconds: number) => {
 
 const HOME_CACHE_KEY = "store_home_payload";
 const DAILY_DEALS_CACHE_KEY = "store_daily_deals";
+const BEST_SELLERS_CACHE_KEY = "store_best_sellers";
 
 function mergeProducts(primary: ProductCardData[], additional: ProductCardData[]) {
-  const seen = new Set<string>();
-  return [...primary, ...additional].filter((product) => {
-    if (seen.has(product.id)) return false;
-    seen.add(product.id);
-    return true;
-  });
+  const products = new Map(primary.map((product) => [product.id, product]));
+  for (const product of additional) products.set(product.id, product);
+  return [...products.values()];
+}
+
+function isProductList(value: unknown): value is ProductCardData[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (product) =>
+        typeof product === "object" &&
+        product !== null &&
+        "id" in product &&
+        typeof product.id === "string" &&
+        "name" in product &&
+        typeof product.name === "string" &&
+        "basePrice" in product,
+    )
+  );
+}
+
+function readCachedProducts(key: string): ProductCardData[] {
+  try {
+    const cached: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
+    return isProductList(cached) ? cached : [];
+  } catch (reason) {
+    console.warn("Cached products could not be read", reason);
+    return [];
+  }
+}
+
+function cacheProducts(key: string, products: ProductCardData[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(products));
+  } catch (reason) {
+    console.warn("Products could not be cached", reason);
+  }
+}
+
+function cacheTrendingProducts(products: ProductCardData[]) {
+  const home = readCachedHome();
+  if (home) cacheHome({ ...home, trendingProducts: mergeProducts(home.trendingProducts, products) });
 }
 
 function readCachedDailyDeals(): ProductCardData[] {
-  try {
-    const cached: unknown = JSON.parse(localStorage.getItem(DAILY_DEALS_CACHE_KEY) ?? "[]");
-    if (
-      Array.isArray(cached) &&
-      cached.every(
-        (product) =>
-          typeof product === "object" &&
-          product !== null &&
-          "id" in product &&
-          typeof product.id === "string" &&
-          "name" in product &&
-          typeof product.name === "string" &&
-          "basePrice" in product,
-      )
-    ) {
-      return cached as ProductCardData[];
-    }
-  } catch (reason) {
-    console.warn("Cached Daily Deals could not be read", reason);
-  }
-  return [];
+  return readCachedProducts(DAILY_DEALS_CACHE_KEY);
 }
 
 function cacheDailyDeals(products: ProductCardData[]) {
-  try {
-    localStorage.setItem(DAILY_DEALS_CACHE_KEY, JSON.stringify(products));
-  } catch (reason) {
-    console.warn("Daily Deals could not be cached", reason);
-  }
+  cacheProducts(DAILY_DEALS_CACHE_KEY, products);
 }
 
 function readCachedHome(): HomePayload | null {
@@ -110,6 +123,7 @@ function BlockLink({
   href,
   active = true,
   priority = false,
+  onImageRatio,
 }: {
   block: HomeBlock;
   className?: string;
@@ -117,9 +131,16 @@ function BlockLink({
   href?: string;
   active?: boolean;
   priority?: boolean;
+  onImageRatio?: (ratio: string) => void;
 }) {
+  const [imageRatio, setImageRatio] = useState<string>();
+
   return (
-    <Link className={className} to={href ?? blockHref(block)}>
+    <Link
+      className={className}
+      to={href ?? blockHref(block)}
+      style={imageRatio ? { aspectRatio: imageRatio } : undefined}
+    >
       {block.imageUrl ? (
         isVideoUrl(block.imageUrl) ? (
           <video
@@ -131,13 +152,31 @@ function BlockLink({
             preload={active ? "auto" : "none"}
           />
         ) : (
-          <img
-            src={block.imageUrl}
-            alt={block.title}
-            loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : "auto"}
-            decoding="async"
-          />
+          <>
+            <img
+              className="image-backdrop"
+              src={block.imageUrl}
+              alt=""
+              aria-hidden="true"
+              loading={priority ? "eager" : "lazy"}
+              decoding="async"
+            />
+            <img
+              className="banner-image"
+              src={block.imageUrl}
+              alt={block.title}
+              loading={priority ? "eager" : "lazy"}
+              fetchPriority={priority ? "high" : "auto"}
+              decoding="async"
+              onLoad={(event) => {
+                const { naturalWidth, naturalHeight } = event.currentTarget;
+                if (naturalWidth === 0 || naturalHeight === 0) return;
+                const ratio = `${naturalWidth} / ${naturalHeight}`;
+                setImageRatio(ratio);
+                onImageRatio?.(ratio);
+              }}
+            />
+          </>
         )
       ) : (
         <div className="banner-copy">
@@ -190,8 +229,9 @@ export function HomePage() {
   );
   const [trending, setTrending] = useState<ProductCardData[]>(initialHome?.trendingProducts ?? []);
   const [selectedTrending, setSelectedTrending] = useState<ProductCardData[]>(initialHome?.trendingProducts ?? []);
-  const [best, setBest] = useState<ProductCardData[]>([]);
+  const [best, setBest] = useState<ProductCardData[]>(() => readCachedProducts(BEST_SELLERS_CACHE_KEY));
   const [slide, setSlide] = useState(0);
+  const [activeBannerRatio, setActiveBannerRatio] = useState<string>();
   const [saleEndsAt] = useState(() => Date.now() + 1000 * 60 * 60 * 12 + 1000 * 30);
   const [timeLeft, setTimeLeft] = useState(() => Math.max(0, saleEndsAt - Date.now()));
   const [error, setError] = useState("");
@@ -245,7 +285,7 @@ export function HomePage() {
 
   useEffect(() => {
     let active = true;
-    api.home(true)
+    api.home()
       .then((home) => {
         if (!active) return;
         applyHomePayload(home, () => active);
@@ -262,11 +302,13 @@ export function HomePage() {
       .then(async (result) => {
         if (!active) return;
         setTrending((current) => mergeProducts(current, result.items));
+        cacheTrendingProducts(result.items);
         updateDailyDeals(result.items);
         setLoading(false);
         const products = await hydrateImages(result.items);
         if (active) {
           setTrending((current) => mergeProducts(current, products));
+          cacheTrendingProducts(products);
           updateDailyDeals(products);
         }
       })
@@ -280,7 +322,10 @@ export function HomePage() {
 
     api.bestSellers()
       .then((products) => {
-        if (active) setBest(products);
+        if (active) {
+          setBest(products);
+          cacheProducts(BEST_SELLERS_CACHE_KEY, products);
+        }
       })
       .catch((reason: unknown) => {
         if (active) {
@@ -326,11 +371,14 @@ export function HomePage() {
           .then(async ([result, bestSellers]) => {
             if (!active) return;
             setTrending((current) => mergeProducts(current, result.items));
+            cacheTrendingProducts(result.items);
             setBest(bestSellers);
+            cacheProducts(BEST_SELLERS_CACHE_KEY, bestSellers);
             updateDailyDeals(result.items);
             const products = await hydrateImages(result.items);
             if (active) {
               setTrending((current) => mergeProducts(current, products));
+              cacheTrendingProducts(products);
               updateDailyDeals(products);
             }
           })
@@ -398,7 +446,7 @@ export function HomePage() {
       {current || sideBanners.length > 0 ? (
         <div className="hero-board">
           {current ? (
-            <div className="hero-main">
+            <div className="hero-main" style={activeBannerRatio ? { aspectRatio: activeBannerRatio } : undefined}>
               <div className="hero-slides">
                 {banners.map((banner, index) => {
                   const active = index === slide;
@@ -409,7 +457,12 @@ export function HomePage() {
                       aria-hidden={!active}
                       inert={!active}
                     >
-                      <BlockLink block={banner} active={active} priority={active} />
+                      <BlockLink
+                        block={banner}
+                        active={active}
+                        priority={active}
+                        onImageRatio={active ? setActiveBannerRatio : undefined}
+                      />
                     </div>
                   );
                 })}
@@ -430,7 +483,10 @@ export function HomePage() {
             </div>
           ) : null}
           {sideBanners.length > 0 ? (
-            <div className="hero-side">
+            <div
+              className="hero-side"
+              style={{ gridTemplateRows: `repeat(${sideBanners.length}, minmax(0, 1fr))` }}
+            >
               {sideBanners.map((campaign) => (
                 <BlockLink key={campaign.id} block={campaign} className="hero-wide" />
               ))}
@@ -482,7 +538,7 @@ export function HomePage() {
               See More
             </Link>
           </div>
-          <ProductCarousel products={deals} showAvailableStock />
+          <ProductCarousel products={deals} showAvailableStock dealCards />
         </section>
       ) : null}
 
@@ -516,7 +572,7 @@ export function HomePage() {
       ) : null}
 
       {collection.length > 0 ? (
-        <section className="section">
+        <section className="section new-collection">
           <div className="section-head">
             <h2>New Collection</h2>
             <Link className="see-more" to={arrivalHref}>

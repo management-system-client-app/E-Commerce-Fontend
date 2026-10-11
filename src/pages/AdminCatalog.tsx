@@ -177,7 +177,7 @@ export function AdminCategories() {
         </label>
         <label className="block text-xs text-slate-500">
           Image
-          <input className="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+          <input className="mt-1 block w-full text-sm" type="file" accept="image/avif,image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
         </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
@@ -480,7 +480,18 @@ export function AdminBanners() {
         {kind !== "TRENDING" ? (
           <label className="block text-xs text-slate-500">
             Image or video
-            <input className="mt-1 block w-full text-sm" type="file" accept="image/*,video/*" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+            <input
+              className="mt-1 block w-full text-sm"
+              type="file"
+              accept="image/*,video/*"
+              onChange={(event) => {
+                const input = event.currentTarget;
+                const file = input.files?.[0];
+                setImage(file ?? null);
+                setError("");
+                input.value = "";
+              }}
+            />
           </label>
         ) : null}
         {currentImage ? (
@@ -586,7 +597,7 @@ export function AdminBanners() {
                         )}
                         <input
                           type="file"
-                          accept="image/jpeg,image/png,image/webp"
+                          accept="image/avif,image/jpeg,image/png,image/webp"
                           className="block w-full text-sm"
                           onChange={(event) => setCollageFiles((files) => ({ ...files, [id]: event.target.files?.[0] ?? null }))}
                         />

@@ -278,18 +278,120 @@ const fallbackSettings: Settings = {
   collageAccessoriesImageUrl: null,
 };
 
+const SETTINGS_CACHE_KEY = "store_settings";
+const CATALOG_CACHE_KEY = "store_catalog";
+const CATEGORIES_CACHE_KEY = "store_categories";
+const PROMO_CACHE_KEY = "store_promo";
+
+const fallbackCatalog: Catalog = {
+  brands: [],
+  categories: [],
+  sizes: [],
+  fabrics: [],
+};
+
+function readStoreCache<T>(
+  key: string,
+  fallback: T,
+  isValid: (value: unknown) => value is T,
+): T {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? "null");
+    return isValid(value) ? value : fallback;
+  } catch (reason) {
+    console.warn(`Cached store data (${key}) could not be read`, reason);
+    return fallback;
+  }
+}
+
+function writeStoreCache<T>(key: string, value: T) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (reason) {
+    console.warn(`Store data (${key}) could not be cached`, reason);
+  }
+}
+
+function isNullableStringField(value: object, key: string) {
+  if (!(key in value)) return false;
+  const field = Reflect.get(value, key);
+  return typeof field === "string" || field === null;
+}
+
+function isSettings(value: unknown): value is Settings {
+  if (typeof value !== "object" || value === null || !("storeName" in value) || typeof value.storeName !== "string") {
+    return false;
+  }
+  return [
+    "supportEmail",
+    "supportPhone",
+    "address",
+    "facebookUrl",
+    "instagramUrl",
+    "bkashNumber",
+    "nagadNumber",
+    "rocketNumber",
+    "collageManImageUrl",
+    "collageWomanImageUrl",
+    "collageChildImageUrl",
+    "collageAccessoriesImageUrl",
+  ].every((key) => isNullableStringField(value, key));
+}
+
+function isCatalog(value: unknown): value is Catalog {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "brands" in value &&
+    Array.isArray(value.brands) &&
+    "categories" in value &&
+    Array.isArray(value.categories) &&
+    "sizes" in value &&
+    Array.isArray(value.sizes) &&
+    "fabrics" in value &&
+    Array.isArray(value.fabrics)
+  );
+}
+
+function isCategoryList(value: unknown): value is Category[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (category) =>
+        typeof category === "object" &&
+        category !== null &&
+        "id" in category &&
+        typeof category.id === "string" &&
+        "name" in category &&
+        typeof category.name === "string" &&
+        "slug" in category &&
+        typeof category.slug === "string",
+    )
+  );
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(fallbackSettings);
-  const [settingsReady, setSettingsReady] = useState(false);
-  const [catalog, setCatalog] = useState<Catalog>({
-    brands: [],
-    categories: [],
-    sizes: [],
-    fabrics: [],
-  });
-  const [catalogReady, setCatalogReady] = useState(false);
-  const [categoryImages, setCategoryImages] = useState<Map<string, string | null>>(new Map());
-  const [promo, setPromo] = useState("New arrivals are in");
+  const [settings, setSettings] = useState<Settings>(() =>
+    readStoreCache(SETTINGS_CACHE_KEY, fallbackSettings, isSettings),
+  );
+  const [settingsReady, setSettingsReady] = useState(() => Boolean(localStorage.getItem(SETTINGS_CACHE_KEY)));
+  const [catalog, setCatalog] = useState<Catalog>(() =>
+    readStoreCache(CATALOG_CACHE_KEY, fallbackCatalog, isCatalog),
+  );
+  const [catalogReady, setCatalogReady] = useState(() => Boolean(localStorage.getItem(CATALOG_CACHE_KEY)));
+  const [categoryImages, setCategoryImages] = useState<Map<string, string | null>>(() =>
+    new Map(
+      readStoreCache(CATEGORIES_CACHE_KEY, [] as Category[], isCategoryList)
+        .map((item) => [item.id, item.imageUrl ?? null]),
+    ),
+  );
+  const [promo, setPromo] = useState(() =>
+    readStoreCache(PROMO_CACHE_KEY, "New arrivals are in", (value): value is string => typeof value === "string"),
+  );
+  const updateSettings = useCallback((next: Settings) => {
+    setSettings(next);
+    writeStoreCache(SETTINGS_CACHE_KEY, next);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -308,20 +410,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const [settingsResult, catalogResult, categoriesResult, promotionsResult] = results;
         if (settingsResult.status === "fulfilled") {
           setSettings(settingsResult.value);
+          writeStoreCache(SETTINGS_CACHE_KEY, settingsResult.value);
           document.title = settingsResult.value.storeName;
         } else {
           console.warn("Store settings could not be refreshed", settingsResult.reason);
         }
-        if (catalogResult.status === "fulfilled") setCatalog(catalogResult.value);
+        if (catalogResult.status === "fulfilled") {
+          setCatalog(catalogResult.value);
+          writeStoreCache(CATALOG_CACHE_KEY, catalogResult.value);
+        }
         else console.warn("Store catalog could not be refreshed", catalogResult.reason);
         if (categoriesResult.status === "fulfilled") {
           setCategoryImages(new Map(categoriesResult.value.map((item) => [item.id, item.imageUrl ?? null])));
+          writeStoreCache(CATEGORIES_CACHE_KEY, categoriesResult.value);
         } else {
           console.warn("Store categories could not be refreshed", categoriesResult.reason);
         }
         if (promotionsResult.status === "fulfilled") {
           const first = promotionsResult.value[0];
-          setPromo(first ? first.description || first.name : "New arrivals are in");
+          const nextPromo = first ? first.description || first.name : "New arrivals are in";
+          setPromo(nextPromo);
+          writeStoreCache(PROMO_CACHE_KEY, nextPromo);
         } else {
           console.warn("Store promotions could not be refreshed", promotionsResult.reason);
         }
@@ -346,8 +455,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ settings, updateSettings: setSettings, settingsReady, catalog, catalogReady, categoryImages, promo }),
-    [settings, settingsReady, catalog, catalogReady, categoryImages, promo],
+    () => ({ settings, updateSettings, settingsReady, catalog, catalogReady, categoryImages, promo }),
+    [settings, updateSettings, settingsReady, catalog, catalogReady, categoryImages, promo],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

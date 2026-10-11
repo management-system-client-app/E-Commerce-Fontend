@@ -270,7 +270,7 @@ export function RegisterPage() {
           <span>Profile photo</span>
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;
               setPhoto(file);
@@ -668,7 +668,7 @@ export function AccountProfile() {
           <span>Profile photo</span>
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/avif,image/jpeg,image/png,image/webp"
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
