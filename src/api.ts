@@ -71,6 +71,8 @@ function mutationSuccessMessage(path: string, method: string) {
 }
 
 function shouldCacheGet(path: string) {
+  const adminSession = sessionStore.userSnapshot()?.accountType === "ADMIN";
+  if (adminSession) return !/^\/(cart|me|wishlist|track)(\/|\?|$)/i.test(path);
   return !/^\/(cart|me|orders|wishlist|returns|dashboard|users|track|payments|admin)(\/|\?|$)/i.test(path);
 }
 

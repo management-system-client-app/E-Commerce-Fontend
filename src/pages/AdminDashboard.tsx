@@ -237,6 +237,35 @@ type Offer = {
   endsAt?: string;
 };
 
+type AdminOverviewData = {
+  overview: DashboardOverview;
+  orders: AdminOrder[];
+  offers: Offer[];
+  returns: StoreReturn[];
+};
+
+let cachedAdminOverview: AdminOverviewData | null = null;
+let adminOverviewRequest: Promise<AdminOverviewData> | null = null;
+
+function loadAdminOverviewData() {
+  if (!adminOverviewRequest) {
+    adminOverviewRequest = Promise.all([
+      api.dashboard(),
+      api.adminOrders({ page: 1, limit: 100 }).then((result) => result.items).catch(() => cachedAdminOverview?.orders ?? []),
+      api.promotions().then((items) => items as Offer[]).catch(() => cachedAdminOverview?.offers ?? []),
+      api.returns().catch(() => cachedAdminOverview?.returns ?? []),
+    ])
+      .then(([overview, orders, offers, returns]) => {
+        cachedAdminOverview = { overview, orders, offers, returns };
+        return cachedAdminOverview;
+      })
+      .finally(() => {
+        adminOverviewRequest = null;
+      });
+  }
+  return adminOverviewRequest;
+}
+
 function dayKey(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -327,28 +356,32 @@ function StatusRing({ delivered, open }: { delivered: number; open: number }) {
 }
 
 export function AdminOverview() {
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [returns, setReturns] = useState<StoreReturn[]>([]);
+  const [overview, setOverview] = useState<DashboardOverview | null>(() => cachedAdminOverview?.overview ?? null);
+  const [orders, setOrders] = useState<AdminOrder[]>(() => cachedAdminOverview?.orders ?? []);
+  const [offers, setOffers] = useState<Offer[]>(() => cachedAdminOverview?.offers ?? []);
+  const [returns, setReturns] = useState<StoreReturn[]>(() => cachedAdminOverview?.returns ?? []);
   const [returnNote, setReturnNote] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => cachedAdminOverview === null);
 
   function load(showLoading = false) {
-    if (showLoading) setLoading(true);
-    Promise.all([
-      api.dashboard().then(setOverview).catch((reason) => {
+    if (showLoading && cachedAdminOverview === null) setLoading(true);
+    loadAdminOverviewData()
+      .then((data) => {
+        setOverview(data.overview);
+        setOrders(data.orders);
+        setOffers(data.offers);
+        setReturns(data.returns);
+        setError("");
+      })
+      .catch((reason: unknown) => {
         setError(reason instanceof ApiError ? reason.message : "Could not load the dashboard");
-      }),
-      api.adminOrders({ page: 1, limit: 100 }).then((result) => setOrders(result.items)).catch(() => setOrders([])),
-      api.promotions().then((items) => setOffers(items as Offer[])).catch(() => setOffers([])),
-      api.returns().then(setReturns).catch(() => setReturns([])),
-    ]).finally(() => setLoading(false));
+      })
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
-    load(true);
+    load(cachedAdminOverview === null);
     function onShow() {
       if (document.visibilityState === "visible") load();
     }
@@ -812,7 +845,7 @@ export function AdminProducts() {
       setLoading(true);
       setError("");
       api
-        .products({ page, limit: 12, sort: "latest", search: search || undefined }, true)
+        .products({ page, limit: 12, sort: "latest", search: search || undefined })
         .then((result) => {
           if (!active) return;
           setItems(result.items as AdminProduct[]);
