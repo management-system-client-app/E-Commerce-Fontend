@@ -188,7 +188,7 @@ export function AdminProductForm() {
   if (!ready) return <DetailSkeleton />;
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto max-w-3xl space-y-5">
+    <form onSubmit={onSubmit} className="mx-auto w-full space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">{editing ? "Edit product" : "Add product"}</h1>

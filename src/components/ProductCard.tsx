@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { coverImage, money, productFlags } from "../format";
 import type { ProductCardData } from "../types";
@@ -49,11 +50,33 @@ export function ProductCarousel({
   products: ProductCardData[];
   showAvailableStock?: boolean;
 }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className="product-carousel">
-      <div className="product-row">
+      <div className="product-row" ref={rowRef}>
         {products.map((product) => <ProductCard key={product.id} product={product} showAvailableStock={showAvailableStock} />)}
       </div>
+      {products.length > 1 ? (
+        <>
+          <button
+            type="button"
+            className="carousel-arrow prev"
+            aria-label="Show previous products"
+            onClick={() => rowRef.current?.scrollBy({ left: -rowRef.current.clientWidth, behavior: "smooth" })}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="carousel-arrow next"
+            aria-label="Show more products"
+            onClick={() => rowRef.current?.scrollBy({ left: rowRef.current.clientWidth, behavior: "smooth" })}
+          >
+            ›
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

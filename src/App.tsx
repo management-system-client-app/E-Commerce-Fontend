@@ -41,7 +41,9 @@ function StoreShell() {
     <div className={`store-shell theme-${theme}`}>
       <Header />
       <main className="page">
-        <Outlet />
+        <div className="page-container">
+          <Outlet />
+        </div>
       </main>
       <Footer />
     </div>
@@ -58,10 +60,32 @@ function RouteScrollReset() {
   return null;
 }
 
+function ReloadIndicator() {
+  const [visible, setVisible] = useState(
+    () => performance.getEntriesByType("navigation").some(
+      (entry) => entry instanceof PerformanceNavigationTiming && entry.type === "reload",
+    ),
+  );
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = window.setTimeout(() => setVisible(false), 1100);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
+
+  if (!visible) return null;
+  return (
+    <div className="reload-indicator" role="progressbar" aria-label="Loading page">
+      <span />
+    </div>
+  );
+}
+
 export function App() {
   return (
     <>
       <RouteScrollReset />
+      <ReloadIndicator />
       <ToastViewport />
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>

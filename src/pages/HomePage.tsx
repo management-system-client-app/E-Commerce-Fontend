@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, DATA_REFRESH_INTERVAL, hydrateImages } from "../api";
 import { categoryTiles } from "../components/Chrome";
 import { ProductCarousel } from "../components/ProductCard";
+import { productFlags } from "../format";
 import { useStore } from "../state";
 import type { HomeBlock, HomePayload, ProductCardData } from "../types";
 
@@ -17,6 +18,48 @@ const getCountdownParts = (milliseconds: number) => {
 };
 
 const HOME_CACHE_KEY = "store_home_payload";
+const DAILY_DEALS_CACHE_KEY = "store_daily_deals";
+
+function mergeProducts(primary: ProductCardData[], additional: ProductCardData[]) {
+  const seen = new Set<string>();
+  return [...primary, ...additional].filter((product) => {
+    if (seen.has(product.id)) return false;
+    seen.add(product.id);
+    return true;
+  });
+}
+
+function readCachedDailyDeals(): ProductCardData[] {
+  try {
+    const cached: unknown = JSON.parse(localStorage.getItem(DAILY_DEALS_CACHE_KEY) ?? "[]");
+    if (
+      Array.isArray(cached) &&
+      cached.every(
+        (product) =>
+          typeof product === "object" &&
+          product !== null &&
+          "id" in product &&
+          typeof product.id === "string" &&
+          "name" in product &&
+          typeof product.name === "string" &&
+          "basePrice" in product,
+      )
+    ) {
+      return cached as ProductCardData[];
+    }
+  } catch (reason) {
+    console.warn("Cached Daily Deals could not be read", reason);
+  }
+  return [];
+}
+
+function cacheDailyDeals(products: ProductCardData[]) {
+  try {
+    localStorage.setItem(DAILY_DEALS_CACHE_KEY, JSON.stringify(products));
+  } catch (reason) {
+    console.warn("Daily Deals could not be cached", reason);
+  }
+}
 
 function readCachedHome(): HomePayload | null {
   try {
@@ -124,6 +167,12 @@ function HomeSkeleton() {
 export function HomePage() {
   const { catalog, categoryImages, settings } = useStore();
   const [initialHome] = useState(readCachedHome);
+  const [dailyDeals, setDailyDeals] = useState<ProductCardData[]>(() => {
+    const cachedDeals = readCachedDailyDeals();
+    if (cachedDeals.length > 0) return cachedDeals;
+    return (initialHome?.trendingProducts ?? []).filter((product) => productFlags(product).onSale);
+  });
+  const dailyDealsRef = useRef(dailyDeals);
   const initialArrival = initialHome?.newArrivals[0];
   const [banners, setBanners] = useState<HomeBlock[]>(initialHome?.banners ?? []);
   const [campaigns, setCampaigns] = useState<HomeBlock[]>(initialHome?.campaigns ?? []);
@@ -143,6 +192,16 @@ export function HomePage() {
   const [reservedHeight, setReservedHeight] = useState(0);
   const isLoading = loading;
 
+  function updateDailyDeals(products: ProductCardData[]) {
+    if (products.length === 0) return;
+    const discounted = products.filter((product) => productFlags(product).onSale);
+    const nextDeals = discounted.length > 0 ? discounted : dailyDealsRef.current.length === 0 ? products : [];
+    if (nextDeals.length === 0) return;
+    dailyDealsRef.current = nextDeals;
+    setDailyDeals(nextDeals);
+    cacheDailyDeals(nextDeals);
+  }
+
   function applyHomePayload(home: HomePayload, isActive: () => boolean = () => true) {
     cacheHome(home);
     setBanners(home.banners);
@@ -152,6 +211,7 @@ export function HomePage() {
     setArrivalHref(arrivalBlock?.categoryId ? `/shop?categoryId=${arrivalBlock.categoryId}` : "/shop?sort=latest");
     setTrending(home.trendingProducts);
     setSelectedTrending(home.trendingProducts);
+    updateDailyDeals(home.trendingProducts);
     void hydrateImages(home.trendingProducts).then(
       (products) => {
         if (isActive()) {
@@ -192,9 +252,13 @@ export function HomePage() {
     api.products({ status: "ACTIVE", inStock: true, limit: 20, page: 1, sort: "latest" })
       .then(async (result) => {
         if (!active) return;
-        setTrending(result.items);
+        setTrending((current) => mergeProducts(current, result.items));
+        updateDailyDeals(result.items);
         const products = await hydrateImages(result.items);
-        if (active) setTrending(products);
+        if (active) {
+          setTrending((current) => mergeProducts(current, products));
+          updateDailyDeals(products);
+        }
       })
       .catch((reason: unknown) => {
         if (active) {
@@ -251,10 +315,14 @@ export function HomePage() {
         ])
           .then(async ([result, bestSellers]) => {
             if (!active) return;
-            setTrending(result.items);
+            setTrending((current) => mergeProducts(current, result.items));
             setBest(bestSellers);
+            updateDailyDeals(result.items);
             const products = await hydrateImages(result.items);
-            if (active) setTrending(products);
+            if (active) {
+              setTrending((current) => mergeProducts(current, products));
+              updateDailyDeals(products);
+            }
           })
           .catch((reason: unknown) => {
             if (active) {
@@ -303,7 +371,7 @@ export function HomePage() {
     { imageUrl: settings.collageAccessoriesImageUrl, label: "Accessories", href: "/shop" },
   ];
   const tiles = categoryTiles(catalog.categories, categoryImages);
-  const deals = trending.filter((product) => product.onSale).length > 0 ? trending.filter((product) => product.onSale) : trending;
+  const deals = dailyDeals;
   const collection = arrivals.length > 0 ? arrivals : trending;
   const countdown = getCountdownParts(timeLeft);
   const hasHomeContent = Boolean(

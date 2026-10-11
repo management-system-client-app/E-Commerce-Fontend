@@ -204,6 +204,7 @@ export function Header() {
             <Link to="/shop">{promo}</Link>
           </div>
         ) : null}
+        <div className="header-container">
         <div className="topbar">
           <Link to="/" className="logo sara-logo" aria-label="SaRa Lifestyle home">
             <span className="sara-logo-main">SaRa</span>
@@ -305,6 +306,7 @@ export function Header() {
             </>
           ) : null}
         </nav>
+        </div>
       </header>
       <nav className="bottom-nav" aria-label="Mobile">
         <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>
