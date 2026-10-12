@@ -4,12 +4,13 @@ import { ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { ProductCarousel } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
 import { coverImage, money, productFlags } from "../format";
+import { readRecentlyViewedIds, readRecentlyViewedProducts, recordRecentlyViewed } from "../recentlyViewed";
 import { useAuth, useCart } from "../state";
 import type { ProductCardData, ProductDetail, Review, SizeGuide } from "../types";
 
-const RECENT_PRODUCTS_KEY = "recently_viewed_products";
 const PRODUCT_CACHE_KEY = "store_product_details";
 const PRODUCT_CACHE_LIMIT = 12;
+const RECENT_PRODUCTS_BATCH_SIZE = 5;
 const GENDER_LABELS: Record<string, string> = {
   MEN: "Male",
   WOMEN: "Female",
@@ -31,26 +32,6 @@ const DEFAULT_SARI_SIZE_GUIDE: SizeGuide = {
     ["XL", "40", "34", "50"],
   ],
 };
-
-function recentlyViewedIds(id: string) {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(RECENT_PRODUCTS_KEY) ?? "[]");
-    const ids = Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string") : [];
-    return ids.filter((productId) => productId !== id).slice(0, 5);
-  } catch {
-    return [];
-  }
-}
-
-function recordRecentlyViewed(id: string) {
-  const previous = recentlyViewedIds(id);
-  try {
-    localStorage.setItem(RECENT_PRODUCTS_KEY, JSON.stringify([id, ...previous]));
-  } catch (reason) {
-    console.warn("Recently viewed products could not be saved", reason);
-  }
-  return previous;
-}
 
 function readProductCache(): Record<string, ProductDetail> {
   try {
@@ -124,8 +105,9 @@ export function ProductPage() {
   const [reviewMessage, setReviewMessage] = useState("");
   const [recentProducts, setRecentProducts] = useState<ProductCardData[]>(() => {
     const cachedProducts = readProductCache();
-    const recentIds = recentlyViewedIds(id);
-    return recentIds.flatMap((productId) => cachedProducts[productId] ?? []);
+    const recentIds = [id, ...readRecentlyViewedIds(id)];
+    const recentSnapshots = readRecentlyViewedProducts();
+    return recentIds.flatMap((productId) => cachedProducts[productId] ?? recentSnapshots[productId] ?? []);
   });
   const [recentIndex, setRecentIndex] = useState(0);
   const [recentLoading, setRecentLoading] = useState(false);
@@ -137,14 +119,23 @@ export function ProductPage() {
     setProduct(cachedProduct);
     setError("");
     setRecentIndex(0);
-    const previousIds = recordRecentlyViewed(id);
-    const cachedRecent = previousIds.flatMap((productId) => cachedProducts[productId] ?? []);
+    recordRecentlyViewed(id, cachedProduct ?? undefined);
+    const previousIds = readRecentlyViewedIds(id);
+    const recentIds = [id, ...previousIds];
+    const recentSnapshots = readRecentlyViewedProducts();
+    const cachedRecent = recentIds.flatMap(
+      (productId) => cachedProducts[productId] ?? recentSnapshots[productId] ?? [],
+    );
     setRecentProducts(cachedRecent);
-    setRecentLoading(previousIds.length > 0 && cachedRecent.length === 0);
+    setRecentLoading(recentIds.length > 0 && cachedRecent.length === 0);
 
     const applyProduct = (next: ProductDetail) => {
       setProduct(next);
       cacheProduct(next);
+      recordRecentlyViewed(id, next);
+      setRecentProducts((current) =>
+        [next, ...current.filter((item) => item.id !== next.id)],
+      );
       const activeVariants = next.variants.filter((variant) => variant.isActive !== false);
       const first =
         activeVariants.find((variant) => Math.max(variant.stock - (variant.reserved ?? 0), 0) > 0) ??
@@ -170,21 +161,40 @@ export function ProductPage() {
         if (active && !cachedProduct) setError(reason instanceof Error ? reason.message : "Product not found");
       });
 
-    if (previousIds.length > 0) {
-      Promise.all(previousIds.map((productId) => api.product(productId).catch(() => null)))
-        .then((items) => {
+    if (recentIds.length > 0) {
+      const loadRecentProducts = async () => {
+        const items: (ProductDetail | null)[] = [];
+        for (let index = 0; index < recentIds.length; index += RECENT_PRODUCTS_BATCH_SIZE) {
+          const batch = await Promise.all(
+            recentIds
+              .slice(index, index + RECENT_PRODUCTS_BATCH_SIZE)
+              .map((productId) =>
+                api.product(productId).catch((reason: unknown) => {
+                  console.warn("Recently viewed product could not be refreshed", productId, reason);
+                  return null;
+                }),
+              ),
+          );
+          items.push(...batch);
           if (!active) return;
-          const products = items.filter((item): item is ProductDetail => item !== null);
-          products.forEach(cacheProduct);
-          setRecentProducts(products);
-          setRecentLoading(false);
-        })
-        .catch((reason: unknown) => {
-          if (active) {
-            console.warn("Recently viewed products could not be refreshed", reason);
-            setRecentLoading(false);
+        }
+        const products = items.map((item, index) => {
+          if (item) {
+            cacheProduct(item);
+            recordRecentlyViewed(item.id, item);
+            return item;
           }
-        });
+          return cachedProducts[recentIds[index]] ?? recentSnapshots[recentIds[index]] ?? null;
+        }).filter((item): item is ProductDetail => item !== null);
+        setRecentProducts(products);
+        setRecentLoading(false);
+      };
+      loadRecentProducts().catch((reason: unknown) => {
+        if (active) {
+          console.warn("Recently viewed products could not be refreshed", reason);
+          setRecentLoading(false);
+        }
+      });
     }
     return () => {
       active = false;
@@ -276,8 +286,11 @@ export function ProductPage() {
   );
   const gallery = useMemo(() => {
     if (!product) return [];
-    return product.images.filter((item) => !item.colorId);
-  }, [product]);
+    const selectedColorImages = product.images.filter((item) => item.colorId === colorId);
+    return selectedColorImages.length > 0
+      ? selectedColorImages
+      : product.images.filter((item) => !item.colorId);
+  }, [product, colorId]);
 
   if (error) return <p className="error">{error}</p>;
   if (!product) return <DetailSkeleton />;

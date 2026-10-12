@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { coverImage, money, productFlags } from "../format";
+import { recordRecentlyViewed } from "../recentlyViewed";
 import type { ProductCardData } from "../types";
 
 export function ProductCard({
@@ -21,7 +22,7 @@ export function ProductCard({
   const soldOut = Boolean(product.variants?.length) && availableStock === 0;
   return (
     <article className={dealCard ? "card deal-card" : "card"}>
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product.id}`} onClick={() => recordRecentlyViewed(product.id, product)}>
         <div className="card-photo">
           {image ? (
             <>
