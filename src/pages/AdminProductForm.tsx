@@ -9,7 +9,7 @@ type SizeRow = { sizeId: string; fabricId: string; colorId: string; stock: strin
 const MAX_PRODUCT_IMAGES = 6;
 
 const fieldClass =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2ec9a8]";
+  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition-all duration-200 ease-out focus:border-[#7b3f55] focus:ring-3 focus:ring-[#7b3f55]/30";
 
 function messageOf(reason: unknown, fallback: string) {
   if (!(reason instanceof ApiError)) return fallback;
@@ -35,21 +35,21 @@ function ColorImagePicker({
   onUpload: (colorId: string, files: File[]) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-3">
+    <div className="flex flex-wrap gap-3">
       {colors.map((color) => {
         const selected = selectedIds.includes(color.id);
         const image = previews[color.id] ?? existingImages.find((photo) => photo.colorId === color.id)?.url;
         return (
-          <div key={color.id} className="flex items-center gap-2.5">
-            <label className="relative block h-12 w-12 shrink-0 cursor-pointer" title={`Upload ${color.name} photo`}>
-              <span className={`grid h-12 w-12 place-items-center overflow-hidden rounded-full border-2 bg-slate-100 ${selected ? "border-[#7b3f55] ring-2 ring-[#e8c9d4]" : "border-slate-200"}`}>
+          <div key={color.id} className={`flex h-16 w-40 shrink-0 items-center gap-2.5 rounded-xl border px-3 transition-colors duration-200 ease-out ${selected ? "border-[#7b3f55] bg-[#2a2026] hover:bg-[#36222c]" : "border-slate-700 bg-[#171c24] hover:border-slate-500 hover:bg-[#1d232d]"}`}>
+            <label className="group relative block h-10 w-10 shrink-0 cursor-pointer" title={`Upload ${color.name} photo`}>
+              <span className={`relative block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-[#171c24] transition-all duration-200 ${selected ? "border-[#f0c0cf] ring-2 ring-[#7b3f55]/50 group-hover:ring-[#7b3f55]/75" : "border-slate-600 hover:border-[#d39aac] hover:ring-2 hover:ring-slate-600/60"}`}>
                 {image ? (
-                  <img src={image} alt={`${color.name} color`} className="h-full w-full object-cover" />
+                  <img src={image} alt={`${color.name} color`} className="absolute inset-0 block h-full w-full object-cover" />
                 ) : (
-                  <span className="h-full w-full" style={{ backgroundColor: color.hexCode }} />
+                  <span className="absolute inset-0 block h-full w-full" style={{ backgroundColor: color.hexCode }} />
                 )}
               </span>
-              <span className="absolute right-0 bottom-0 grid h-5 w-5 place-items-center rounded-full border-2 border-white bg-[#7b3f55] text-xs font-bold leading-none text-white">+</span>
+              <span aria-hidden="true" className="absolute right-0 bottom-0 grid h-5 w-5 place-items-center rounded-full border-2 border-[#202630] bg-[#f0c0cf] text-sm font-bold leading-none text-[#542536] shadow-md transition-colors duration-200 group-hover:bg-[#7b3f55] group-hover:text-white">+</span>
               <input
                 className="sr-only"
                 type="file"
@@ -67,13 +67,13 @@ function ColorImagePicker({
               <button
                 type="button"
                 aria-pressed={selected}
-                className={`text-sm font-medium ${selected ? "text-[#7b3f55]" : "text-slate-600"}`}
+                className={`min-w-0 flex-1 truncate text-left text-sm font-medium transition-colors duration-200 ${selected ? "text-[#f0c0cf]" : "text-slate-300 hover:text-white"}`}
                 onClick={() => onSelect(color.id)}
               >
                 {color.name}{selected ? " ✓" : ""}
               </button>
             ) : (
-              <span className="text-sm font-medium text-slate-700">{color.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-200">{color.name}</span>
             )}
           </div>
         );
@@ -144,7 +144,8 @@ export function AdminProductForm() {
   }, [id]);
 
   function updateRowStock(index: number, stock: string) {
-    setRows((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, stock } : row)));
+    const numericStock = stock.replace(/\D/g, "");
+    setRows((current) => current.map((row, rowIndex) => (rowIndex === index ? { ...row, stock: numericStock } : row)));
   }
 
   function addImages(files: File[], colorId: string | null = null) {
@@ -294,12 +295,20 @@ export function AdminProductForm() {
             {editing ? "Update the product details." : "Active products show on the shop."}
           </p>
         </div>
-        <Link to="/admin/products" className="text-sm text-[#163a8a]">
+        <Link to="/admin/products" className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition duration-200 delay-75 ease-out hover:bg-[#663247] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b3f55] focus-visible:ring-offset-2">
           Back
         </Link>
       </div>
       {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
-      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+        <div className="border-b border-slate-700 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
+            <h2 className="text-sm font-semibold text-slate-100">Product details</h2>
+          </div>
+          <p className="mt-1.5 pl-10 text-xs text-slate-400">Add the core information customers need to find this product.</p>
+        </div>
+        <div className="grid gap-4 p-5 sm:grid-cols-2 [&>label>span]:text-slate-400">
         <label className="grid gap-1.5 text-sm sm:col-span-2">
           <span className="text-slate-500">Name</span>
           <input className={fieldClass} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} />
@@ -360,14 +369,15 @@ export function AdminProductForm() {
             <option value="ARCHIVED">Archived</option>
           </select>
         </label>
+        </div>
       </section>
 
       {editing ? null : (
-        <section className="overflow-hidden rounded-2xl border border-slate-700 bg-[#202630] shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-slate-600 bg-[#202630] shadow-sm">
           <div className="border-b border-slate-700 px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#fbf1f4] text-sm font-bold text-[#7b3f55]">01</span>
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-sm font-bold text-white">02</span>
                 <h2 className="text-sm font-semibold text-slate-100">Variants & inventory</h2>
               </div>
               <p className="mt-1.5 pl-10 text-xs text-slate-400">Choose sizes and colors, then set stock for each combination.</p>
@@ -392,7 +402,7 @@ export function AdminProductForm() {
                       key={size.id}
                       type="button"
                       aria-pressed={selected}
-                      className={`min-w-12 rounded-xl border px-3.5 py-2.5 text-xs transition-colors ${selected ? "border-[#d39aac] bg-[#7b3f55] font-semibold text-white shadow-sm" : "border-slate-600 text-slate-300 hover:border-[#b98b9b] hover:text-white"}`}
+                      className={`min-w-12 rounded-xl border px-3.5 py-2.5 text-xs transition-colors duration-200 ease-out active:transform-none active:filter-none ${selected ? "border-[#d39aac] bg-[#7b3f55] font-semibold text-white hover:bg-[#673247]" : "border-slate-600 text-slate-300 hover:border-[#b98b9b] hover:bg-slate-700/60 hover:text-white"}`}
                       onClick={() => toggleSelection(selectedSizeIds, size.id, setSelectedSizeIds)}
                     >
                       {size.name}
@@ -423,7 +433,7 @@ export function AdminProductForm() {
               </select>
               <button
                 type="button"
-                className="h-11 rounded-xl bg-[#7b3f55] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#673247]"
+                className="h-11 rounded-xl bg-[#7b3f55] px-5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#673247] hover:shadow-md"
                 onClick={addSelectedCombinations}
               >
                 + Add combinations
@@ -434,7 +444,7 @@ export function AdminProductForm() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-700 text-xs font-bold text-slate-200">B</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#7b3f55] text-xs font-bold text-white">B</span>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-100">Added combinations</h3>
                   <p className="text-xs text-slate-400">Set stock for each combination selected above.</p>
@@ -451,26 +461,28 @@ export function AdminProductForm() {
               const color = colors.find((item) => item.id === row.colorId);
               const fabricName = catalog.fabrics.find((fabric) => fabric.id === row.fabricId)?.name || "No fabric";
               return (
-                <div key={index} className="border-t border-slate-700 py-3 first:border-0 sm:py-4">
+                <div key={index} className="variant-combination-row rounded-xl border border-slate-700 bg-[#171c24] p-3 sm:p-4">
                   <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto]">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-700 text-xs font-semibold text-slate-200">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#7b3f55] text-xs font-semibold text-white">{String(index + 1).padStart(2, "0")}</span>
                       <span className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-100">{sizeName}</span>
                       {color ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-slate-100">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#202630] px-2.5 py-1.5 text-xs text-slate-100">
                           <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: color.hexCode }} />
                           {color.name}
                         </span>
                       ) : (
                         <span className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-slate-300">No color</span>
                       )}
-                      <span className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-slate-300">{fabricName}</span>
+                      <span className="rounded-lg border border-slate-700 bg-[#202630] px-2.5 py-1.5 text-xs text-slate-300">{fabricName}</span>
                     </div>
-                    <label className="grid grid-cols-[auto_minmax(100px,140px)] items-center gap-2 text-xs font-medium text-slate-300">
+                    <label className="variant-stock-panel grid grid-cols-[auto_minmax(100px,140px)] items-center gap-2 rounded-xl border border-slate-700 bg-[#202630] px-3 py-2 text-xs font-semibold text-slate-300 transition-colors duration-200 ease-out hover:border-[#7b3f55] hover:bg-[#2a313d]">
                       Stock
                       <input
-                        className={`${fieldClass} border-slate-600 bg-[#171c24] text-white`}
+                        className="h-9 w-full rounded-lg border border-slate-600 bg-[#171c24] px-3 text-sm text-white outline-none focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30"
+                        type="text"
                         inputMode="numeric"
+                        pattern="[0-9]*"
                         aria-label={`Stock for ${sizeName}${color ? ` ${color.name}` : ""}`}
                         placeholder="0"
                         value={row.stock}
@@ -488,46 +500,74 @@ export function AdminProductForm() {
       )}
 
       {editing && photoColors.length > 0 ? (
-        <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div>
-            <h2 className="text-sm font-semibold">Color photos</h2>
-            <p className="mt-1 text-xs text-slate-500">Upload from the circle beside each color name.</p>
+        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">02</span>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-100">Color photos</h2>
+                <p className="mt-1 text-xs text-slate-400">Upload a photo for each product color.</p>
+              </div>
+            </div>
+            <span className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200">{photoColors.length} colors</span>
           </div>
-          <ColorImagePicker
-            colors={photoColors}
-            selectedIds={productColorIds}
-            previews={imagePreviews}
-            existingImages={existingImages}
-            disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
-            onUpload={(colorId, files) => addImages(files, colorId)}
-          />
+          <div className="p-5">
+            <ColorImagePicker
+              colors={photoColors}
+              selectedIds={productColorIds}
+              previews={imagePreviews}
+              existingImages={existingImages}
+              disabled={existingImages.length + images.length >= MAX_PRODUCT_IMAGES}
+              onUpload={(colorId, files) => addImages(files, colorId)}
+            />
+          </div>
         </section>
       ) : null}
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div>
-          <h2 className="text-sm font-semibold">Product photos</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Add up to {MAX_PRODUCT_IMAGES} images per product. {existingImages.length + images.length} of {MAX_PRODUCT_IMAGES} selected.
-          </p>
-          <p className="mt-1 text-xs text-slate-500">Use the color circles above to add photos for a specific color. Photos added below apply to all colors.</p>
+      <section className="space-y-4 rounded-2xl border border-slate-700 bg-[#202630] p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">03</span>
+              <h2 className="text-sm font-semibold text-slate-100">Product photos</h2>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">Add up to {MAX_PRODUCT_IMAGES} images. Photos added here apply to all colors.</p>
+            <p className="mt-1 text-xs text-slate-400">Use the color circles above to add photos for a specific color.</p>
+          </div>
+          <span className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-100">
+            {existingImages.length + images.length} / {MAX_PRODUCT_IMAGES} selected
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Product photos selected"
+          aria-valuemin={0}
+          aria-valuemax={MAX_PRODUCT_IMAGES}
+          aria-valuenow={existingImages.length + images.length}
+          className="h-1.5 overflow-hidden rounded-full bg-slate-700"
+        >
+          <span
+            className="block h-full rounded-full bg-[#7b3f55]"
+            style={{ width: `${((existingImages.length + images.length) / MAX_PRODUCT_IMAGES) * 100}%` }}
+          />
         </div>
         {existingImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {existingImages.map((photo) => (
-              <div key={photo.id ?? photo.url} className="space-y-1.5">
-                <img src={photo.url} alt={photo.alt ?? name} className="aspect-square w-full rounded-lg object-cover" />
-                <span className="block truncate text-xs text-slate-500">
+              <div key={photo.id ?? photo.url} className="overflow-hidden rounded-xl border border-slate-600 bg-[#171c24]">
+                <img src={photo.url} alt={photo.alt ?? name} className="aspect-square w-full object-cover" />
+                <span className="block truncate px-2.5 py-2 text-xs text-slate-300">
                   {photo.colorId ? colors.find((color) => color.id === photo.colorId)?.name ?? "Color image" : "All colors"}
                 </span>
               </div>
             ))}
           </div>
         ) : null}
-        <label className="grid gap-1.5 text-sm">
-          <span className="text-slate-500">{existingImages.length > 0 ? "Add more photos" : "Choose photos"}</span>
+        <label className="grid gap-2 rounded-xl border border-dashed border-slate-600 bg-[#171c24] p-4 text-sm transition-colors duration-200 hover:bg-[#262d38]">
+          <span className="font-medium text-slate-100">{existingImages.length > 0 ? "Add more photos" : "Choose product photos"}</span>
+          <span className="text-xs text-slate-400">{MAX_PRODUCT_IMAGES - existingImages.length - images.length} more available · AVIF, JPEG, PNG or WebP</span>
           <input
-            className="text-sm"
+            className="block w-full cursor-pointer text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-[#7b3f55] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
             type="file"
             accept="image/avif,image/jpeg,image/png,image/webp"
             multiple
@@ -542,14 +582,14 @@ export function AdminProductForm() {
         {images.length > 0 ? (
           <ul className="space-y-2">
             {images.map((photo, index) => (
-              <li key={`${photo.name}-${photo.lastModified}-${index}`} className="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5">
-                <span className="min-w-0 flex-1 truncate text-xs text-slate-600">{photo.name}</span>
-                <span className="shrink-0 text-xs text-slate-500">
+              <li key={`${photo.name}-${photo.lastModified}-${index}`} className="flex items-center gap-3 rounded-xl border border-slate-700 bg-[#171c24] p-2.5">
+                <span className="min-w-0 flex-1 truncate text-xs text-slate-200">{photo.name}</span>
+                <span className="shrink-0 text-xs text-slate-400">
                   {imageColorIds[index] ? colors.find((color) => color.id === imageColorIds[index])?.name ?? "Color photo" : "All colors"}
                 </span>
                 <button
                   type="button"
-                  className="shrink-0 text-xs text-rose-700"
+                  className="shrink-0 text-xs text-rose-300"
                   onClick={() => {
                     setImages((current) => current.filter((_, photoIndex) => photoIndex !== index));
                     setImageColorIds((current) => current.filter((_, photoIndex) => photoIndex !== index));
