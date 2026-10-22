@@ -5,6 +5,14 @@ import { coverImage } from "../format";
 import { useStore } from "../state";
 import type { AdminHomeBlock, Category, ProductCardData, Settings } from "../types";
 
+function Icon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d={d} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const fieldClass =
   "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2ec9a8]";
 
@@ -147,15 +155,18 @@ export function AdminCategories() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold">{editing ? "Edit category" : "Add category"}</h2>
-        <label className="block text-xs text-slate-500">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-4 shadow-sm">
+        <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
+          <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit category" : "Add category"}</h2>
+        </div>
+        <label className="block text-xs text-slate-300">
           Name
-          <input className={`${fieldClass} mt-1`} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Parent
-          <select className={`${fieldClass} mt-1`} value={parentId} onChange={(event) => setParentId(event.target.value)}>
+          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={parentId} onChange={(event) => setParentId(event.target.value)}>
             <option value="">None</option>
             {categories
               .filter((category) => category.id !== editing)
@@ -167,37 +178,46 @@ export function AdminCategories() {
               ))}
           </select>
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Description
-          <textarea className={`${fieldClass} mt-1 h-20 py-2`} value={description} onChange={(event) => setDescription(event.target.value)} />
+          <textarea className={`${fieldClass} mt-1 h-20 border-slate-600 bg-[#171c24] py-2 text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Sort
-          <input className={`${fieldClass} mt-1`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Image
-          <input className="mt-1 block w-full text-sm" type="file" accept="image/avif,image/jpeg,image/png,image/webp" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+          <span className="relative mt-1.5 flex min-h-[68px] items-center gap-3 rounded-xl border border-dashed border-slate-600 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#24212a] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
+              <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium text-slate-100">{image?.name ?? "Choose category image"}</span>
+              <span className="mt-1 block text-xs text-slate-400">AVIF, JPEG, PNG or WebP · Click to browse</span>
+            </span>
+            <input className="absolute inset-0 h-full w-full cursor-pointer opacity-0" type="file" accept="image/avif,image/jpeg,image/png,image/webp" aria-label="Choose category image" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+          </span>
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+        <label className="flex items-center gap-2 text-sm text-slate-200">
+          <input className="accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
           Active
         </label>
         {error ? <p className="text-sm text-rose-700">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
             {busy ? "Saving…" : editing ? "Update" : "Add"}
           </button>
           {editing ? (
-            <button type="button" className="rounded-xl border border-slate-200 px-4 py-2 text-sm" onClick={reset}>
+            <button type="button" className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 transition-colors duration-200 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={reset}>
               Cancel
             </button>
           ) : null}
         </div>
       </form>
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs tracking-wide text-slate-500 uppercase">
+          <thead className="bg-[#171c24] text-xs tracking-wide text-slate-400 uppercase">
             <tr>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Parent</th>
@@ -206,36 +226,50 @@ export function AdminCategories() {
           </thead>
           <tbody>
             {loading ? <tr><td colSpan={3} className="p-4"><RowsSkeleton rows={5} columns={3} /></td></tr> : categories.map((category) => (
-              <tr key={category.id} className="border-t border-slate-100">
+              <tr key={category.id} className="border-t border-slate-700 transition-colors duration-200 hover:bg-slate-700/30">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {category.imageUrl ? (
-                      <img src={category.imageUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                      <img src={category.imageUrl} alt="" className="h-10 w-10 rounded-lg border border-slate-600 object-cover" />
                     ) : (
-                      <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                      <span className="grid h-10 w-10 place-items-center rounded-lg border border-slate-600 bg-slate-700 text-xs font-semibold text-slate-200">
                         {category.name.slice(0, 1)}
                       </span>
                     )}
                     <span>
-                      <span className="block font-medium">{category.name}</span>
-                      <span className="text-xs text-slate-500">{category.isActive === false ? "Hidden" : "Active"}</span>
+                      <span className="block font-medium text-slate-100">{category.name}</span>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${category.isActive === false ? "bg-rose-500/10 text-rose-300" : "bg-emerald-500/10 text-emerald-300"}`}>
+                        {category.isActive === false ? "Hidden" : "Active"}
+                      </span>
                     </span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{parentName(categories, category.parentId)}</td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="mr-3 font-medium text-[#163a8a]" onClick={() => startEdit(category)}>
-                    Edit
-                  </button>
-                  <button type="button" className="text-rose-700" onClick={() => remove(category)}>
-                    Delete
-                  </button>
+                <td className="px-4 py-3 text-slate-300">{parentName(categories, category.parentId)}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                      onClick={() => startEdit(category)}
+                    >
+                      <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 text-sm font-medium text-rose-300 transition-colors duration-200 hover:border-rose-700 hover:bg-rose-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                      onClick={() => remove(category)}
+                    >
+                      <Icon d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {!loading && categories.length === 0 && !error ? <p className="px-4 py-8 text-sm text-slate-500">No categories yet.</p> : null}
+        {!loading && categories.length === 0 && !error ? <p className="px-4 py-8 text-sm text-slate-400">No categories yet.</p> : null}
       </section>
     </div>
   );
@@ -382,11 +416,14 @@ export function AdminBanners() {
   return (
     <div className="space-y-5">
     <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold">{editing ? "Edit banner" : "Add banner"}</h2>
-        <label className="block text-xs text-slate-500">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-4 shadow-sm">
+        <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
+          <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit banner" : "Add banner"}</h2>
+        </div>
+        <label className="block text-xs text-slate-300">
           Type
-          <select className={`${fieldClass} mt-1`} value={kind} onChange={(event) => setKind(event.target.value as (typeof KINDS)[number]["id"])}>
+          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={kind} onChange={(event) => setKind(event.target.value as (typeof KINDS)[number]["id"])}>
             {KINDS.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
@@ -395,28 +432,28 @@ export function AdminBanners() {
           </select>
         </label>
         {kind === "CAMPAIGN" ? (
-          <p className="text-xs leading-relaxed text-slate-500">
+          <p className="rounded-xl border border-slate-700 bg-[#171c24] p-3 text-xs leading-relaxed text-slate-400">
             Active offer banners are placed by Sort order: the first three appear beside the top slider. Additional offers fill the campaign tiles above New Collection.
           </p>
         ) : null}
         {kind === "TRENDING" ? (
-          <div className="space-y-2 rounded-xl bg-slate-50 p-3">
-            <p className="text-xs leading-relaxed text-slate-500">Choose up to 24 active products with available stock. They will appear in Trending Now in the order selected.</p>
+          <div className="space-y-2 rounded-xl border border-slate-700 bg-[#171c24] p-3">
+            <p className="text-xs leading-relaxed text-slate-400">Choose up to 24 active products with available stock. They will appear in Trending Now in the order selected.</p>
             <input
-              className={fieldClass}
+              className={`${fieldClass} border-slate-600 bg-[#202630] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`}
               placeholder="Search products"
               value={productSearch}
               onChange={(event) => setProductSearch(event.target.value)}
             />
             {selectedProducts.length > 0 ? (
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-600">Selected ({selectedProducts.length}/24)</p>
+                <p className="text-xs font-semibold text-slate-200">Selected ({selectedProducts.length}/24)</p>
                 {selectedProducts.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between gap-2 text-xs">
+                  <div key={product.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs text-slate-200 hover:bg-slate-800">
                     <span className="truncate">{product.name}</span>
                     <button
                       type="button"
-                      className="shrink-0 text-rose-700"
+                      className="shrink-0 rounded-md px-2 py-1 text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-200"
                       onClick={() => setSelectedProducts((selected) => selected.filter((item) => item.id !== product.id))}
                     >
                       Remove
@@ -429,8 +466,9 @@ export function AdminBanners() {
               {productOptions.map((product) => {
                 const selected = selectedProducts.some((item) => item.id === product.id);
                 return (
-                  <label key={product.id} className="flex cursor-pointer items-center gap-2 text-xs">
+                  <label key={product.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-800">
                     <input
+                      className="accent-[#d39aac]"
                       type="checkbox"
                       checked={selected}
                       disabled={!selected && selectedProducts.length >= 24}
@@ -446,25 +484,25 @@ export function AdminBanners() {
                   </label>
                 );
               })}
-              {productOptions.length === 0 ? <p className="text-xs text-slate-500">No available products found.</p> : null}
+              {productOptions.length === 0 ? <p className="px-2 py-1 text-xs text-slate-400">No available products found.</p> : null}
             </div>
           </div>
         ) : null}
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Title
-          <input className={`${fieldClass} mt-1`} required minLength={2} value={title} onChange={(event) => setTitle(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required minLength={2} value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Subtitle
-          <input className={`${fieldClass} mt-1`} value={subtitle} onChange={(event) => setSubtitle(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={subtitle} onChange={(event) => setSubtitle(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Link
-          <input className={`${fieldClass} mt-1`} placeholder="/shop" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} placeholder="/shop" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} />
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Category
-          <select className={`${fieldClass} mt-1`} value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
             <option value="">None</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -473,45 +511,56 @@ export function AdminBanners() {
             ))}
           </select>
         </label>
-        <label className="block text-xs text-slate-500">
+        <label className="block text-xs text-slate-300">
           Sort
-          <input className={`${fieldClass} mt-1`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
+          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
         </label>
         {kind !== "TRENDING" ? (
-          <label className="block text-xs text-slate-500">
+          <label className="block text-xs text-slate-300">
             Image or video
-            <input
-              className="mt-1 block w-full text-sm"
-              type="file"
-              accept="image/*,video/*"
-              onChange={(event) => {
-                const input = event.currentTarget;
-                const file = input.files?.[0];
-                setImage(file ?? null);
-                setError("");
-                input.value = "";
-              }}
-            />
+            <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-[#7b3f55]/50 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#241b22] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
+                <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-slate-100">{image?.name ?? (currentImage ? "Replace current media" : "Add banner")}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-slate-400">Images: AVIF, JPEG, PNG, WebP  Videos: MP4, WebM, MOV</span>
+                <span className="mt-1 block text-xs font-semibold text-[#f0c0cf]">Click to browse</span>
+              </span>
+              <input
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                type="file"
+                accept="image/*,video/*"
+                aria-label="Choose banner image or video"
+                onChange={(event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  setImage(file ?? null);
+                  setError("");
+                  input.value = "";
+                }}
+              />
+            </span>
           </label>
         ) : null}
         {currentImage ? (
           isVideoUrl(currentImage) ? (
-            <video src={currentImage} controls className="h-20 w-full rounded-lg object-cover" />
+            <video src={currentImage} controls className="h-28 w-full rounded-xl border border-slate-700 bg-[#171c24] object-contain" />
           ) : (
-            <img src={currentImage} alt="" className="h-20 w-full rounded-lg object-cover" />
+            <img src={currentImage} alt="" className="h-28 w-full rounded-xl border border-slate-700 bg-[#171c24] object-contain" />
           )
         ) : null}
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+        <label className="flex items-center gap-2 text-sm text-slate-200">
+          <input className="accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
           Active
         </label>
-        {error ? <p className="text-sm text-rose-700">{error}</p> : null}
+        {error ? <p className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
             {busy ? "Saving…" : editing ? "Update" : "Add"}
           </button>
           {editing ? (
-            <button type="button" className="rounded-xl border border-slate-200 px-4 py-2 text-sm" onClick={reset}>
+            <button type="button" className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 transition-colors duration-200 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={reset}>
               Cancel
             </button>
           ) : null}
@@ -520,7 +569,7 @@ export function AdminBanners() {
       <div className="space-y-4">
         {loading ? <RowsSkeleton rows={5} columns={2} /> : null}
         {!loading && blocks.length === 0 && !error ? (
-          <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-sm text-slate-500">
+          <p className="rounded-2xl border border-slate-700 bg-[#202630] px-4 py-8 text-sm text-slate-400">
             No banners yet. Add a slider banner to show it on the home page.
           </p>
         ) : null}
@@ -533,45 +582,47 @@ export function AdminBanners() {
           return (
             <Fragment key={item.id}>
               {group.length > 0 ? (
-                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <header className="border-b border-slate-100 bg-slate-50 px-4 py-3">
-                    <h2 className="text-sm font-semibold text-slate-800">{item.label}</h2>
+                <section className="overflow-hidden rounded-2xl border border-slate-700 bg-[#202630] shadow-sm">
+                  <header className="border-b border-slate-700 border-l-2 border-l-[#7b3f55] bg-[#171c24] px-4 py-3">
+                    <h2 className="text-sm font-semibold text-slate-100">{item.label}</h2>
                   </header>
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-700">
                     {group.map((block) => (
-                      <article key={block.id} className="flex flex-wrap items-center gap-3 p-4">
+                      <article key={block.id} className="flex flex-wrap items-center gap-3 p-4 transition-colors duration-200 hover:bg-slate-700/20">
                         {block.imageUrl ? (
                           isVideoUrl(block.imageUrl) ? (
-                            <video src={block.imageUrl} muted className="h-16 w-24 shrink-0 rounded-lg bg-slate-100 object-contain" />
+                            <video src={block.imageUrl} muted className="h-16 w-24 shrink-0 rounded-lg border border-slate-700 bg-[#171c24] object-contain" />
                           ) : (
-                            <img src={block.imageUrl} alt="" className="h-16 w-24 shrink-0 rounded-lg bg-slate-100 object-contain" />
+                            <img src={block.imageUrl} alt="" className="h-16 w-24 shrink-0 rounded-lg border border-slate-700 bg-[#171c24] object-contain" />
                           )
                         ) : block.kind === "TRENDING" && block.products?.[0] && coverImage(block.products[0]) ? (
                           <img
                             src={coverImage(block.products[0]) ?? ""}
                             alt={block.products[0].name}
-                            className="h-16 w-24 shrink-0 rounded-lg bg-slate-100 object-contain"
+                            className="h-16 w-24 shrink-0 rounded-lg border border-slate-700 bg-[#171c24] object-contain"
                           />
                         ) : (
-                          <span className="grid h-16 w-24 shrink-0 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">
+                          <span className="grid h-16 w-24 shrink-0 place-items-center rounded-lg border border-slate-700 bg-[#171c24] text-xs text-slate-400">
                             {block.productIds.length} products
                           </span>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-800">{block.title}</p>
-                          <p className="mt-1 text-xs font-medium text-[#147a65]">
+                          <p className="truncate text-sm font-medium text-slate-100">{block.title}</p>
+                          <p className="mt-1 text-xs font-medium text-[#f0c0cf]">
                             {placementFor(block, group)}
                           </p>
-                          <p className="mt-1 text-xs text-slate-500">
+                          <p className="mt-1 text-xs text-slate-400">
                             Sort order: {block.sortOrder} · {block.isActive ? "Active" : "Hidden"}
                             {block.kind === "TRENDING" ? ` · ${block.productIds.length} selected` : ""}
                           </p>
                         </div>
-                        <div className="ml-auto flex shrink-0 gap-3 text-sm">
-                          <button type="button" className="font-medium text-[#163a8a]" onClick={() => startEdit(block)}>
+                        <div className="ml-auto flex shrink-0 gap-2 text-sm">
+                          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={() => startEdit(block)}>
+                            <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
                             Edit
                           </button>
-                          <button type="button" className="text-rose-700" onClick={() => remove(block)}>
+                          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 text-sm font-medium text-rose-300 transition-colors duration-200 hover:border-rose-700 hover:bg-rose-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={() => remove(block)}>
+                            <Icon d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
                             Delete
                           </button>
                         </div>
@@ -581,30 +632,40 @@ export function AdminBanners() {
                 </section>
               ) : null}
               {item.id === "CAMPAIGN" ? (
-                <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <header className="mb-4">
-                    <h2 className="text-sm font-semibold">Category collage images</h2>
-                    <p className="mt-1 text-xs text-slate-500">Upload separate images for Man, Woman, Child, and Accessories. These slots are independent of slider and offer banners.</p>
+                <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-slate-600 bg-[#202630] p-4 shadow-sm">
+                  <header className="mb-4 flex items-center gap-3 border-b border-slate-700 pb-3">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">02</span>
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-100">Category collage images</h2>
+                      <p className="mt-1 text-xs text-slate-400">Upload separate images for Man, Woman, Child, and Accessories.</p>
+                    </div>
                   </header>
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {COLLAGE_SLOTS.map(({ id, label, setting }) => (
-                      <div key={id} className="space-y-2 rounded-xl border border-slate-100 p-3">
-                        <p className="text-sm font-medium text-slate-700">{label}</p>
+                      <div key={id} className="space-y-2 rounded-xl border border-slate-700 bg-[#171c24] p-3">
+                        <p className="text-sm font-medium text-slate-100">{label}</p>
                         {settings[setting] ? (
-                          <img src={settings[setting] ?? ""} alt={`${label} collage`} className="h-28 w-full rounded-lg bg-slate-100 object-cover" />
+                          <img src={settings[setting] ?? ""} alt={`${label} collage`} className="h-28 w-full rounded-lg border border-slate-700 bg-[#10151c] object-cover" />
                         ) : (
-                          <div className="grid h-28 place-items-center rounded-lg bg-slate-50 text-xs text-slate-400">No image uploaded</div>
+                          <div className="grid h-28 place-items-center rounded-lg border border-dashed border-slate-700 bg-[#202630] text-xs text-slate-400">No image uploaded</div>
                         )}
-                        <input
-                          type="file"
-                          accept="image/avif,image/jpeg,image/png,image/webp"
-                          className="block w-full text-sm"
-                          onChange={(event) => setCollageFiles((files) => ({ ...files, [id]: event.target.files?.[0] ?? null }))}
-                        />
+                        <div className="space-y-1">
+                          <label className="relative flex min-h-10 items-center gap-2 rounded-lg border border-dashed border-slate-600 bg-[#202630] px-2.5 py-2 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#28232b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
+                            <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
+                            <span className="min-w-0 truncate text-xs text-slate-300">{collageFiles[id]?.name ?? "Choose an image"}</span>
+                            <input
+                              type="file"
+                              accept="image/avif,image/jpeg,image/png,image/webp"
+                              aria-label={`Choose ${label} collage image`}
+                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                              onChange={(event) => setCollageFiles((files) => ({ ...files, [id]: event.target.files?.[0] ?? null }))}
+                            />
+                          </label>
+                        </div>
                         <button
                           type="button"
                           disabled={!collageFiles[id] || collageUploading !== null}
-                          className="rounded-xl bg-[#2ec9a8] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                          className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171c24] disabled:opacity-50"
                           onClick={() => {
                             const file = collageFiles[id];
                             if (!file) return;
@@ -626,8 +687,8 @@ export function AdminBanners() {
                       </div>
                     ))}
                   </div>
-                  {collageError ? <p className="mt-3 text-sm text-rose-700">{collageError}</p> : null}
-                  {collageNote ? <p className="mt-3 text-sm text-emerald-700">{collageNote}</p> : null}
+                  {collageError ? <p className="mt-3 rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{collageError}</p> : null}
+                  {collageNote ? <p className="mt-3 rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{collageNote}</p> : null}
                 </section>
               ) : null}
             </Fragment>

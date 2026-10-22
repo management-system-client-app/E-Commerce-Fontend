@@ -873,15 +873,15 @@ export function AdminProducts() {
           <h1 className="text-lg font-semibold tracking-tight">Catalog</h1>
           <p className="mt-1 text-sm text-slate-500">{search ? `Results for “${search}”` : meta ? `${meta.total} products` : loading ? <SkeletonBlock className="h-4 w-24" /> : ""}</p>
         </div>
-        <Link to="/admin/products/new" className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white">
+        <Link to="/admin/products/new" className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition duration-200 delay-75 ease-out hover:bg-[#663247] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b3f55] focus-visible:ring-offset-2">
           Add product
         </Link>
       </div>
       {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs tracking-wide text-slate-500 uppercase">
+            <thead className="bg-[#171c24] text-xs tracking-wide text-slate-400 uppercase">
               <tr>
                 <th className="px-5 py-3 font-medium">Product</th>
                 <th className="px-5 py-3 font-medium">Category</th>
@@ -897,23 +897,28 @@ export function AdminProducts() {
               ) : items.map((product) => {
                 const stock = (product.variants ?? []).reduce((sum, variant) => sum + variant.stock, 0);
                 return (
-                  <tr key={product.id} className="border-t border-slate-100">
+                  <tr key={product.id} className="border-t border-slate-700 transition-colors duration-200 ease-out hover:bg-slate-700/30">
                     <td className="px-5 py-3.5">
-                      <Link to={`/product/${product.id}`} className="font-medium text-[#163a8a]">{product.name}</Link>
-                      <p className="text-xs text-slate-500">{product.brand?.name ?? ""}</p>
+                      <Link to={`/product/${product.id}`} className="font-medium text-white transition-colors duration-200 ease-out hover:text-[#e7b5c4]">{product.name}</Link>
+                      <p className="text-xs text-slate-400">{product.brand?.name ?? ""}</p>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-600">{product.category?.name ?? "—"}</td>
-                    <td className="px-5 py-3.5 font-medium">{money(product.basePrice)}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{stock}</td>
+                    <td className="px-5 py-3.5 text-slate-300">{product.category?.name ?? "—"}</td>
+                    <td className="px-5 py-3.5 font-medium text-slate-100">{money(product.basePrice)}</td>
+                    <td className="px-5 py-3.5 text-slate-300">{stock}</td>
                     <td className="px-5 py-3.5">{product.status ? <StatusBadge status={product.status} /> : "—"}</td>
                     <td className="px-5 py-3.5">
-                      <Link to={`/admin/products/${product.id}/edit`} className="text-sm font-medium text-[#163a8a]">
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        className="ml-3 text-sm text-rose-700"
-                        onClick={() => {
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          to={`/admin/products/${product.id}/edit`}
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                        >
+                          <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 text-sm font-medium text-rose-300 transition-colors duration-200 hover:border-rose-700 hover:bg-rose-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                          onClick={() => {
                           if (!window.confirm(`Delete ${product.name}?`)) return;
                           api.deleteProduct(product.id).then((result) => {
                             if (result.archived) {
@@ -925,9 +930,11 @@ export function AdminProducts() {
                             setError("");
                           }).catch((reason) => setError(reason instanceof ApiError ? reason.message : "Could not delete the product"));
                         }}
-                      >
-                        Delete
-                      </button>
+                          >
+                            <Icon d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
+                            Delete
+                          </button>
+                      </div>
                     </td>
                   </tr>
                 );
