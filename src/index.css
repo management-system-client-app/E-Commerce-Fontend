@@ -2147,6 +2147,25 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 .admin-theme-panel { background: #fffdfa; }
 .admin-theme-sidebar { background: #f8f3eb; }
 .admin-theme-toggle { background: #fff; color: #475569; }
+.admin-theme-topbar { border-bottom: 1px solid #30363e; background: linear-gradient(110deg, #1b2027 0%, #222831 52%, #1c2128 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025); color: #f5f6f7; }
+.admin-topbar-heading { position: relative; padding-left: 12px; }
+.admin-topbar-heading::before { position: absolute; top: 3px; bottom: 3px; left: 0; width: 2px; border-radius: 2px; background: linear-gradient(180deg, #e0a367, #b66f57); content: ""; }
+.admin-topbar-divider { background: #3a414b; }
+.admin-topbar-icon-button { background: #272d35; color: #c5cbd2; transition: background-color 160ms ease, color 160ms ease; }
+.admin-topbar-icon-button:hover { background: #343b45; color: #fff; }
+.admin-topbar-user, .admin-topbar-date { background: #272d35; color: #d2d7dd; }
+.admin-topbar-user { border: 1px solid #303740; }
+.admin-topbar-date { color: #aeb7c1; }
+.admin-sidebar-brand { border-bottom: 1px solid rgba(120, 101, 82, 0.14); }
+.admin-sidebar-mark { background: linear-gradient(145deg, #914e68, #6d354b); box-shadow: 0 5px 12px rgba(123, 63, 85, 0.2); }
+.admin-sidebar-section { color: #9a8b7b; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; line-height: 1rem; text-transform: uppercase; }
+.admin-sidebar-link { display: flex; align-items: center; gap: 0.65rem; min-height: 40px; margin: 1px 0; border-radius: 11px; padding: 4px 10px; color: #66707b; font-size: 13px; font-weight: 550; transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.admin-sidebar-link:hover { background: rgba(255, 255, 255, 0.72); color: #37302d; transform: translateX(2px); }
+.admin-sidebar-link-active, .admin-sidebar-link-active:hover { background: #7b3f55; color: #fff; box-shadow: 0 5px 12px rgba(123, 63, 85, 0.16); transform: none; }
+.admin-sidebar-icon { background: rgba(255, 255, 255, 0.58); color: #8b6873; transition: background-color 160ms ease, color 160ms ease; }
+.admin-sidebar-link-active .admin-sidebar-icon { background: rgba(255, 255, 255, 0.13); color: #fff; }
+.admin-sidebar-store-link { color: #66707b; transition: background-color 160ms ease, color 160ms ease; }
+.admin-sidebar-store-link:hover { background: rgba(255, 255, 255, 0.72); color: #37302d; }
 .admin-theme-dark {
   color-scheme: dark;
   background: #10151b;
@@ -2155,6 +2174,20 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 .admin-theme-dark .admin-theme-panel { background: #1b2027; }
 .admin-theme-dark .admin-theme-sidebar { background: #151a21; }
 .admin-theme-dark .admin-theme-toggle { background: #252b33; color: #f1f5f9; }
+.admin-theme-dark .admin-theme-topbar { border-bottom-color: #303741; background: #1c2128; }
+.admin-theme-dark .admin-topbar-divider { background: #3a414b; }
+.admin-theme-dark .admin-topbar-icon-button { background: #272d35; color: #c5cbd2; }
+.admin-theme-dark .admin-topbar-icon-button:hover { background: #343b45; color: #fff; }
+.admin-theme-dark .admin-topbar-user, .admin-theme-dark .admin-topbar-date { background: #272d35; color: #d2d7dd; }
+.admin-theme-dark .admin-sidebar-brand { border-bottom-color: #303741; }
+.admin-theme-dark .admin-sidebar-section { color: #74808e; }
+.admin-theme-dark .admin-sidebar-link { color: #aab4c0; }
+.admin-theme-dark .admin-sidebar-link:hover { background: #242a33; color: #f1f5f9; }
+.admin-theme-dark .admin-sidebar-link-active, .admin-theme-dark .admin-sidebar-link-active:hover { background: #7b3f55; color: #fff; }
+.admin-theme-dark .admin-sidebar-icon { background: #20262e; color: #c18ca0; }
+.admin-theme-dark .admin-sidebar-link-active .admin-sidebar-icon { background: rgba(255, 255, 255, 0.13); color: #fff; }
+.admin-theme-dark .admin-sidebar-store-link { color: #aab4c0; }
+.admin-theme-dark .admin-sidebar-store-link:hover { background: #242a33; color: #f1f5f9; }
 .admin-theme-dark .bg-white { background-color: #242a33 !important; }
 .admin-theme-dark .bg-slate-50 { background-color: #20262e !important; }
 .admin-theme-dark .bg-slate-100 { background-color: #2b323b !important; }
