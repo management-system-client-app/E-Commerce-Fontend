@@ -9,7 +9,7 @@ type SizeRow = { sizeId: string; fabricId: string; colorId: string; stock: strin
 const MAX_PRODUCT_IMAGES = 6;
 
 const fieldClass =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition-all duration-200 ease-out focus:border-[#7b3f55] focus:ring-3 focus:ring-[#7b3f55]/30";
+  "h-11 w-full rounded-xl border border-slate-600 bg-[#171c24] px-3 text-sm text-white outline-none transition-all duration-200 ease-out placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20";
 
 function messageOf(reason: unknown, fallback: string) {
   if (!(reason instanceof ApiError)) return fallback;
@@ -40,16 +40,16 @@ function ColorImagePicker({
         const selected = selectedIds.includes(color.id);
         const image = previews[color.id] ?? existingImages.find((photo) => photo.colorId === color.id)?.url;
         return (
-          <div key={color.id} className={`flex h-16 w-40 shrink-0 items-center gap-2.5 rounded-xl border px-3 transition-colors duration-200 ease-out ${selected ? "border-[#7b3f55] bg-[#2a2026] hover:bg-[#36222c]" : "border-slate-700 bg-[#171c24] hover:border-slate-500 hover:bg-[#1d232d]"}`}>
+          <div key={color.id} className={`flex h-16 w-40 shrink-0 items-center gap-2.5 rounded-xl border px-3 transition-colors duration-200 ease-out ${selected ? "border-amber-600 bg-amber-950/25 hover:bg-amber-950/40" : "border-slate-700 bg-[#171c24] hover:border-slate-500 hover:bg-[#1d232d]"}`}>
             <label className="group relative block h-10 w-10 shrink-0 cursor-pointer" title={`Upload ${color.name} photo`}>
-              <span className={`relative block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-[#171c24] transition-all duration-200 ${selected ? "border-[#f0c0cf] ring-2 ring-[#7b3f55]/50 group-hover:ring-[#7b3f55]/75" : "border-slate-600 hover:border-[#d39aac] hover:ring-2 hover:ring-slate-600/60"}`}>
+              <span className={`relative block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 bg-[#171c24] transition-all duration-200 ${selected ? "border-amber-300 ring-2 ring-amber-500/40 group-hover:ring-amber-400/60" : "border-slate-600 hover:border-amber-400 hover:ring-2 hover:ring-slate-600/60"}`}>
                 {image ? (
                   <img src={image} alt={`${color.name} color`} className="absolute inset-0 block h-full w-full object-cover" />
                 ) : (
                   <span className="absolute inset-0 block h-full w-full" style={{ backgroundColor: color.hexCode }} />
                 )}
               </span>
-              <span aria-hidden="true" className="absolute right-0 bottom-0 grid h-5 w-5 place-items-center rounded-full border-2 border-[#202630] bg-[#f0c0cf] text-sm font-bold leading-none text-[#542536] shadow-md transition-colors duration-200 group-hover:bg-[#7b3f55] group-hover:text-white">+</span>
+              <span aria-hidden="true" className="absolute right-0 bottom-0 grid h-5 w-5 place-items-center rounded-full border-2 border-[#202630] bg-amber-300 text-sm font-bold leading-none text-amber-950 shadow-md transition-colors duration-200 group-hover:bg-amber-500 group-hover:text-white">+</span>
               <input
                 className="sr-only"
                 type="file"
@@ -288,25 +288,38 @@ export function AdminProductForm() {
 
   return (
     <form onSubmit={onSubmit} className="mx-auto w-full space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">{editing ? "Edit product" : "Add product"}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {editing ? "Update the product details." : "Active products show on the shop."}
-          </p>
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 border-l-2 border-l-emerald-500 bg-[#171c24] p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl border border-emerald-800/60 bg-emerald-950/30 text-emerald-200">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">Product studio</p>
+            <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">{editing ? "Edit product" : "Add product"}</h1>
+            <p className="mt-0.5 text-xs text-slate-400">{editing ? `Updating ${name || "this listing"} · manage its details and imagery.` : "Build a product listing with pricing, variants and imagery."}</p>
+          </div>
         </div>
-        <Link to="/admin/products" className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition duration-200 delay-75 ease-out hover:bg-[#663247] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7b3f55] focus-visible:ring-offset-2">
-          Back
-        </Link>
-      </div>
-      {error ? <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
-      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {editing ? (
+            <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${status === "ACTIVE" ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200" : status === "DRAFT" ? "border-amber-800/60 bg-amber-950/25 text-amber-200" : "border-slate-600 bg-[#202630] text-slate-300"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${status === "ACTIVE" ? "bg-emerald-300" : status === "DRAFT" ? "bg-amber-300" : "bg-slate-400"}`} />
+              {status}
+            </span>
+          ) : null}
+          <Link to="/admin/products" className="group inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-[#202630] px-3.5 py-2.5 text-sm font-medium text-slate-200 transition-colors duration-200 hover:border-emerald-700 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+            <span className="transition-transform duration-200 group-hover:-translate-x-0.5"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M10 6 4 12l6 6M4 12h16" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+            Back
+          </Link>
+        </div>
+      </header>
+      {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-emerald-600 bg-[#202630] shadow-sm">
         <div className="border-b border-slate-700 px-5 py-4">
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-700 text-xs font-bold text-white">01</span>
             <h2 className="text-sm font-semibold text-slate-100">Product details</h2>
           </div>
-          <p className="mt-1.5 pl-10 text-xs text-slate-400">Add the core information customers need to find this product.</p>
+          <p className="mt-1.5 pl-10 text-xs text-slate-400">{editing ? "Keep the product details and listing information up to date." : "Add the core information customers need to find this product."}</p>
         </div>
         <div className="grid gap-4 p-5 sm:grid-cols-2 [&>label>span]:text-slate-400">
         <label className="grid gap-1.5 text-sm sm:col-span-2">
@@ -373,11 +386,11 @@ export function AdminProductForm() {
       </section>
 
       {editing ? null : (
-        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-slate-600 bg-[#202630] shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] shadow-sm">
           <div className="border-b border-slate-700 px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-sm font-bold text-white">02</span>
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-700 text-sm font-bold text-white">02</span>
                 <h2 className="text-sm font-semibold text-slate-100">Variants & inventory</h2>
               </div>
               <p className="mt-1.5 pl-10 text-xs text-slate-400">Choose sizes and colors, then set stock for each combination.</p>
@@ -386,7 +399,7 @@ export function AdminProductForm() {
           <div className="space-y-5 p-5">
           <div className="space-y-4 border-b border-slate-700 pb-5">
             <div className="flex items-start gap-3">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#7b3f55] text-xs font-bold text-white">A</span>
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-700 text-xs font-bold text-white">A</span>
               <div>
                 <h3 className="text-sm font-semibold text-slate-100">Build combinations</h3>
                 <p className="mt-0.5 text-xs text-slate-400">Every selected size is paired with each selected color.</p>
@@ -402,7 +415,7 @@ export function AdminProductForm() {
                       key={size.id}
                       type="button"
                       aria-pressed={selected}
-                      className={`min-w-12 rounded-xl border px-3.5 py-2.5 text-xs transition-colors duration-200 ease-out active:transform-none active:filter-none ${selected ? "border-[#d39aac] bg-[#7b3f55] font-semibold text-white hover:bg-[#673247]" : "border-slate-600 text-slate-300 hover:border-[#b98b9b] hover:bg-slate-700/60 hover:text-white"}`}
+                      className={`min-w-12 rounded-xl border px-3.5 py-2.5 text-xs transition-colors duration-200 ease-out active:transform-none active:filter-none ${selected ? "border-amber-300 bg-amber-700 font-semibold text-white hover:bg-amber-600" : "border-slate-600 text-slate-300 hover:border-amber-600 hover:bg-slate-700/60 hover:text-white"}`}
                       onClick={() => toggleSelection(selectedSizeIds, size.id, setSelectedSizeIds)}
                     >
                       {size.name}
@@ -433,10 +446,11 @@ export function AdminProductForm() {
               </select>
               <button
                 type="button"
-                className="h-11 rounded-xl bg-[#7b3f55] px-5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#673247] hover:shadow-md"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-700 px-5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-amber-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                 onClick={addSelectedCombinations}
               >
-                + Add combinations
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10" strokeLinecap="round" /></svg>
+                Add combinations
               </button>
             </div>
             <p className="text-[11px] text-slate-400">Stock is entered separately for each generated variant below.</p>
@@ -500,13 +514,13 @@ export function AdminProductForm() {
       )}
 
       {editing && photoColors.length > 0 ? (
-        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">02</span>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-700 text-xs font-bold text-white">02</span>
               <div>
                 <h2 className="text-sm font-semibold text-slate-100">Color photos</h2>
-                <p className="mt-1 text-xs text-slate-400">Upload a photo for each product color.</p>
+                <p className="mt-1 text-xs text-slate-400">Add or replace photos assigned to each color on this product.</p>
               </div>
             </div>
             <span className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200">{photoColors.length} colors</span>
@@ -524,14 +538,14 @@ export function AdminProductForm() {
         </section>
       ) : null}
 
-      <section className="space-y-4 rounded-2xl border border-slate-700 bg-[#202630] p-5 shadow-sm">
+      <section className="space-y-4 overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">03</span>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-700 text-xs font-bold text-white">03</span>
               <h2 className="text-sm font-semibold text-slate-100">Product photos</h2>
             </div>
-            <p className="mt-2 text-xs text-slate-400">Add up to {MAX_PRODUCT_IMAGES} images. Photos added here apply to all colors.</p>
+            <p className="mt-2 text-xs text-slate-400">{editing ? "Manage the saved gallery and add new product photos." : `Add up to ${MAX_PRODUCT_IMAGES} images. Photos added here apply to all colors.`}</p>
             <p className="mt-1 text-xs text-slate-400">Use the color circles above to add photos for a specific color.</p>
           </div>
           <span className="rounded-full bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-100">
@@ -547,7 +561,7 @@ export function AdminProductForm() {
           className="h-1.5 overflow-hidden rounded-full bg-slate-700"
         >
           <span
-            className="block h-full rounded-full bg-[#7b3f55]"
+            className="block h-full rounded-full bg-cyan-500"
             style={{ width: `${((existingImages.length + images.length) / MAX_PRODUCT_IMAGES) * 100}%` }}
           />
         </div>
@@ -563,11 +577,21 @@ export function AdminProductForm() {
             ))}
           </div>
         ) : null}
-        <label className="grid gap-2 rounded-xl border border-dashed border-slate-600 bg-[#171c24] p-4 text-sm transition-colors duration-200 hover:bg-[#262d38]">
-          <span className="font-medium text-slate-100">{existingImages.length > 0 ? "Add more photos" : "Choose product photos"}</span>
-          <span className="text-xs text-slate-400">{MAX_PRODUCT_IMAGES - existingImages.length - images.length} more available · AVIF, JPEG, PNG or WebP</span>
+        <label className="relative grid gap-2 rounded-2xl border border-dashed border-cyan-800/60 bg-[#171c24] p-4 text-sm transition-colors duration-200 hover:border-cyan-400 hover:bg-cyan-950/10 has-[:focus-visible]:border-cyan-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-cyan-500/30">
+          <span className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cyan-700 text-white">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-slate-100">{existingImages.length > 0 ? "Add more photos" : "Choose product photos"}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-slate-400">{MAX_PRODUCT_IMAGES - existingImages.length - images.length} more available · AVIF, JPEG, PNG or WebP</span>
+              <span className="mt-1 block text-xs font-semibold text-cyan-300">Click to browse</span>
+            </span>
+          </span>
           <input
-            className="block w-full cursor-pointer text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-[#7b3f55] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white"
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             type="file"
             accept="image/avif,image/jpeg,image/png,image/webp"
             multiple
@@ -606,8 +630,9 @@ export function AdminProductForm() {
       <button
         type="submit"
         disabled={busy}
-        className="h-11 rounded-xl bg-[#2ec9a8] px-5 text-sm font-semibold text-white disabled:opacity-60"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-emerald-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:cursor-wait disabled:opacity-60"
       >
+        {!busy ? <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 8.5 6.2 12 13 4.5" strokeLinecap="round" strokeLinejoin="round" /></svg> : null}
         {busy ? "Saving…" : editing ? "Update product" : "Add product"}
       </button>
     </form>

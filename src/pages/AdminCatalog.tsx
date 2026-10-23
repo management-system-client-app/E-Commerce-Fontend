@@ -77,6 +77,7 @@ export function AdminCategories() {
   const [sortOrder, setSortOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
   const [image, setImage] = useState<File | null>(null);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -102,6 +103,7 @@ export function AdminCategories() {
     setSortOrder("0");
     setIsActive(true);
     setImage(null);
+    setCurrentImage(null);
     setFormKey((key) => key + 1);
   }
 
@@ -113,6 +115,7 @@ export function AdminCategories() {
     setSortOrder(String(category.sortOrder ?? 0));
     setIsActive(category.isActive !== false);
     setImage(null);
+    setCurrentImage(category.imageUrl ?? null);
     setError("");
   }
 
@@ -153,12 +156,36 @@ export function AdminCategories() {
     }
   }
 
+  const activeCount = categories.filter((category) => category.isActive !== false).length;
+  const hiddenCount = categories.length - activeCount;
+
   return (
-    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-4 shadow-sm">
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 border-l-2 border-l-cyan-500 bg-[#171c24] p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl border border-cyan-800/60 bg-cyan-950/30 text-cyan-200">
+            <Icon d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" />
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-300">Catalog structure</p>
+            <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Categories</h1>
+            <p className="mt-0.5 text-xs text-slate-400">Organize products into clear collections</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">{loading ? "Loading…" : `${categories.length} total`}</span>
+          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200">{activeCount} active</span>
+          <span className="rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200">{hiddenCount} hidden</span>
+        </div>
+      </header>
+      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-4 shadow-sm">
         <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
-          <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit category" : "Add category"}</h2>
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-800 text-xs font-bold text-white">01</span>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit category" : "Add category"}</h2>
+            <p className="mt-0.5 text-[11px] text-slate-400">{editing ? "Update this collection" : "Create a product collection"}</p>
+          </div>
         </div>
         <label className="block text-xs text-slate-300">
           Name
@@ -188,24 +215,39 @@ export function AdminCategories() {
         </label>
         <label className="block text-xs text-slate-300">
           Image
-          <span className="relative mt-1.5 flex min-h-[68px] items-center gap-3 rounded-xl border border-dashed border-slate-600 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#24212a] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
+          <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-[#7b3f55]/50 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#241b22] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
               <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium text-slate-100">{image?.name ?? "Choose category image"}</span>
-              <span className="mt-1 block text-xs text-slate-400">AVIF, JPEG, PNG or WebP · Click to browse</span>
+              <span className="block truncate text-sm font-semibold text-slate-100">{image?.name ?? (currentImage ? "Replace current image" : "Choose category image")}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-slate-400">AVIF, JPEG, PNG or WebP</span>
+              <span className="mt-1 block text-xs font-semibold text-[#f0c0cf]">Click to browse</span>
             </span>
-            <input className="absolute inset-0 h-full w-full cursor-pointer opacity-0" type="file" accept="image/avif,image/jpeg,image/png,image/webp" aria-label="Choose category image" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
+            <input
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              type="file"
+              accept="image/avif,image/jpeg,image/png,image/webp"
+              aria-label="Choose category image"
+              onChange={(event) => {
+                const input = event.currentTarget;
+                setImage(input.files?.[0] ?? null);
+                setError("");
+                input.value = "";
+              }}
+            />
           </span>
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-200">
-          <input className="accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+        {currentImage ? <img src={currentImage} alt="" className="h-28 w-full rounded-xl border border-slate-700 bg-[#171c24] object-cover" /> : null}
+        <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-600 bg-[#171c24] px-2.5 py-1 text-[11px] font-medium text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+          <input className="h-3.5 w-3.5 accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-slate-500"}`} />
           Active
         </label>
         {error ? <p className="text-sm text-rose-700">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
+          <button type="submit" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
+            {!busy ? <Icon d="M12 5v14m-7-7h14" /> : null}
             {busy ? "Saving…" : editing ? "Update" : "Add"}
           </button>
           {editing ? (
@@ -215,13 +257,23 @@ export function AdminCategories() {
           ) : null}
         </div>
       </form>
-      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-xl border border-cyan-800/50 bg-cyan-950/25 text-cyan-200"><Icon d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" /></span>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">Category directory</h2>
+              <p className="mt-0.5 text-xs text-slate-400">Parent relationships and visibility</p>
+            </div>
+          </div>
+          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{categories.length} entries</span>
+        </div>
         <table className="w-full text-left text-sm">
           <thead className="bg-[#171c24] text-xs tracking-wide text-slate-400 uppercase">
             <tr>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Parent</th>
-              <th className="px-4 py-3 font-medium"> </th>
+              <th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><Icon d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" />Category</span></th>
+              <th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><Icon d="M4 5h6v6H4zM14 13h6v6h-6zM10 8h4v8h-4" />Parent</span></th>
+              <th className="px-4 py-3 text-right font-medium"><span className="inline-flex items-center justify-end gap-1.5"><Icon d="M4 6h16M4 12h16M4 18h16" />Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -238,7 +290,8 @@ export function AdminCategories() {
                     )}
                     <span>
                       <span className="block font-medium text-slate-100">{category.name}</span>
-                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${category.isActive === false ? "bg-rose-500/10 text-rose-300" : "bg-emerald-500/10 text-emerald-300"}`}>
+                      <span className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${category.isActive === false ? "border-rose-500/30 bg-rose-500/10 text-rose-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${category.isActive === false ? "bg-rose-400" : "bg-emerald-400"}`} />
                         {category.isActive === false ? "Hidden" : "Active"}
                       </span>
                     </span>
@@ -269,8 +322,9 @@ export function AdminCategories() {
             ))}
           </tbody>
         </table>
-        {!loading && categories.length === 0 && !error ? <p className="px-4 py-8 text-sm text-slate-400">No categories yet.</p> : null}
+        {!loading && categories.length === 0 && !error ? <div className="px-4 py-12 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-slate-700 bg-[#171c24] text-slate-400"><Icon d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" /></span><p className="mt-3 text-sm font-medium text-slate-200">No categories yet</p><p className="mt-1 text-xs text-slate-400">Create a category to organize your products.</p></div> : null}
       </section>
+      </div>
     </div>
   );
 }
@@ -413,13 +467,36 @@ export function AdminBanners() {
     }
   }
 
+  const activeBannerCount = blocks.filter((block) => block.isActive).length;
+  const hiddenBannerCount = blocks.length - activeBannerCount;
+
   return (
     <div className="space-y-5">
-    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-4 shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 border-l-2 border-l-amber-500 bg-[#171c24] p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-xl border border-amber-800/60 bg-amber-950/30 text-amber-200">
+            <Icon d="M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" />
+          </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-300">Homepage content</p>
+            <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Banners & campaigns</h1>
+            <p className="mt-0.5 text-xs text-slate-400">Control the visual stories and product features on your storefront</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">{loading ? "Loading…" : `${blocks.length} total`}</span>
+          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200">{activeBannerCount} active</span>
+          <span className="rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200">{hiddenBannerCount} hidden</span>
+        </div>
+      </header>
+      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm">
         <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">01</span>
-          <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit banner" : "Add banner"}</h2>
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-700 text-xs font-bold text-white">01</span>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit banner" : "Add banner"}</h2>
+            <p className="mt-0.5 text-[11px] text-slate-400">{editing ? "Update this homepage feature" : "Create a homepage feature"}</p>
+          </div>
         </div>
         <label className="block text-xs text-slate-300">
           Type
@@ -550,8 +627,9 @@ export function AdminBanners() {
             <img src={currentImage} alt="" className="h-28 w-full rounded-xl border border-slate-700 bg-[#171c24] object-contain" />
           )
         ) : null}
-        <label className="flex items-center gap-2 text-sm text-slate-200">
-          <input className="accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+        <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-600 bg-[#171c24] px-2.5 py-1 text-[11px] font-medium text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+          <input className="h-3.5 w-3.5 accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-slate-500"}`} />
           Active
         </label>
         {error ? <p className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</p> : null}
@@ -567,6 +645,16 @@ export function AdminBanners() {
         </div>
       </form>
       <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-[#202630] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 place-items-center rounded-lg border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[#f0c0cf]"><Icon d="M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" /></span>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">Banner library</h2>
+              <p className="text-[11px] text-slate-400">Sorted by homepage placement</p>
+            </div>
+          </div>
+          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{blocks.length} items</span>
+        </div>
         {loading ? <RowsSkeleton rows={5} columns={2} /> : null}
         {!loading && blocks.length === 0 && !error ? (
           <p className="rounded-2xl border border-slate-700 bg-[#202630] px-4 py-8 text-sm text-slate-400">
@@ -583,8 +671,11 @@ export function AdminBanners() {
             <Fragment key={item.id}>
               {group.length > 0 ? (
                 <section className="overflow-hidden rounded-2xl border border-slate-700 bg-[#202630] shadow-sm">
-                  <header className="border-b border-slate-700 border-l-2 border-l-[#7b3f55] bg-[#171c24] px-4 py-3">
-                    <h2 className="text-sm font-semibold text-slate-100">{item.label}</h2>
+                  <header className="border-b border-slate-700 border-l-2 border-l-amber-500 bg-[#171c24] px-4 py-3">
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+                      <span className="text-amber-300"><Icon d={item.id === "BANNER" ? "M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" : item.id === "TRENDING" ? "M3 3v18h18M7 14l4-4 4 3 6-7" : item.id === "NEW_ARRIVAL" ? "M12 3v18m9-9H3m15.4-6.4-12.8 12.8m0-12.8 12.8 12.8" : "M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"} /></span>
+                      {item.label}
+                    </h2>
                   </header>
                   <div className="divide-y divide-slate-700">
                     {group.map((block) => (
@@ -611,10 +702,21 @@ export function AdminBanners() {
                           <p className="mt-1 text-xs font-medium text-[#f0c0cf]">
                             {placementFor(block, group)}
                           </p>
-                          <p className="mt-1 text-xs text-slate-400">
-                            Sort order: {block.sortOrder} · {block.isActive ? "Active" : "Hidden"}
-                            {block.kind === "TRENDING" ? ` · ${block.productIds.length} selected` : ""}
-                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#d39aac]/20 bg-[#7b3f55]/8 px-2 py-0.5 text-[10px] font-medium text-[#e9c5d1]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#d39aac]" />
+                              Sort {block.sortOrder}
+                            </span>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${block.isActive ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-200" : "border-rose-500/20 bg-rose-500/8 text-rose-200"}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${block.isActive ? "bg-emerald-400" : "bg-rose-400"}`} />
+                              {block.isActive ? "Active" : "Hidden"}
+                            </span>
+                            {block.kind === "TRENDING" ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-600 bg-[#202630] px-2 py-0.5 text-[10px] font-medium text-slate-300">
+                                {block.productIds.length} selected
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                         <div className="ml-auto flex shrink-0 gap-2 text-sm">
                           <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={() => startEdit(block)}>
@@ -632,7 +734,7 @@ export function AdminBanners() {
                 </section>
               ) : null}
               {item.id === "CAMPAIGN" ? (
-                <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-slate-600 bg-[#202630] p-4 shadow-sm">
+                <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm">
                   <header className="mb-4 flex items-center gap-3 border-b border-slate-700 pb-3">
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">02</span>
                     <div>
