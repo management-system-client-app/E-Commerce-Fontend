@@ -70,30 +70,33 @@ export function AdminCoupons() {
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 border-l-2 border-l-amber-400 bg-[#171c24] p-5 shadow-sm">
-        <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-[#f0c0cf]"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 8h16v8H4zM8 8v2m8-2v2m-8 4v2m8-2v2M4 12h16" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#d39aac]">Discount tools</p><h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Coupons</h1><p className="mt-0.5 text-xs text-slate-400">Create and manage checkout discount codes</p></div></div>
-        <div className="flex flex-wrap gap-2"><span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} total`}</span><span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200">{liveCount} live</span></div>
+        <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl border border-amber-700/60 bg-amber-950/35 text-amber-300"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 8h16v8H4zM8 8v2m8-2v2m-8 4v2m8-2v2M4 12h16" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-300">Discount tools</p><h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Coupons</h1><p className="mt-0.5 text-xs text-slate-400">Create and manage checkout discount codes</p></div></div>
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 8h16v12H4zM7 8V5h10v3M8 12h8M8 16h5" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{liveCount} live</span>
+        </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-500 bg-[#202630] p-5 shadow-sm">
-          <div className="flex items-center gap-3 border-b border-slate-700 pb-4"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-xs font-semibold text-[#f0c0cf]">01</span><div><h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit coupon" : "Create coupon"}</h2><p className="text-xs text-slate-400">Set a code and discount value</p></div></div>
-          {editing ? <div className="rounded-xl border border-[#9b6075]/40 bg-[#171c24] px-3 py-2.5"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Coupon code</p><p className="mt-0.5 font-mono text-sm font-semibold tracking-wider text-[#f0c0cf]">{editingCoupon?.code}</p></div> : <label className="block text-xs font-medium text-slate-300">Coupon code<input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] font-mono uppercase tracking-wider text-white placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required minLength={3} placeholder="e.g. WELCOME10" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>}
-          <label className="block text-xs font-medium text-slate-300">Discount type<select className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={type} onChange={(event) => setType(event.target.value)}><option value="PERCENTAGE">Percentage</option><option value="FIXED_AMOUNT">Fixed amount</option></select></label>
-          <label className="block text-xs font-medium text-slate-300">Discount value<div className="relative mt-1.5"><input className={`${field} border-slate-600 bg-[#171c24] pr-12 text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required inputMode="decimal" placeholder="10" value={value} onChange={(event) => setValue(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-[#d39aac]">{type === "PERCENTAGE" ? "%" : "৳"}</span></div></label>
-          <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Preview</span><span className="truncate text-xs font-medium text-slate-200">{editingCoupon?.code ?? (code.trim() || "COUPON")}</span><span className="rounded-md bg-[#7b3f55]/20 px-2 py-1 text-xs font-semibold text-[#f0c0cf]">{value || "0"}{type === "PERCENTAGE" ? "% off" : " off"}</span></div>
+          <div className="flex items-center gap-3 border-b border-slate-700 pb-4"><span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/60 bg-amber-950/35 text-xs font-semibold text-amber-300">01</span><div><h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit coupon" : "Create coupon"}</h2><p className="text-xs text-slate-400">Set a code and discount value</p></div></div>
+          {editing ? <div className="rounded-xl border border-amber-800/50 bg-[#171c24] px-3 py-2.5"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Coupon code</p><p className="mt-0.5 font-mono text-sm font-semibold tracking-wider text-amber-200">{editingCoupon?.code}</p></div> : <label className="block text-xs font-medium text-slate-300">Coupon code<input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm font-mono uppercase tracking-wider text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-400" required minLength={3} placeholder="e.g. WELCOME10" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>}
+          <label className="block text-xs font-medium text-slate-300">Discount type<select className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={type} onChange={(event) => setType(event.target.value)}><option value="PERCENTAGE">Percentage</option><option value="FIXED_AMOUNT">Fixed amount</option></select></label>
+          <label className="block text-xs font-medium text-slate-300">Discount value<div className="relative mt-1.5"><input className="h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 pr-12 text-sm text-white outline-none focus:border-amber-400" required inputMode="decimal" placeholder="10" value={value} onChange={(event) => setValue(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-amber-300">{type === "PERCENTAGE" ? "%" : "৳"}</span></div></label>
+          <div className="flex items-center justify-between rounded-lg border border-amber-800/40 bg-gradient-to-r from-amber-950/45 via-[#171c24] to-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300/70">Preview</span><span className="truncate text-xs font-medium text-slate-100">{editingCoupon?.code ?? (code.trim() || "COUPON")}</span><span className="rounded-md border border-amber-500/40 bg-gradient-to-br from-amber-500/30 to-amber-900/40 px-2 py-1 text-xs font-semibold text-amber-100">{value || "0"}{type === "PERCENTAGE" ? "% off" : " off"}</span></div>
           {editing ? <button type="button" className="w-full rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-700/40" onClick={() => { setEditing(null); setCode(""); setType("PERCENTAGE"); setValue("10"); }}>Cancel edit</button> : null}
-          <button disabled={busy} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : editing ? "Save changes" : "Create coupon"}</button>
+          <button disabled={busy} className="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : editing ? "Save changes" : "Create coupon"}</button>
         </form>
         <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-500 bg-[#202630] shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4"><div><h2 className="text-sm font-semibold text-slate-100">Coupon book</h2><p className="text-xs text-slate-400">Codes and discount rules</p></div><span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} codes</span></div>
+          <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4"><div><h2 className="text-sm font-semibold text-slate-100">Coupon book</h2><p className="text-xs text-slate-400">Codes and discount rules</p></div><span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 8h16v8H4zM8 8v2m8-2v2m-8 4v2m8-2v2M4 12h16" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} codes</span></div>
           {loading ? <div className="p-5"><RowsSkeleton rows={5} columns={2} /></div> : items.length === 0 ? <div className="px-5 py-12 text-center"><p className="text-sm font-medium text-slate-200">No coupons yet</p><p className="mt-1 text-xs text-slate-400">Create a coupon to offer a checkout discount.</p></div> : (
             <ul className="space-y-1 px-4 py-3">{items.map((item) => {
               const isLive = item.isActive && new Date(item.startsAt).getTime() <= now && new Date(item.endsAt).getTime() > now;
               const isExpired = new Date(item.endsAt).getTime() <= now;
-              return <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-[#9b6075]/40 hover:bg-slate-700/25">
-                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold tracking-wider text-[#f0c0cf]">{item.code}</span><span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${isLive ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200" : isExpired || !item.isActive ? "border-slate-600 bg-[#171c24] text-slate-400" : "border-amber-800/60 bg-amber-950/25 text-amber-200"}`}>{isLive ? "Live" : isExpired ? "Expired" : item.isActive ? "Scheduled" : "Inactive"}</span></div><p className="mt-1 text-xs text-slate-400">{item.type === "PERCENTAGE" ? `${item.value}% discount` : `${item.value} fixed discount`} · Ends {new Date(item.endsAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p></div>
-                <span className="rounded-lg border border-[#9b6075]/40 bg-[#7b3f55]/15 px-2.5 py-1 text-xs font-semibold text-[#f0c0cf]">{item.type === "PERCENTAGE" ? `${item.value}%` : money(item.value)}</span>
-                <div className="flex items-center gap-2"><button type="button" aria-label={`Edit ${item.code}`} title={`Edit ${item.code}`} className="grid h-9 w-9 place-items-center rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/15 text-[#f0c0cf] transition-colors hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white" onClick={async () => { try { const coupon = await api.coupon(item.id); setEditing(coupon.id); setType(coupon.type); setValue(String(coupon.value)); setError(""); } catch (reason) { setError(messageOf(reason, "Could not load coupon")); } }}><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" strokeLinecap="round" strokeLinejoin="round" /></svg></button><button type="button" aria-label={`Delete ${item.code}`} title={`Delete ${item.code}`} className="grid h-9 w-9 place-items-center rounded-lg border border-rose-400/30 bg-rose-500/10 text-rose-300 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white" onClick={async () => { if (!window.confirm(`Delete coupon ${item.code}?`)) return; try { await api.deleteCoupon(item.id); if (editing === item.id) setEditing(null); load(); } catch (reason) { setError(messageOf(reason, "Could not delete coupon")); } }}><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" strokeLinecap="round" strokeLinejoin="round" /></svg></button></div>
+              return <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-amber-700/40 hover:bg-amber-950/15">
+                <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold tracking-wider text-amber-200">{item.code}</span><span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${isLive ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200" : isExpired || !item.isActive ? "border-slate-600 bg-[#171c24] text-slate-400" : "border-amber-800/60 bg-amber-950/25 text-amber-200"}`}>{isLive ? "Live" : isExpired ? "Expired" : item.isActive ? "Scheduled" : "Inactive"}</span></div><p className="mt-1 text-xs text-slate-400">{item.type === "PERCENTAGE" ? `${item.value}% discount` : `${item.value} fixed discount`} · Ends {new Date(item.endsAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p></div>
+                <span className="rounded-lg border border-amber-800/50 bg-amber-950/30 px-2.5 py-1 text-xs font-semibold text-amber-200">{item.type === "PERCENTAGE" ? `${item.value}%` : money(item.value)}</span>
+                <div className="flex items-center gap-2"><button type="button" aria-label={`Edit ${item.code}`} title={`Edit ${item.code}`} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-600 bg-[#202630] text-slate-300 transition-colors hover:border-amber-700 hover:bg-amber-950/40 hover:text-amber-200" onClick={async () => { try { const coupon = await api.coupon(item.id); setEditing(coupon.id); setType(coupon.type); setValue(String(coupon.value)); setError(""); } catch (reason) { setError(messageOf(reason, "Could not load coupon")); } }}><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" strokeLinecap="round" strokeLinejoin="round" /></svg></button><button type="button" aria-label={`Delete ${item.code}`} title={`Delete ${item.code}`} className="grid h-9 w-9 place-items-center rounded-lg border border-rose-400/30 bg-rose-500/10 text-rose-300 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white" onClick={async () => { if (!window.confirm(`Delete coupon ${item.code}?`)) return; try { await api.deleteCoupon(item.id); if (editing === item.id) setEditing(null); load(); } catch (reason) { setError(messageOf(reason, "Could not delete coupon")); } }}><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" strokeLinecap="round" strokeLinejoin="round" /></svg></button></div>
               </li>;
             })}</ul>
           )}
@@ -148,8 +151,8 @@ export function AdminPromotions() {
           </div>
         </div>
         <div className="flex gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} total`}</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200">{activeCount} active</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{activeCount} active</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -159,16 +162,16 @@ export function AdminPromotions() {
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/50 bg-amber-950/25 text-xs font-semibold text-amber-200">01</span>
             <div><h2 className="text-sm font-semibold text-slate-100">Create promotion</h2><p className="text-xs text-slate-400">Define a discount campaign</p></div>
           </div>
-          <label className="block text-xs font-medium text-slate-300">Promotion name<input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20`} required minLength={2} placeholder="e.g. Weekend offer" value={name} onChange={(event) => setName(event.target.value)} /></label>
-          <label className="block text-xs font-medium text-slate-300">Discount type<select className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20`} value={type} onChange={(event) => setType(event.target.value)}><option value="PERCENTAGE">Percentage</option><option value="FIXED_AMOUNT">Fixed amount</option></select></label>
-          <label className="block text-xs font-medium text-slate-300">Discount value<div className="relative mt-1.5"><input className={`${field} border-slate-600 bg-[#171c24] pr-12 text-white focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20`} required inputMode="decimal" placeholder="10" value={value} onChange={(event) => setValue(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-amber-300">{type === "PERCENTAGE" ? "%" : "৳"}</span></div></label>
-          <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Preview</span><span className="truncate text-xs font-medium text-slate-200">{name.trim() || "Promotion name"}</span><span className="rounded-md bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-200">{value || "0"}{type === "PERCENTAGE" ? "% off" : " off"}</span></div>
-          <button disabled={busy} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : "Create promotion"}</button>
+          <label className="block text-xs font-medium text-slate-300">Promotion name<input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-400" required minLength={2} placeholder="e.g. Weekend offer" value={name} onChange={(event) => setName(event.target.value)} /></label>
+          <label className="block text-xs font-medium text-slate-300">Discount type<select className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={type} onChange={(event) => setType(event.target.value)}><option value="PERCENTAGE">Percentage</option><option value="FIXED_AMOUNT">Fixed amount</option></select></label>
+          <label className="block text-xs font-medium text-slate-300">Discount value<div className="relative mt-1.5"><input className="h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 pr-12 text-sm text-white outline-none focus:border-amber-400" required inputMode="decimal" placeholder="10" value={value} onChange={(event) => setValue(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-amber-300">{type === "PERCENTAGE" ? "%" : "৳"}</span></div></label>
+          <div className="flex items-center justify-between rounded-lg border border-amber-800/40 bg-gradient-to-r from-amber-950/45 via-[#171c24] to-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300/70">Preview</span><span className="truncate text-xs font-medium text-slate-100">{name.trim() || "Promotion name"}</span><span className="rounded-md border border-amber-500/40 bg-gradient-to-br from-amber-500/30 to-amber-900/40 px-2 py-1 text-xs font-semibold text-amber-100">{value || "0"}{type === "PERCENTAGE" ? "% off" : " off"}</span></div>
+          <button disabled={busy} className="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : "Create promotion"}</button>
         </form>
         <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-500/60 bg-[#202630] shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
             <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/40 bg-amber-950/25 text-amber-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Promotion board</h2><p className="text-xs text-slate-400">Campaign value and availability</p></div></div>
-            <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} campaigns</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} campaigns</span>
           </div>
           {loading ? <div className="p-5"><RowsSkeleton rows={5} columns={2} /></div> : items.length === 0 ? <div className="px-5 py-12 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-slate-700 bg-[#171c24] text-amber-200"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" /></svg></span><p className="mt-3 text-sm font-medium text-slate-200">No promotions yet</p><p className="mt-1 text-xs text-slate-400">Create a campaign to highlight a special discount.</p></div> : (
             <ul className="space-y-1 px-4 py-3">
@@ -217,7 +220,7 @@ export function AdminCatalogExtras() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-700 border-l-2 border-l-teal-500 bg-[#171c24] p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-[#f0c0cf]"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" /></svg></span>
+          <span className="grid h-11 w-11 place-items-center rounded-xl border border-teal-700/60 bg-teal-950/40 text-teal-300"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 5h7v7H4V5zm9 0h7v7h-7V5zM4 14h7v5H4v-5zm9 0h7v5h-7v-5z" /></svg></span>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-300">Catalog setup</p>
             <h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Brands & sizes</h1>
@@ -225,9 +228,9 @@ export function AdminCatalogExtras() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{brandCount} brands</span>
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{sizeCount} sizes</span>
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{fabricCount} fabrics</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><span className="grid h-6 w-6 place-items-center rounded-md bg-slate-800"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 7h16v13H4zM8 7V5h8v2M8 12h8" strokeLinecap="round" strokeLinejoin="round" /></svg></span>{brandCount} brands</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><span className="grid h-6 w-6 place-items-center rounded-md bg-slate-800"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 5h14v14H5zM9 5v14m6-14v14M5 10h14m-14 4h14" strokeLinecap="round" strokeLinejoin="round" /></svg></span>{sizeCount} sizes</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><span className="grid h-6 w-6 place-items-center rounded-md bg-slate-800"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM4 9h16M9 5v4m6-4v4M8 13h.01M12 13h.01M16 13h.01M8 16h.01M12 16h.01M16 16h.01" strokeLinecap="round" strokeLinejoin="round" /></svg></span>{fabricCount} fabrics</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200 lg:col-span-3" role="alert">{error}</p> : null}
@@ -378,7 +381,10 @@ export function AdminColors() {
               <p className="mt-0.5 text-xs text-slate-400">Build a reusable palette for product variants</p>
             </div>
           </div>
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">{loading ? "Loading colors…" : `${colors.length} saved colors`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-4a2 2 0 0 1-2-2V8a5 5 0 0 0-3-5zM7 12h.01M10 7h.01M15 7h.01" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            {loading ? "Loading colors…" : `${colors.length} saved colors`}
+          </span>
         </div>
         <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-[#252b35]" aria-label="Saved color palette preview">
           {colors.length > 0 ? colors.slice(0, 12).map((color) => <span key={color.id} className="min-w-2 flex-1" style={{ backgroundColor: color.hexCode }} title={`${color.name} ${color.hexCode}`} />) : <span className="w-full" style={{ backgroundColor: hexCode }} />}
@@ -386,7 +392,8 @@ export function AdminColors() {
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <form
-          className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-teal-600 bg-[#202630] p-5 shadow-sm"
+          className="space-y-4 rounded-2xl border border-slate-700 border-t-2 bg-[#202630] p-5 shadow-sm"
+          style={{ borderTopColor: hexCode }}
           onSubmit={async (event) => {
             event.preventDefault();
             setError("");
@@ -409,7 +416,7 @@ export function AdminColors() {
           }}
         >
           <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
-            <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-xs font-semibold text-[#f0c0cf]">01</span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl border text-xs font-semibold text-white" style={{ borderColor: hexCode, backgroundColor: hexCode }}>01</span>
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Add a color</h2>
               <p className="text-xs text-slate-400">Create a reusable product swatch</p>
@@ -418,7 +425,8 @@ export function AdminColors() {
           <label className="grid gap-1.5 text-xs font-medium text-slate-300">
             <span>Color name</span>
             <input
-              className={`${field} border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`}
+              className="h-11 w-full rounded-xl border-2 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500"
+              style={{ borderColor: hexCode }}
               required
               minLength={2}
               maxLength={120}
@@ -462,16 +470,17 @@ export function AdminColors() {
           <button
             type="submit"
             disabled={loading || saving || duplicate}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-[#914e68] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:brightness-90 hover:shadow-md focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ backgroundColor: hexCode }}
           >
             {!saving ? <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10" strokeLinecap="round" /></svg> : null}
             {saving ? "Saving…" : "Add color"}
           </button>
         </form>
-        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 bg-[#202630] shadow-sm" style={{ borderTopColor: hexCode }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[#f0c0cf]"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-4a2 2 0 0 1-2-2V8a5 5 0 0 0-3-5zM7 12h.01M10 7h.01M15 7h.01" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl border text-slate-100" style={{ borderColor: hexCode, backgroundColor: hexCode }}><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-4a2 2 0 0 1-2-2V8a5 5 0 0 0-3-5zM7 12h.01M10 7h.01M15 7h.01" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <div>
                 <h2 className="text-sm font-semibold text-slate-100">Saved colors</h2>
                 <p className="mt-0.5 text-xs text-slate-400">Your store’s reusable color palette</p>
@@ -656,8 +665,8 @@ export function AdminOutlets() {
           </div>
         </div>
         <div className="flex gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "outlet" : "outlets"}`}</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200">{loading ? "…" : `${cities.length} ${cities.length === 1 ? "city" : "cities"}`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 10h18M5 10V6l7-3 7 3v4M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "outlet" : "outlets"}`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0zM12 10h.01" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "…" : `${cities.length} ${cities.length === 1 ? "city" : "cities"}`}</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -671,21 +680,21 @@ export function AdminOutlets() {
             </div>
           </div>
           <label className="block text-xs font-medium text-slate-300">Outlet name
-            <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20`} required placeholder="e.g. Dhanmondi flagship" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-400" required placeholder="e.g. Dhanmondi flagship" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           </label>
           <label className="block text-xs font-medium text-slate-300">Street address
-            <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20`} required placeholder="House, road, area" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
+            <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-400" required placeholder="House, road, area" value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} />
           </label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block text-xs font-medium text-slate-300">City
-              <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20`} required placeholder="Dhaka" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} />
+              <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-400" required placeholder="Dhaka" value={form.city} onChange={(event) => setForm({ ...form, city: event.target.value })} />
             </label>
             <label className="block text-xs font-medium text-slate-300">Phone
-              <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20`} required type="tel" placeholder="+880 1XXX-XXXXXX" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
+              <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-400" required type="tel" placeholder="+880 1XXX-XXXXXX" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
             </label>
           </div>
           <label className="block text-xs font-medium text-slate-300">Opening hours <span className="font-normal text-slate-500">(optional)</span>
-            <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20`} placeholder="Every day, 10:00 AM – 9:00 PM" value={form.hours} onChange={(event) => setForm({ ...form, hours: event.target.value })} />
+            <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-emerald-400" placeholder="Every day, 10:00 AM – 9:00 PM" value={form.hours} onChange={(event) => setForm({ ...form, hours: event.target.value })} />
           </label>
           <div className="flex items-center gap-3 overflow-hidden rounded-xl border border-emerald-900/60 bg-gradient-to-r from-emerald-950/35 to-[#171c24] px-3 py-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-emerald-800/60 bg-emerald-950/40 text-emerald-200"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11zM12 10h.01" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
@@ -695,7 +704,7 @@ export function AdminOutlets() {
               <p className="mt-0.5 truncate text-xs text-slate-400">{[form.city.trim(), form.address.trim()].filter(Boolean).join(" · ") || "City and address will appear here"}</p>
             </div>
           </div>
-          <button disabled={saving} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{saving ? "Saving…" : "Add outlet"}</button>
+          <button disabled={saving} className="w-full rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:cursor-wait disabled:opacity-50">{saving ? "Saving…" : "Add outlet"}</button>
         </form>
         <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-emerald-600 bg-[#202630] shadow-sm">
           <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
@@ -703,7 +712,7 @@ export function AdminOutlets() {
               <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-800/60 bg-emerald-950/25 text-emerald-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 10h18M5 10V6l7-3 7 3v4M5 10v10h14V10M9 20v-6h6v6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <div><h2 className="text-sm font-semibold text-slate-100">Outlet directory</h2><p className="text-xs text-slate-400">Address, contact and opening hours</p></div>
             </div>
-            <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} total</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 10h18M5 10V6l7-3 7 3v4M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} total</span>
           </div>
           {loading ? <div className="p-5"><RowsSkeleton rows={4} columns={2} /></div> : items.length === 0 ? (
             <div className="px-5 py-12 text-center">
@@ -802,8 +811,8 @@ export function AdminPages() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "page" : "pages"}`}</span>
-          <span className="rounded-lg border border-cyan-800/60 bg-cyan-950/25 px-3 py-1.5 text-xs text-cyan-200">{populatedCount} with content</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h6" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "page" : "pages"}`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-cyan-800/60 bg-cyan-950/25 px-3 py-1.5 text-xs text-cyan-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-cyan-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{populatedCount} with content</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -817,16 +826,16 @@ export function AdminPages() {
             {editing ? <button type="button" className="rounded-lg border border-slate-600 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-700/40" onClick={clearForm}>Cancel</button> : null}
           </div>
           <label className="block text-xs font-medium text-slate-300">Page address
-            <div className="mt-1.5 flex h-11 items-center overflow-hidden rounded-xl border border-slate-600 bg-[#171c24] focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20">
+            <div className="mt-1.5 flex h-11 items-center overflow-hidden rounded-xl border-2 border-slate-600 bg-[#171c24] focus-within:border-cyan-400">
               <span className="shrink-0 border-r border-slate-700 px-3 text-xs text-slate-500">/pages/</span>
               <input className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-slate-500" required placeholder="about-us" value={slug} onChange={(event) => setSlug(event.target.value)} />
             </div>
           </label>
           <label className="block text-xs font-medium text-slate-300">Page title
-            <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20`} required placeholder="About our store" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400" required placeholder="About our store" value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
           <label className="block text-xs font-medium text-slate-300">Page content
-            <textarea className={`${field} mt-1.5 min-h-40 resize-y border-slate-600 bg-[#171c24] py-3 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20`} required placeholder="Write the page content…" value={body} onChange={(event) => setBody(event.target.value)} />
+            <textarea className="mt-1.5 min-h-40 w-full resize-y rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-cyan-400" required placeholder="Write the page content…" value={body} onChange={(event) => setBody(event.target.value)} />
           </label>
           <div className="overflow-hidden rounded-xl border border-cyan-900/60 bg-gradient-to-br from-cyan-950/30 to-[#171c24] p-3.5">
             <div className="flex items-center justify-between gap-3">
@@ -837,7 +846,7 @@ export function AdminPages() {
             <p className="mt-1 truncate font-mono text-[11px] text-cyan-200/80">/pages/{slug.trim() || "your-page"}</p>
             <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-400">{body.trim() || "Your page content preview will appear here."}</p>
           </div>
-          <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">
+          <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-wait disabled:opacity-50">
             {!saving ? <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10" strokeLinecap="round" /></svg> : null}
             {saving ? "Saving…" : editing ? "Save changes" : "Publish page"}
           </button>
@@ -848,7 +857,7 @@ export function AdminPages() {
               <span className="grid h-9 w-9 place-items-center rounded-xl border border-cyan-800/50 bg-cyan-950/25 text-cyan-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <div><h2 className="text-sm font-semibold text-slate-100">Page library</h2><p className="text-xs text-slate-400">Storefront content and page addresses</p></div>
             </div>
-            <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} total</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M6 3h9l5 5v13H6zM14 3v6h6" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} total</span>
           </div>
           {loading ? <div className="p-5"><RowsSkeleton rows={4} columns={2} /></div> : items.length === 0 ? (
             <div className="px-5 py-12 text-center">
@@ -933,8 +942,8 @@ export function AdminDelivery() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} zones`}</span>
-          <span className="rounded-lg border border-sky-800/60 bg-sky-950/25 px-3 py-1.5 text-xs text-sky-200">{activeCount} active</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} zones`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-sky-800/60 bg-sky-950/25 px-3 py-1.5 text-xs text-sky-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-sky-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{activeCount} active</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -962,16 +971,16 @@ export function AdminDelivery() {
           <span className="grid h-9 w-9 place-items-center rounded-xl border border-sky-800/60 bg-sky-950/25 text-xs font-semibold text-sky-200">01</span>
           <div><h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit delivery zone" : "Add delivery zone"}</h2><p className="text-xs text-slate-400">Define area and delivery fee</p></div>
         </div>
-        <label className="block text-xs font-medium text-slate-300">Zone name<input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20`} required placeholder="e.g. Metro express" value={name} onChange={(event) => setName(event.target.value)} /></label>
-        <label className="block text-xs font-medium text-slate-300">City <span className="font-normal text-slate-500">(blank means all cities)</span><input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20`} placeholder="City name" value={city} onChange={(event) => setCity(event.target.value)} /></label>
-        <label className="block text-xs font-medium text-slate-300">Delivery fee<div className="relative mt-1.5"><input className={`${field} border-slate-600 bg-[#171c24] pr-12 text-white focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20`} required inputMode="decimal" placeholder="60" value={fee} onChange={(event) => setFee(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-sky-300">৳</span></div></label>
-        <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Preview</span><span className="truncate text-xs font-medium text-slate-200">{name.trim() || "Zone name"} · {city.trim() || "All cities"}</span><span className="rounded-md bg-sky-500/10 px-2 py-1 text-xs font-semibold text-sky-200">৳{fee || "0"}</span></div>
-        <button disabled={busy} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : editing ? "Save changes" : "Add zone"}</button>
+        <label className="block text-xs font-medium text-slate-300">Zone name<input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-sky-400" required placeholder="e.g. Metro express" value={name} onChange={(event) => setName(event.target.value)} /></label>
+        <label className="block text-xs font-medium text-slate-300">City <span className="font-normal text-slate-500">(blank means all cities)</span><input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-sky-400" placeholder="City name" value={city} onChange={(event) => setCity(event.target.value)} /></label>
+        <label className="block text-xs font-medium text-slate-300">Delivery fee<div className="relative mt-1.5"><input className="h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 pr-12 text-sm text-white outline-none focus:border-sky-400" required inputMode="decimal" placeholder="60" value={fee} onChange={(event) => setFee(event.target.value)} /><span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-semibold text-sky-300">৳</span></div></label>
+        <div className="flex items-center justify-between rounded-lg border border-sky-800/40 bg-gradient-to-r from-sky-950/45 via-[#171c24] to-[#171c24] px-3 py-2"><span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-sky-300/70">Preview</span><span className="truncate text-xs font-medium text-slate-100">{name.trim() || "Zone name"} · {city.trim() || "All cities"}</span><span className="rounded-md border border-sky-500/40 bg-gradient-to-br from-sky-500/25 to-sky-900/40 px-2 py-1 text-xs font-semibold text-sky-100">৳{fee || "0"}</span></div>
+        <button disabled={busy} className="w-full rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:cursor-wait disabled:opacity-50">{busy ? "Saving…" : editing ? "Save changes" : "Add zone"}</button>
       </form>
       <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-sky-700 bg-[#202630] shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
           <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-sky-800/50 bg-sky-950/25 text-sky-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7zM7 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Delivery network</h2><p className="text-xs text-slate-400">Coverage areas and fee settings</p></div></div>
-          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} zones</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} zones</span>
         </div>
         {loading ? <div className="p-5"><RowsSkeleton rows={4} columns={3} /></div> : items.length === 0 ? <div className="px-5 py-12 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-slate-700 bg-[#171c24] text-sky-200"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z" /></svg></span><p className="mt-3 text-sm font-medium text-slate-200">No delivery zones yet</p><p className="mt-1 text-xs text-slate-400">Create a zone to set delivery coverage and fees.</p></div> : (
           <ul className="space-y-1 px-4 py-3">
@@ -1018,9 +1027,9 @@ export function AdminNewsletter() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} total`}</span>
-          <span className="rounded-lg border border-lime-800/60 bg-lime-950/25 px-3 py-1.5 text-xs text-lime-200">{activeCount} subscribed</span>
-          <span className="rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs text-slate-400">{items.length - activeCount} unsubscribed</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-lime-800/60 bg-lime-950/25 px-3 py-1.5 text-xs text-lime-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-lime-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{activeCount} subscribed</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs text-slate-400"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18M4 6h16v12H4z" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length - activeCount} unsubscribed</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -1033,7 +1042,7 @@ export function AdminNewsletter() {
           <label className="relative block w-full sm:w-72">
             <span className="sr-only">Search subscribers by email</span>
             <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" strokeLinecap="round" /></svg>
-            <input className={`${field} border-slate-600 bg-[#171c24] pl-9 text-white placeholder:text-slate-500 focus:border-lime-400 focus:ring-2 focus:ring-lime-500/20`} type="search" placeholder="Search email address" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <input className="h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] pr-3 pl-9 text-sm text-white outline-none placeholder:text-slate-500 focus:border-lime-400" type="search" placeholder="Search email address" value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
         </div>
         {loading ? <div className="p-5"><RowsSkeleton rows={5} columns={3} /></div> : items.length === 0 ? (
@@ -1125,7 +1134,7 @@ export function AdminSettings() {
               <span className="grid h-11 w-11 place-items-center rounded-xl border border-orange-800/60 bg-orange-950/30 text-orange-200"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.5 1a7 7 0 0 0-1.7-1L14.5 3h-5L9 6a7 7 0 0 0-1.7 1L5 6 3 9.5 5 11a7 7 0 0 0 0 2l-2 1.5L5 18l2.3-1a7 7 0 0 0 1.7 1l.5 3h5l.3-3a7 7 0 0 0 1.7-1l2.5 1 2-3.5z" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-300">Store control</p><h1 className="mt-0.5 text-lg font-semibold tracking-tight text-slate-100">Settings</h1><p className="mt-0.5 text-xs text-slate-400">Store details, customer contacts and account security</p></div>
             </div>
-            <span className="rounded-lg border border-orange-800/50 bg-orange-950/20 px-3 py-1.5 text-xs text-orange-200">{form.storeName || "Your store"}</span>
+            <span className="inline-flex items-center gap-2 rounded-lg border border-orange-800/50 bg-orange-950/20 px-3 py-1.5 text-xs text-orange-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 10h18M5 10V6l7-3 7 3v4M5 10v10h14V10M9 20v-6h6v6" strokeLinecap="round" strokeLinejoin="round" /></svg>{form.storeName || "Your store"}</span>
           </header>
           <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
             <form className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-orange-500 bg-[#202630] shadow-sm" onSubmit={async (event) => {
@@ -1151,7 +1160,7 @@ export function AdminSettings() {
                       {group.fields.map(({ key, label, type, placeholder }) => (
                         <label key={key} className={`block text-xs font-medium text-slate-300 ${key === "address" ? "sm:col-span-2" : ""}`}>
                           {label}
-                          <input type={type} required={key === "storeName"} className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20`} placeholder={placeholder} value={form[key] ?? ""} onChange={(event) => setForm({ ...form, [key]: key === "storeName" ? event.target.value : event.target.value || null })} />
+                          <input type={type} required={key === "storeName"} className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-orange-400" placeholder={placeholder} value={form[key] ?? ""} onChange={(event) => setForm({ ...form, [key]: key === "storeName" ? event.target.value : event.target.value || null })} />
                         </label>
                       ))}
                     </div>
@@ -1160,7 +1169,7 @@ export function AdminSettings() {
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-[#171c24] px-5 py-4">
                 <div aria-live="polite">{error ? <p className="text-xs text-rose-300" role="alert">{error}</p> : note ? <p className="inline-flex items-center gap-1.5 text-xs text-emerald-300"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m3 8 3 3 7-7" strokeLinecap="round" strokeLinejoin="round" /></svg>{note}</p> : <p className="text-xs text-slate-500">Changes apply to your storefront settings.</p>}</div>
-                <button type="submit" disabled={settingsSaving} className="rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{settingsSaving ? "Saving…" : "Save store settings"}</button>
+                <button type="submit" disabled={settingsSaving} className="rounded-xl bg-orange-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-wait disabled:opacity-50">{settingsSaving ? "Saving…" : "Save store settings"}</button>
               </div>
             </form>
             <aside className="space-y-5">
@@ -1214,11 +1223,11 @@ export function AdminSettings() {
                 }
               }}>
                 <div className="flex items-center gap-3 border-b border-slate-700 pb-4"><span className="grid h-9 w-9 place-items-center rounded-xl border border-rose-800/50 bg-rose-950/25 text-rose-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3m-12 0h14v11H5V10zm7 4v3" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Account security</h2><p className="text-xs text-slate-400">Change your admin password</p></div></div>
-                <label className="block text-xs font-medium text-slate-300">Current password<input type="password" autoComplete="current-password" required className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20`} value={password.currentPassword} onChange={(event) => setPassword({ ...password, currentPassword: event.target.value })} /></label>
-                <label className="block text-xs font-medium text-slate-300">New password<input type="password" autoComplete="new-password" required minLength={8} className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20`} value={password.newPassword} onChange={(event) => setPassword({ ...password, newPassword: event.target.value })} /></label>
-                <label className="block text-xs font-medium text-slate-300">Confirm new password<input type="password" autoComplete="new-password" required minLength={8} className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20`} value={password.confirmPassword} onChange={(event) => setPassword({ ...password, confirmPassword: event.target.value })} /></label>
+                <label className="block text-xs font-medium text-slate-300">Current password<input type="password" autoComplete="current-password" required className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-rose-400" value={password.currentPassword} onChange={(event) => setPassword({ ...password, currentPassword: event.target.value })} /></label>
+                <label className="block text-xs font-medium text-slate-300">New password<input type="password" autoComplete="new-password" required minLength={8} className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-rose-400" value={password.newPassword} onChange={(event) => setPassword({ ...password, newPassword: event.target.value })} /></label>
+                <label className="block text-xs font-medium text-slate-300">Confirm new password<input type="password" autoComplete="new-password" required minLength={8} className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-rose-400" value={password.confirmPassword} onChange={(event) => setPassword({ ...password, confirmPassword: event.target.value })} /></label>
                 {passwordNote && passwordNote !== "Photo saved" ? <p className={`text-xs ${passwordNote === "Password changed" ? "text-emerald-300" : "text-rose-300"}`} role="status">{passwordNote}</p> : null}
-                <button type="submit" disabled={passwordSaving} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-50">{passwordSaving ? "Updating…" : "Update password"}</button>
+                <button type="submit" disabled={passwordSaving} className="w-full rounded-xl bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:cursor-wait disabled:opacity-50">{passwordSaving ? "Updating…" : "Update password"}</button>
               </form>
             </aside>
           </div>
@@ -1266,33 +1275,33 @@ export function AdminReturns() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} total`}</span>
-          <span className="rounded-lg border border-amber-800/60 bg-amber-950/25 px-3 py-1.5 text-xs text-amber-200">{requestedCount} requested</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200">{approvedCount} approved</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-amber-800/60 bg-amber-950/25 px-3 py-1.5 text-xs text-amber-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-amber-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 7v5l3 2m5-2a8 8 0 1 1-2.34-5.66" strokeLinecap="round" strokeLinejoin="round" /></svg>{requestedCount} requested</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>{approvedCount} approved</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <label className="block rounded-2xl border border-slate-700 border-t-2 border-t-orange-600 bg-[#202630] p-4 text-xs font-medium text-slate-300 shadow-sm">
         Admin note for the next decision <span className="font-normal text-slate-500">(optional)</span>
-        <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} placeholder="Add context for the customer" value={note} onChange={(event) => setNote(event.target.value)} />
+        <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-orange-400" placeholder="Add context for the customer" value={note} onChange={(event) => setNote(event.target.value)} />
       </label>
       <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-orange-600 bg-[#202630] shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
-          <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[#f0c0cf]"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Return queue</h2><p className="text-xs text-slate-400">Requests, reasons and item details</p></div></div>
-          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} requests</span>
+        <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-orange-800/50 bg-orange-950/30 text-orange-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Return queue</h2><p className="text-xs text-slate-400">Requests, reasons and item details</p></div></div>
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h8" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} requests</span>
         </div>
         {loading ? <div className="p-5"><RowsSkeleton rows={4} columns={2} /></div> : items.length === 0 ? (
           <div className="px-5 py-12 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-slate-700 bg-[#171c24] text-slate-400"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 12h13m-5-5 5 5-5 5M20 5v14" strokeLinecap="round" strokeLinejoin="round" /></svg></span><p className="mt-3 text-sm font-medium text-slate-200">No return requests</p><p className="mt-1 text-xs text-slate-400">New customer requests will appear here.</p></div>
         ) : (
           <ul className="space-y-1 px-4 py-3">
             {items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-slate-600 hover:bg-[#171c24]">
+              <li key={item.id} className="rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-orange-800/40 hover:bg-orange-950/15">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-700 bg-[#202630] text-[#d39aac]"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h8m-8 4h5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-orange-800/50 bg-orange-950/25 text-orange-300"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h8m-8 4h5" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-mono text-sm font-semibold text-[#f0c0cf]">{item.order?.orderNumber ?? item.returnNumber ?? "Return request"}</p>
+                        <p className="font-mono text-sm font-semibold text-orange-200">{item.order?.orderNumber ?? item.returnNumber ?? "Return request"}</p>
                         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${item.status === "REQUESTED" ? "border-amber-800/60 bg-amber-950/25 text-amber-200" : item.status === "APPROVED" ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200" : item.status === "REJECTED" ? "border-rose-800/60 bg-rose-950/25 text-rose-200" : "border-slate-600 bg-[#202630] text-slate-300"}`}><span className={`h-1.5 w-1.5 rounded-full ${item.status === "REQUESTED" ? "bg-amber-300" : item.status === "APPROVED" ? "bg-emerald-300" : item.status === "REJECTED" ? "bg-rose-300" : "bg-slate-400"}`} />{titleCaseStatus(item.status)}</span>
                       </div>
                       <p className="mt-1 truncate text-xs text-slate-400">{item.user ? `${item.user.firstName} ${item.user.lastName} · ${item.user.email}` : "Customer"}</p>
@@ -1344,27 +1353,27 @@ export function AdminPayments() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} total`}</span>
-          <span className="rounded-lg border border-amber-800/60 bg-amber-950/25 px-3 py-1.5 text-xs text-amber-200">{pendingCount} pending</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200">{money(totalAmount)} total value</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h8M8 17h4" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-amber-800/60 bg-amber-950/25 px-3 py-1.5 text-xs text-amber-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-amber-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 7v5l3 2m5-2a8 8 0 1 1-2.34-5.66" strokeLinecap="round" strokeLinejoin="round" /></svg>{pendingCount} pending</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs text-emerald-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M12 2v20m5-16H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" strokeLinecap="round" /></svg>{money(totalAmount)} total value</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <label className="block rounded-2xl border border-slate-700 border-t-2 border-t-rose-800/60 bg-[#202630] p-4 text-xs font-medium text-slate-300 shadow-sm">
         Rejection reason <span className="font-normal text-slate-500">(used when rejecting a payment)</span>
-        <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/20`} placeholder="Add a reason for the customer" value={reason} onChange={(event) => setReason(event.target.value)} />
+        <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-rose-400" placeholder="Add a reason for the customer" value={reason} onChange={(event) => setReason(event.target.value)} />
       </label>
       <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-emerald-700 bg-[#202630] shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
           <div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-800/50 bg-emerald-950/20 text-emerald-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h4m4 0h.01" strokeLinecap="round" strokeLinejoin="round" /></svg></span><div><h2 className="text-sm font-semibold text-slate-100">Payment review queue</h2><p className="text-xs text-slate-400">Transactions awaiting verification</p></div></div>
-          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} submissions</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h4m4 0h.01" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} submissions</span>
         </div>
         {loading ? <div className="p-5"><RowsSkeleton rows={5} columns={4} /></div> : items.length === 0 ? (
           <div className="px-5 py-12 text-center"><span className="mx-auto grid h-11 w-11 place-items-center rounded-xl border border-slate-700 bg-[#171c24] text-slate-400"><svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M3 7h18v13H3zM7 7V5h10v2m-14 5h18" strokeLinecap="round" strokeLinejoin="round" /></svg></span><p className="mt-3 text-sm font-medium text-slate-200">No payment submissions</p><p className="mt-1 text-xs text-slate-400">Customer payment references will appear here.</p></div>
         ) : (
           <ul className="space-y-1 px-4 py-3">
             {items.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-slate-600 hover:bg-[#171c24]">
+              <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-transparent px-3 py-3.5 transition-colors duration-200 hover:border-emerald-800/40 hover:bg-emerald-950/15">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-emerald-800/40 bg-emerald-950/20 text-emerald-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 7h18v13H3zM7 7V5h10v2m-14 5h18" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2"><span className="font-mono text-sm font-semibold text-slate-100">{item.order?.orderNumber ?? item.provider}</span><span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${item.status === "PENDING" ? "border-amber-800/60 bg-amber-950/25 text-amber-200" : item.status === "APPROVED" ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200" : "border-slate-600 bg-[#202630] text-slate-300"}`}><span className={`h-1.5 w-1.5 rounded-full ${item.status === "PENDING" ? "bg-amber-300" : item.status === "APPROVED" ? "bg-emerald-300" : "bg-slate-400"}`} />{titleCaseStatus(item.status)}</span></div>
@@ -1439,8 +1448,8 @@ export function AdminSizeGuides() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300">{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "guide" : "guides"}`}</span>
-          <span className="rounded-lg border border-blue-800/60 bg-blue-950/25 px-3 py-1.5 text-xs text-blue-200">{coveredCategories} categories covered</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-[#202630] px-3 py-1.5 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M3 7.5 7.5 3 21 16.5 16.5 21 3 7.5zM7 7l2-2m1 6 2-2m1 6 2-2" strokeLinecap="round" strokeLinejoin="round" /></svg>{loading ? "Loading…" : `${items.length} ${items.length === 1 ? "guide" : "guides"}`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-blue-800/60 bg-blue-950/25 px-3 py-1.5 text-xs text-blue-200"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-blue-300" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14m5-14v14" strokeLinecap="round" strokeLinejoin="round" /></svg>{coveredCategories} categories covered</span>
         </div>
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
@@ -1451,15 +1460,15 @@ export function AdminSizeGuides() {
             <div><h2 className="text-sm font-semibold text-slate-100">Create a fit guide</h2><p className="text-xs text-slate-400">Choose a category and name your chart</p></div>
           </div>
           <label className="block text-xs font-medium text-slate-300">Product category
-            <select className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20`} required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+            <select className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-blue-400" required value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
               <option value="">Select a category</option>
               {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           </label>
           <label className="block text-xs font-medium text-slate-300">Guide name
-            <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20`} required placeholder="e.g. Women's tops" value={title} onChange={(event) => setTitle(event.target.value)} />
+            <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-blue-400" required placeholder="e.g. Women's tops" value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
-          <div className="overflow-hidden rounded-xl border border-blue-900/60 bg-[#171c24]">
+          <div className="overflow-hidden rounded-xl border border-blue-800/50 bg-gradient-to-br from-blue-950/45 via-[#171c24] to-[#171c24]">
             <div className="flex items-center justify-between border-b border-slate-700 px-3 py-2.5">
               <div><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-blue-300">Chart preview</p><p className="mt-0.5 text-xs font-medium text-slate-200">{title.trim() || "Standard size chart"}</p></div>
               <span className="rounded-md border border-slate-700 bg-[#202630] px-2 py-1 text-[10px] text-slate-400">INCHES</span>
@@ -1472,7 +1481,7 @@ export function AdminSizeGuides() {
             </div>
             <p className="border-t border-slate-700 px-3 py-2 text-[10px] text-slate-500">Includes 5 standard sizes from XS to XL</p>
           </div>
-          <button disabled={saving || categories.length === 0} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-not-allowed disabled:opacity-50">
+          <button disabled={saving || categories.length === 0} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50">
             {!saving ? <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M8 3v10M3 8h10" strokeLinecap="round" /></svg> : null}
             {saving ? "Saving…" : "Add size guide"}
           </button>
@@ -1483,7 +1492,7 @@ export function AdminSizeGuides() {
               <span className="grid h-9 w-9 place-items-center rounded-xl border border-blue-800/50 bg-blue-950/25 text-blue-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14m5-14v14" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <div><h2 className="text-sm font-semibold text-slate-100">Saved fit guides</h2><p className="text-xs text-slate-400">Open a chart to check its measurement table</p></div>
             </div>
-            <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} total</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14m5-14v14" strokeLinecap="round" strokeLinejoin="round" /></svg>{items.length} total</span>
           </div>
           {loading ? <div className="p-5"><RowsSkeleton rows={4} columns={2} /></div> : items.length === 0 ? (
             <div className="px-5 py-12 text-center">
@@ -1600,6 +1609,7 @@ export function AdminVariants() {
   const activeVariantCount = items.filter((item) => item.isActive).length;
   const lowStockCount = items.filter((item) => item.isActive && item.stock <= 5).length;
   const totalUnits = items.reduce((total, item) => total + item.stock, 0);
+  const variantFieldClass = "h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400";
 
   return (
     <Panel title="Variants" error={error}>
@@ -1616,19 +1626,19 @@ export function AdminVariants() {
         </div>
         <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="min-w-24 rounded-lg border border-slate-700 bg-[#171c24] px-3 py-2">
-            <dt className="text-[10px] text-slate-400">Loaded</dt>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-slate-400"><svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M2 5h12v9H2zM5 5V3h6v2m-9 3h12" strokeLinecap="round" strokeLinejoin="round" /></svg>Loaded</dt>
             <dd className="mt-0.5 text-sm font-semibold text-slate-100">{loading ? "—" : items.length}</dd>
           </div>
           <div className="min-w-24 rounded-lg border border-emerald-900/60 bg-emerald-950/20 px-3 py-2">
-            <dt className="text-[10px] text-emerald-300/80">Active</dt>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-emerald-300/80"><svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="m5.5 8 1.7 1.7 3.5-3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>Active</dt>
             <dd className="mt-0.5 text-sm font-semibold text-emerald-200">{loading ? "—" : activeVariantCount}</dd>
           </div>
-          <div className="min-w-24 rounded-lg border border-amber-900/60 bg-amber-950/20 px-3 py-2">
-            <dt className="text-[10px] text-amber-300/80">Low stock</dt>
-            <dd className="mt-0.5 text-sm font-semibold text-amber-200">{loading ? "—" : lowStockCount}</dd>
+          <div className="min-w-24 rounded-lg border border-rose-800/60 bg-rose-950/25 px-3 py-2">
+            <dt className="inline-flex items-center gap-1 text-[10px] text-rose-300/80"><svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M8 2 1.8 13h12.4L8 2zM8 6v3m0 2v.01" strokeLinecap="round" strokeLinejoin="round" /></svg>Low stock</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-rose-200">{loading ? "—" : lowStockCount}</dd>
           </div>
           <div className="min-w-24 rounded-lg border border-slate-700 bg-[#171c24] px-3 py-2">
-            <dt className="text-[10px] text-slate-400">Total units</dt>
+            <dt className="inline-flex items-center gap-1 text-[10px] text-slate-400"><svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true"><path d="m2 5 6-3 6 3v7l-6 3-6-3zM2 5l6 3 6-3M8 8v7" /></svg>Total units</dt>
             <dd className="mt-0.5 text-sm font-semibold text-slate-100">{loading ? "—" : totalUnits}</dd>
           </div>
         </dl>
@@ -1656,7 +1666,7 @@ export function AdminVariants() {
         }}
       >
         <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
-          <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-xs font-semibold text-[#f0c0cf]">01</span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-800/60 bg-amber-950/25 text-xs font-semibold text-amber-200">01</span>
           <div>
             <h2 className="text-sm font-semibold text-slate-100">Create variant</h2>
             <p className="text-xs text-slate-400">Product, options and inventory</p>
@@ -1664,18 +1674,18 @@ export function AdminVariants() {
         </div>
         <label className="block text-xs font-medium text-slate-300">
           Product ID
-          <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac]`} required placeholder="Enter product ID" value={productId} onChange={(event) => setProductId(event.target.value)} />
+          <input className={`${variantFieldClass} mt-1.5 placeholder:text-slate-500`} required placeholder="Enter product ID" value={productId} onChange={(event) => setProductId(event.target.value)} />
         </label>
         <label className="block text-xs font-medium text-slate-300">
           Size
-          <select className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac]`} required value={sizeId} onChange={(event) => setSizeId(event.target.value)}>
+          <select className={`${variantFieldClass} mt-1.5`} required value={sizeId} onChange={(event) => setSizeId(event.target.value)}>
             <option value="">Choose size</option>
             {(catalog?.sizes ?? []).map((size) => <option key={size.id} value={size.id}>{size.name}</option>)}
           </select>
         </label>
         <label className="block text-xs font-medium text-slate-300">
           Fabric
-          <select className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac]`} required value={fabricId} onChange={(event) => setFabricId(event.target.value)}>
+          <select className={`${variantFieldClass} mt-1.5`} required value={fabricId} onChange={(event) => setFabricId(event.target.value)}>
             <option value="">Choose fabric</option>
             {(catalog?.fabrics ?? []).map((fabric) => <option key={fabric.id} value={fabric.id}>{fabric.name}</option>)}
           </select>
@@ -1684,7 +1694,7 @@ export function AdminVariants() {
           <label className="mb-1.5 block text-xs font-medium text-slate-300" htmlFor="variant-color-search">Color <span className="font-normal text-slate-500">(optional)</span></label>
           <input
             id="variant-color-search"
-            className={`${field} border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac]`}
+            className={`${variantFieldClass} placeholder:text-slate-500`}
             autoComplete="off"
             role="combobox"
             aria-autocomplete="list"
@@ -1705,7 +1715,7 @@ export function AdminVariants() {
             ? <p className="mt-1.5 text-xs text-slate-400">No colors found.</p>
             : null}
           {colorId && selectedColor ? (
-            <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1.5 text-xs text-slate-200">
+            <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-amber-800/50 bg-amber-950/20 px-2.5 py-1.5 text-xs text-amber-100">
               <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: selectedColor.hexCode }} />
               Selected {colorQuery}<span className="text-slate-500">{selectedColor.hexCode}</span>
             </p>
@@ -1716,7 +1726,7 @@ export function AdminVariants() {
                 <li key={color.id} role="option" aria-selected={false}>
                   <button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-slate-700/50"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:bg-amber-950/40 hover:text-amber-100"
                     onClick={() => {
                       setColorId(color.id);
                       setSelectedColor(color);
@@ -1736,35 +1746,35 @@ export function AdminVariants() {
         </div>
         <label className="block text-xs font-medium text-slate-300">
           SKU
-          <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] font-mono text-white placeholder:font-sans placeholder:text-slate-500 focus:border-[#d39aac]`} required placeholder="e.g. TEE-BLK-M" value={sku} onChange={(event) => setSku(event.target.value)} />
+          <input className={`${variantFieldClass} mt-1.5 font-mono placeholder:font-sans placeholder:text-slate-500`} required placeholder="e.g. TEE-BLK-M" value={sku} onChange={(event) => setSku(event.target.value)} />
         </label>
         <label className="block text-xs font-medium text-slate-300">
           Stock quantity
-          <input className={`${field} mt-1.5 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac]`} type="number" min="0" step="1" inputMode="numeric" required value={stock} onChange={(event) => setStock(event.target.value)} />
+          <input className={`${variantFieldClass} mt-1.5`} type="number" min="0" step="1" inputMode="numeric" required value={stock} onChange={(event) => setStock(event.target.value)} />
         </label>
-        <div className="rounded-xl border border-[#9b6075]/40 bg-[#171c24] p-3">
+        <div className="rounded-xl border border-amber-800/50 bg-gradient-to-r from-amber-950/30 via-[#171c24] to-[#171c24] p-3">
           <div className="flex items-center justify-between gap-2 border-b border-slate-700 pb-2">
             <div className="flex items-center gap-2">
-              <span className="text-[#d39aac]"><svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M2 4h12v9H2zM5 7h6M5 10h3" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+              <span className="text-amber-300"><svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M2 4h12v9H2zM5 7h6M5 10h3" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-300">Live preview</p>
             </div>
             <span className="rounded-md border border-slate-700 bg-[#202630] px-1.5 py-0.5 text-[10px] text-slate-400">{stock || "0"} units</span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="max-w-full truncate rounded-md border border-[#9b6075]/40 bg-[#7b3f55]/15 px-2 py-1 font-mono text-[10px] text-[#f0c0cf]">{sku || "SKU pending"}</span>
+            <span className="max-w-full truncate rounded-md border border-amber-800/50 bg-amber-950/25 px-2 py-1 font-mono text-[10px] text-amber-200">{sku || "SKU pending"}</span>
             <span className="rounded-md border border-slate-700 bg-[#202630] px-2 py-1 text-[10px] text-slate-300">{catalog?.sizes.find((size) => size.id === sizeId)?.name ?? "Size"}</span>
             <span className="rounded-md border border-slate-700 bg-[#202630] px-2 py-1 text-[10px] text-slate-300">{catalog?.fabrics.find((fabric) => fabric.id === fabricId)?.name ?? "Fabric"}</span>
             {selectedColor ? <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-[#202630] px-2 py-1 text-[10px] text-slate-300"><span className="h-2 w-2 rounded-full border border-white/20" style={{ backgroundColor: selectedColor.hexCode }} />{selectedColor.name}</span> : null}
           </div>
         </div>
-        <button disabled={saving} className="w-full rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-[#914e68] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:cursor-wait disabled:opacity-60">
+        <button disabled={saving} className="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-amber-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-wait disabled:opacity-60">
           {saving ? "Adding variant…" : "Add variant"}
         </button>
       </form>
       <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/60 bg-[#7b3f55]/20 text-[#f0c0cf]"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m2 6 6-3 6 3 6-3 2 1v14l-8 4-6-3-6 3V6zm6-3v14m6-11v15m6-21v14" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+            <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-800/50 bg-amber-950/25 text-amber-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m2 6 6-3 6 3 6-3 2 1v14l-8 4-6-3-6 3V6zm6-3v14m6-11v15m6-21v14" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
             <div>
             <h2 className="text-sm font-semibold text-slate-100">Variant inventory</h2>
             <p className="mt-0.5 text-xs text-slate-400">Manage product options and stock status</p>
@@ -1784,11 +1794,11 @@ export function AdminVariants() {
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="bg-[#171c24] text-[11px] uppercase tracking-[0.1em] text-slate-400">
                 <tr>
-                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#d39aac]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true"><path d="M2 3h7l5 5-6 6-6-6z" /><circle cx="5.5" cy="6.5" r="1" /></svg>Variant / SKU</span></th>
-                  <th className="px-5 py-3 text-right font-medium"><span className="inline-flex items-center justify-end gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#d39aac]" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10" /><circle cx="6" cy="4" r="1" fill="#171c24" /><circle cx="10" cy="8" r="1" fill="#171c24" /><circle cx="5" cy="12" r="1" fill="#171c24" /></svg>Options</span></th>
-                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#d39aac]" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true"><path d="m2 5 6-3 6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6" /></svg>Inventory</span></th>
-                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#d39aac]" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="m5.5 8 1.7 1.7 3.5-3.5" /></svg>Status</span></th>
-                  <th className="px-5 py-3 text-right font-medium"><span className="inline-flex items-center justify-end gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5 text-[#d39aac]" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="3" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="13" cy="8" r="1" fill="currentColor" stroke="none" /></svg>Actions</span></th>
+                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true"><path d="M2 3h7l5 5-6 6-6-6z" /><circle cx="5.5" cy="6.5" r="1" /></svg>Variant / SKU</span></th>
+                  <th className="px-5 py-3 text-right font-medium"><span className="inline-flex items-center justify-end gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10" /><circle cx="6" cy="4" r="1" fill="#171c24" /><circle cx="10" cy="8" r="1" fill="#171c24" /><circle cx="5" cy="12" r="1" fill="#171c24" /></svg>Options</span></th>
+                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" aria-hidden="true"><path d="m2 5 6-3 6 3v6l-6 3-6-3zM2 5l6 3 6-3M8 8v6" /></svg>Inventory</span></th>
+                  <th className="px-5 py-3 font-medium"><span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="m5.5 8 1.7 1.7 3.5-3.5" /></svg>Status</span></th>
+                  <th className="px-5 py-3 text-right font-medium"><span className="inline-flex items-center justify-end gap-1.5"><svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><circle cx="3" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" /><circle cx="13" cy="8" r="1" fill="currentColor" stroke="none" /></svg>Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -1798,18 +1808,18 @@ export function AdminVariants() {
                   return (
                     <tr key={item.id} className="border-t border-slate-700 transition-colors duration-200 hover:bg-slate-700/20">
                       <td className="px-5 py-4">
-                        <p className="font-mono font-semibold text-[#f0c0cf]">{item.sku}</p>
+                        <p className="font-mono font-semibold text-amber-200">{item.sku}</p>
                         <p className="mt-1 max-w-40 truncate text-[10px] text-slate-500" title={item.productId}>Product {item.productId}</p>
                       </td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex flex-wrap justify-end gap-1.5">
                           <span className="rounded-md border border-slate-600 bg-[#171c24] px-2 py-1 text-xs text-slate-200"><span className="text-slate-400">Size:</span> {sizeName}</span>
                           <span className="rounded-md border border-slate-600 bg-[#171c24] px-2 py-1 text-xs text-slate-200"><span className="text-slate-400">Fabric:</span> {fabricName}</span>
-                          {item.colorId ? <span className="inline-flex items-center gap-1.5 rounded-md border border-[#9b6075]/50 bg-[#7b3f55]/15 px-2 py-1 text-xs text-[#e8b6c6]" title={item.colorId}><span className="text-slate-300">Color:</span><span className="h-1.5 w-1.5 rounded-full bg-[#d39aac]" aria-hidden="true" />{item.colorId.slice(0, 8)}</span> : null}
+                          {item.colorId ? <span className="rounded-md border border-slate-600 bg-[#171c24] px-2 py-1 text-xs text-slate-300" title={item.colorId}>Color: {item.colorId.slice(0, 8)}</span> : null}
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${item.stock <= 0 ? "border-rose-800/60 bg-rose-950/30 text-rose-200" : item.stock <= 5 ? "border-amber-700/60 bg-amber-950/30 text-amber-200" : "border-emerald-800/60 bg-emerald-950/30 text-emerald-200"}`}>
+                        <span className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold ${item.stock <= 5 ? "border-rose-800/60 bg-rose-950/30 text-rose-200" : "border-emerald-800/60 bg-emerald-950/30 text-emerald-200"}`}>
                           {item.stock} {item.stock === 1 ? "unit" : "units"}
                         </span>
                       </td>
@@ -1824,7 +1834,7 @@ export function AdminVariants() {
                           <button
                             type="button"
                             disabled={busyVariantId === item.id}
-                            className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] disabled:opacity-50"
+                            className={`rounded-lg border border-slate-600 bg-[#202630] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50 ${item.isActive ? "hover:border-amber-700 hover:bg-amber-950/40 hover:text-amber-200 focus-visible:ring-amber-500" : "hover:border-emerald-700 hover:bg-emerald-950/40 hover:text-emerald-200 focus-visible:ring-emerald-500"}`}
                             onClick={async () => {
                               setBusyVariantId(item.id);
                               setError("");
@@ -1874,4 +1884,3 @@ export function AdminVariants() {
     </Panel>
   );
 }
-

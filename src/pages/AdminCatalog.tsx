@@ -13,8 +13,8 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-const fieldClass =
-  "h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#2ec9a8]";
+const categoryFieldClass =
+  "h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-cyan-400";
 
 type CollageSlot = "man" | "woman" | "child" | "accessories";
 const COLLAGE_SLOTS: { id: CollageSlot; label: string; setting: keyof Settings }[] = [
@@ -173,9 +173,9 @@ export function AdminCategories() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">{loading ? "Loading…" : `${categories.length} total`}</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200">{activeCount} active</span>
-          <span className="rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200">{hiddenCount} hidden</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300"><Icon d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" />{loading ? "Loading…" : `${categories.length} total`}</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200"><Icon d="m5 12 4 4L19 6" />{activeCount} active</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200"><Icon d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A11 11 0 0 1 12 5c5 0 8.5 4.5 9 7-.2 1.1-.9 2.2-1.8 3.2M6.2 6.2C4.4 7.4 3.3 9.3 3 12c.5 2.5 4 7 9 7 1 0 2-.2 2.9-.6" />{hiddenCount} hidden</span>
         </div>
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
@@ -189,11 +189,11 @@ export function AdminCategories() {
         </div>
         <label className="block text-xs text-slate-300">
           Name
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} />
+          <input className={`${categoryFieldClass} mt-1`} required minLength={2} value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Parent
-          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={parentId} onChange={(event) => setParentId(event.target.value)}>
+          <select className={`${categoryFieldClass} mt-1`} value={parentId} onChange={(event) => setParentId(event.target.value)}>
             <option value="">None</option>
             {categories
               .filter((category) => category.id !== editing)
@@ -207,22 +207,22 @@ export function AdminCategories() {
         </label>
         <label className="block text-xs text-slate-300">
           Description
-          <textarea className={`${fieldClass} mt-1 h-20 border-slate-600 bg-[#171c24] py-2 text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={description} onChange={(event) => setDescription(event.target.value)} />
+          <textarea className={`${categoryFieldClass} mt-1 h-20 resize-y py-2`} value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Sort
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
+          <input className={`${categoryFieldClass} mt-1`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Image
-          <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-[#7b3f55]/50 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#241b22] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
+          <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-cyan-800/60 bg-[#171c24] p-3 transition-colors duration-200 hover:border-cyan-400 hover:bg-cyan-950/10 has-[:focus-visible]:border-cyan-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-cyan-500/30">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-cyan-700 text-white">
               <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold text-slate-100">{image?.name ?? (currentImage ? "Replace current image" : "Choose category image")}</span>
               <span className="mt-1 block text-xs leading-relaxed text-slate-400">AVIF, JPEG, PNG or WebP</span>
-              <span className="mt-1 block text-xs font-semibold text-[#f0c0cf]">Click to browse</span>
+              <span className="mt-1 block text-xs font-semibold text-cyan-300">Click to browse</span>
             </span>
             <input
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -239,14 +239,14 @@ export function AdminCategories() {
           </span>
         </label>
         {currentImage ? <img src={currentImage} alt="" className="h-28 w-full rounded-xl border border-slate-700 bg-[#171c24] object-cover" /> : null}
-        <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-600 bg-[#171c24] px-2.5 py-1 text-[11px] font-medium text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-          <input className="h-3.5 w-3.5 accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+        <label className={`inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 text-[11px] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors ${isActive ? "border-emerald-800/60 bg-emerald-950/25 text-emerald-200 hover:border-emerald-600" : "border-slate-600 bg-[#171c24] text-slate-300 hover:border-slate-400"}`}>
+          <input className="h-3.5 w-3.5 accent-emerald-500" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-slate-500"}`} />
           Active
         </label>
         {error ? <p className="text-sm text-rose-700">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
+          <button type="submit" disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-cyan-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
             {!busy ? <Icon d="M12 5v14m-7-7h14" /> : null}
             {busy ? "Saving…" : editing ? "Update" : "Add"}
           </button>
@@ -302,7 +302,7 @@ export function AdminCategories() {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-600 bg-[#202630] px-3 text-sm font-medium text-slate-300 transition-colors duration-200 hover:border-cyan-700 hover:bg-cyan-950/40 hover:text-cyan-200"
                       onClick={() => startEdit(category)}
                     >
                       <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
@@ -484,9 +484,9 @@ export function AdminBanners() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300">{loading ? "Loading…" : `${blocks.length} total`}</span>
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200">{activeBannerCount} active</span>
-          <span className="rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200">{hiddenBannerCount} hidden</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-[#202630] px-3 py-1.5 text-xs font-medium text-slate-300"><Icon d="M4 5h16v14H4zM8 9h8M8 13h8" />{loading ? "Loading…" : `${blocks.length} total`}</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-3 py-1.5 text-xs font-medium text-emerald-200"><Icon d="m5 12 4 4L19 6" />{activeBannerCount} active</span>
+          <span className="inline-flex items-center gap-2 rounded-lg border border-rose-900/60 bg-rose-950/25 px-3 py-1.5 text-xs font-medium text-rose-200"><Icon d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.8 10.8 0 0 1 12 5c5 0 8.5 5 8.5 7s-1.3 3.2-2.6 4.4M6.2 6.2C3.8 7.7 2.5 10 2.5 12c0 2 3.5 7 9.5 7 1 0 2-.2 2.8-.5" />{hiddenBannerCount} hidden</span>
         </div>
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
@@ -500,7 +500,7 @@ export function AdminBanners() {
         </div>
         <label className="block text-xs text-slate-300">
           Type
-          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={kind} onChange={(event) => setKind(event.target.value as (typeof KINDS)[number]["id"])}>
+          <select className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={kind} onChange={(event) => setKind(event.target.value as (typeof KINDS)[number]["id"])}>
             {KINDS.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.label}
@@ -517,7 +517,7 @@ export function AdminBanners() {
           <div className="space-y-2 rounded-xl border border-slate-700 bg-[#171c24] p-3">
             <p className="text-xs leading-relaxed text-slate-400">Choose up to 24 active products with available stock. They will appear in Trending Now in the order selected.</p>
             <input
-              className={`${fieldClass} border-slate-600 bg-[#202630] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`}
+              className="h-11 w-full rounded-xl border-2 border-slate-600 bg-[#202630] px-4 text-sm text-white outline-none focus:border-amber-400"
               placeholder="Search products"
               value={productSearch}
               onChange={(event) => setProductSearch(event.target.value)}
@@ -545,7 +545,7 @@ export function AdminBanners() {
                 return (
                   <label key={product.id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-800">
                     <input
-                      className="accent-[#d39aac]"
+                      className="accent-amber-400"
                       type="checkbox"
                       checked={selected}
                       disabled={!selected && selectedProducts.length >= 24}
@@ -567,19 +567,19 @@ export function AdminBanners() {
         ) : null}
         <label className="block text-xs text-slate-300">
           Title
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} required minLength={2} value={title} onChange={(event) => setTitle(event.target.value)} />
+          <input className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" required minLength={2} value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Subtitle
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={subtitle} onChange={(event) => setSubtitle(event.target.value)} />
+          <input className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={subtitle} onChange={(event) => setSubtitle(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Link
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} placeholder="/shop" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} />
+          <input className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-amber-400" placeholder="/shop" value={linkUrl} onChange={(event) => setLinkUrl(event.target.value)} />
         </label>
         <label className="block text-xs text-slate-300">
           Category
-          <select className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+          <select className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
             <option value="">None</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -590,19 +590,19 @@ export function AdminBanners() {
         </label>
         <label className="block text-xs text-slate-300">
           Sort
-          <input className={`${fieldClass} mt-1 border-slate-600 bg-[#171c24] text-white focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30`} inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
+          <input className="mt-1 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" inputMode="numeric" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} />
         </label>
         {kind !== "TRENDING" ? (
           <label className="block text-xs text-slate-300">
             Image or video
-            <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-[#7b3f55]/50 bg-[#171c24] p-3 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#241b22] has-[:focus-visible]:border-[#d39aac] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#7b3f55] text-white">
+            <span className="relative mt-1.5 flex min-h-[76px] items-center gap-3 rounded-2xl border border-dashed border-amber-700/50 bg-[#171c24] p-3 transition-colors duration-200 hover:border-amber-400 hover:bg-amber-950/15 has-[:focus-visible]:border-amber-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/30">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-amber-700 text-white">
                 <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold text-slate-100">{image?.name ?? (currentImage ? "Replace current media" : "Add banner")}</span>
                 <span className="mt-1 block text-xs leading-relaxed text-slate-400">Images: AVIF, JPEG, PNG, WebP  Videos: MP4, WebM, MOV</span>
-                <span className="mt-1 block text-xs font-semibold text-[#f0c0cf]">Click to browse</span>
+                <span className="mt-1 block text-xs font-semibold text-amber-300">Click to browse</span>
               </span>
               <input
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -628,17 +628,17 @@ export function AdminBanners() {
           )
         ) : null}
         <label className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-600 bg-[#171c24] px-2.5 py-1 text-[11px] font-medium text-slate-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-          <input className="h-3.5 w-3.5 accent-[#d39aac]" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+          <input className="h-3.5 w-3.5 accent-amber-400" type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-slate-500"}`} />
           Active
         </label>
         {error ? <p className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">{error}</p> : null}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
+          <button type="submit" disabled={busy} className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630] disabled:opacity-50">
             {busy ? "Saving…" : editing ? "Update" : "Add"}
           </button>
           {editing ? (
-            <button type="button" className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 transition-colors duration-200 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={reset}>
+            <button type="button" className="rounded-xl border border-slate-600 px-4 py-2 text-sm text-slate-200 transition-colors duration-200 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={reset}>
               Cancel
             </button>
           ) : null}
@@ -647,13 +647,13 @@ export function AdminBanners() {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-[#202630] px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="grid h-8 w-8 place-items-center rounded-lg border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[#f0c0cf]"><Icon d="M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" /></span>
+            <span className="grid h-8 w-8 place-items-center rounded-lg border border-amber-700/50 bg-amber-950/30 text-amber-200"><Icon d="M4 6h16v12H4V6zm2 2v8l5-3 5 3V8H6z" /></span>
             <div>
               <h2 className="text-sm font-semibold text-slate-100">Banner library</h2>
               <p className="text-[11px] text-slate-400">Sorted by homepage placement</p>
             </div>
           </div>
-          <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{blocks.length} items</span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><Icon d="M4 5h16v14H4zM8 9h8M8 13h8" />{blocks.length} items</span>
         </div>
         {loading ? <RowsSkeleton rows={5} columns={2} /> : null}
         {!loading && blocks.length === 0 && !error ? (
@@ -719,7 +719,7 @@ export function AdminBanners() {
                           </div>
                         </div>
                         <div className="ml-auto flex shrink-0 gap-2 text-sm">
-                          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]" onClick={() => startEdit(block)}>
+                          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-600 bg-[#202630] px-3 text-sm font-medium text-slate-300 transition-colors duration-200 hover:border-amber-700 hover:bg-amber-950/40 hover:text-amber-200" onClick={() => startEdit(block)}>
                             <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
                             Edit
                           </button>
@@ -736,7 +736,7 @@ export function AdminBanners() {
               {item.id === "CAMPAIGN" ? (
                 <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm">
                   <header className="mb-4 flex items-center gap-3 border-b border-slate-700 pb-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#7b3f55] text-xs font-bold text-white">02</span>
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-700 text-xs font-bold text-white">02</span>
                     <div>
                       <h2 className="text-sm font-semibold text-slate-100">Category collage images</h2>
                       <p className="mt-1 text-xs text-slate-400">Upload separate images for Man, Woman, Child, and Accessories.</p>
@@ -744,7 +744,7 @@ export function AdminBanners() {
                   </header>
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     {COLLAGE_SLOTS.map(({ id, label, setting }) => (
-                      <div key={id} className="space-y-2 rounded-xl border border-slate-700 bg-[#171c24] p-3">
+                      <div key={id} className="space-y-2 rounded-xl border border-slate-700 bg-[#171c24] p-3 transition-colors duration-200 hover:border-amber-800/60">
                         <p className="text-sm font-medium text-slate-100">{label}</p>
                         {settings[setting] ? (
                           <img src={settings[setting] ?? ""} alt={`${label} collage`} className="h-28 w-full rounded-lg border border-slate-700 bg-[#10151c] object-cover" />
@@ -752,8 +752,8 @@ export function AdminBanners() {
                           <div className="grid h-28 place-items-center rounded-lg border border-dashed border-slate-700 bg-[#202630] text-xs text-slate-400">No image uploaded</div>
                         )}
                         <div className="space-y-1">
-                          <label className="relative flex min-h-10 items-center gap-2 rounded-lg border border-dashed border-slate-600 bg-[#202630] px-2.5 py-2 transition-colors duration-200 hover:border-[#d39aac] hover:bg-[#28232b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#7b3f55]/40">
-                            <Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" />
+                          <label className="relative flex min-h-10 items-center gap-2 rounded-lg border border-dashed border-slate-600 bg-[#202630] px-2.5 py-2 transition-colors duration-200 hover:border-amber-400 hover:bg-amber-950/20 has-[:focus-visible]:border-amber-400 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-amber-500/30">
+                            <span className="text-amber-300"><Icon d="M12 16V4m0 0 4 4m-4-4L8 8M4 16v4h16v-4" /></span>
                             <span className="min-w-0 truncate text-xs text-slate-300">{collageFiles[id]?.name ?? "Choose an image"}</span>
                             <input
                               type="file"
@@ -767,7 +767,7 @@ export function AdminBanners() {
                         <button
                           type="button"
                           disabled={!collageFiles[id] || collageUploading !== null}
-                          className="rounded-xl bg-[#7b3f55] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#673247] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171c24] disabled:opacity-50"
+                          className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#171c24] disabled:opacity-50"
                           onClick={() => {
                             const file = collageFiles[id];
                             if (!file) return;
