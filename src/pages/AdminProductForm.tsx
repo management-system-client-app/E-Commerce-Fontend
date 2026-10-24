@@ -390,7 +390,7 @@ export function AdminProductForm() {
           <div className="border-b border-slate-700 px-5 py-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-700 text-sm font-bold text-white">02</span>
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-700 text-xs font-bold text-white">B</span>
                 <h2 className="text-sm font-semibold text-slate-100">Variants & inventory</h2>
               </div>
               <p className="mt-1.5 pl-10 text-xs text-slate-400">Choose sizes and colors, then set stock for each combination.</p>
@@ -458,16 +458,16 @@ export function AdminProductForm() {
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#7b3f55] text-xs font-bold text-white">B</span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-amber-700 text-xs font-bold text-white">B</span>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-100">Added combinations</h3>
                   <p className="text-xs text-slate-400">Set stock for each combination selected above.</p>
                 </div>
               </div>
-              <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-200">{rows.length} rows</span>
+              <span className="rounded-full border border-amber-800/50 bg-amber-950/25 px-2.5 py-1 text-xs font-medium text-amber-200">{rows.length} rows</span>
             </div>
             {rows.length === 0 ? (
-              <p className="border-y border-dashed border-slate-600 px-4 py-6 text-center text-sm text-slate-400">
+              <p className="rounded-xl border border-dashed border-amber-800/50 bg-amber-950/10 px-4 py-6 text-center text-sm text-slate-400">
                 Select sizes, colors and fabric above, then add combinations.
               </p>
             ) : rows.map((row, index) => {
@@ -478,22 +478,22 @@ export function AdminProductForm() {
                 <div key={index} className="variant-combination-row rounded-xl border border-slate-700 bg-[#171c24] p-3 sm:p-4">
                   <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto]">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#7b3f55] text-xs font-semibold text-white">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-100">{sizeName}</span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-amber-700 text-xs font-semibold text-white">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="rounded-lg border border-amber-800/50 bg-amber-950/25 px-2.5 py-1.5 text-xs font-semibold text-amber-100">{sizeName}</span>
                       {color ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-[#202630] px-2.5 py-1.5 text-xs text-slate-100">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-800/50 bg-amber-950/20 px-2.5 py-1.5 text-xs text-amber-100">
                           <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: color.hexCode }} />
                           {color.name}
                         </span>
                       ) : (
-                        <span className="rounded-lg bg-slate-700 px-2.5 py-1.5 text-xs text-slate-300">No color</span>
+                        <span className="rounded-lg border border-slate-700 bg-[#202630] px-2.5 py-1.5 text-xs text-slate-400">No color</span>
                       )}
-                      <span className="rounded-lg border border-slate-700 bg-[#202630] px-2.5 py-1.5 text-xs text-slate-300">{fabricName}</span>
+                      <span className="rounded-lg border border-amber-800/40 bg-[#202630] px-2.5 py-1.5 text-xs text-amber-100">{fabricName}</span>
                     </div>
-                    <label className="variant-stock-panel grid grid-cols-[auto_minmax(100px,140px)] items-center gap-2 rounded-xl border border-slate-700 bg-[#202630] px-3 py-2 text-xs font-semibold text-slate-300 transition-colors duration-200 ease-out hover:border-[#7b3f55] hover:bg-[#2a313d]">
+                    <label className="variant-stock-panel grid grid-cols-[auto_minmax(100px,140px)] items-center gap-2 rounded-xl border border-amber-800/40 bg-[#202630] px-3 py-2 text-xs font-semibold text-amber-200 transition-colors duration-200 ease-out hover:border-amber-500 hover:bg-amber-950/30">
                       Stock
                       <input
-                        className="h-9 w-full rounded-lg border border-slate-600 bg-[#171c24] px-3 text-sm text-white outline-none focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30"
+                        className="h-9 w-full rounded-lg border border-slate-600 bg-[#171c24] px-3 text-sm text-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20"
                         type="text"
                         inputMode="numeric"
                         pattern="[0-9]*"

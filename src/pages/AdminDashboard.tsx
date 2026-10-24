@@ -305,12 +305,12 @@ function AreaChart({ points, labels }: { points: number[]; labels: string[] }) {
       <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label="Revenue over the last 8 days">
         <defs>
           <linearGradient id="sales-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b58b4b" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#b58b4b" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#7f2929" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#7f2929" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={fill} fill="url(#sales-fill)" />
-        <path d={line} fill="none" stroke="#7b3f55" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={line} fill="none" stroke="#7f2929" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <div className="mt-1 flex justify-between text-[11px] text-slate-400">
         {labels.map((label) => (
@@ -337,7 +337,7 @@ function StatusRing({ delivered, open }: { delivered: number; open: number }) {
         cy="80"
         r={radius}
         fill="none"
-        stroke="#7b3f55"
+        stroke="#7f2929"
         strokeWidth="14"
         strokeLinecap="round"
         strokeDasharray={`${circumference * outer} ${circumference}`}
@@ -436,15 +436,15 @@ export function AdminOverview() {
             <p className="mt-0.5 text-xs text-slate-400">A quick snapshot of how your store is performing</p>
           </div>
         </div>
-        <span className="rounded-lg border border-teal-800/40 bg-teal-950/20 px-3 py-1.5 text-xs font-medium text-teal-200">Overview · {overviewDate}</span>
+        <span className="inline-flex items-center gap-2 rounded-lg border border-teal-800/40 bg-teal-950/20 px-3 py-1.5 text-xs font-medium text-teal-200"><Icon d="M7 3v4m10-4v4M4 9h16M5 5h14v16H5z" />Overview · {overviewDate}</span>
       </header>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric accent="border-t-amber-500/70" icon="M12 8c-2.2 0-4 .9-4 2.5S9.8 13 12 13s4 .9 4 2.5S14.2 18 12 18m0-14v2m0 12v2" tone="bg-amber-500/10 text-amber-300" label="Total Revenue" value={overview ? money(overview.totalRevenue) : "—"} hint="Paid orders" />
-        <Metric accent="border-t-[#9b6075]" icon="M4 7h16v11H4zM8 7V5h8v2" tone="bg-[#7b3f55]/25 text-[#f0c0cf]" label="Total Order" value={overview ? String(overview.totalOrders) : "—"} hint="All statuses" />
+        <Metric accent="border-t-teal-500/70" icon="M4 7h16v11H4zM8 7V5h8v2" tone="bg-teal-500/10 text-teal-300" label="Total Order" value={overview ? String(overview.totalOrders) : "—"} hint="All statuses" />
         <Metric accent="border-t-emerald-500/70" icon="M16 19v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1M10 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 8v6M16 11h6" tone="bg-emerald-500/10 text-emerald-300" label="Total Customer" value={overview ? String(overview.activeUsers) : "—"} hint="Active accounts" />
         <Metric accent="border-t-orange-500/70" icon="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.5 1.5 0 1 0 0.01 0M17 18a1.5 1.5 0 1 0 0.01 0" tone="bg-orange-500/10 text-orange-300" label="Pending Delivery" value={overview ? String(pendingDelivery) : "—"} hint="Not delivered yet" />
       </section>
-      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-slate-700 border-t border-t-orange-600 bg-[#202630] shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-5 py-4">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-orange-700/40 bg-orange-950/30 text-orange-200"><Icon d="M4 7h16v11H4zM8 7V5h8v2" /></span>
@@ -453,17 +453,17 @@ export function AdminOverview() {
               <p className="mt-0.5 text-xs text-slate-400">Review and decide on recent requests</p>
             </div>
           </div>
-          <Link to="/admin/returns" className="rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/15 px-3 py-1.5 text-xs font-semibold text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white">All returns</Link>
+          <Link to="/admin/returns" className="rounded-lg border border-orange-700/50 bg-orange-950/25 px-3 py-1.5 text-xs font-semibold text-orange-200 transition-colors duration-200 hover:border-orange-500 hover:bg-orange-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">All returns</Link>
         </div>
         <div className="p-5">
         <label className="block text-xs font-medium text-slate-400">
           Decision note
-          <input className="mt-1.5 h-10 w-full rounded-xl border border-slate-600 bg-[#171c24] px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-[#d39aac] focus:ring-2 focus:ring-[#7b3f55]/30" placeholder="Optional note for the next decision" value={returnNote} onChange={(event) => setReturnNote(event.target.value)} />
+          <input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-orange-400" placeholder="Optional note for the next decision" value={returnNote} onChange={(event) => setReturnNote(event.target.value)} />
         </label>
         {returns.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-slate-700 bg-[#171c24] px-4 py-6 text-center text-sm text-slate-400">No return requests yet.</p> : null}
         <ul className="mt-4 space-y-2">
           {returns.slice(0, 6).map((item) => (
-            <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700 bg-[#171c24] px-3.5 py-3 transition-colors duration-200 hover:border-slate-600">
+            <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700 bg-[#171c24] px-3.5 py-3 transition-colors duration-200 hover:border-orange-800/50 hover:bg-orange-950/15">
               <div>
                 <p className="text-sm font-semibold text-slate-100">{item.order?.orderNumber ?? item.returnNumber ?? "Return"} · {titleCaseStatus(item.reason)}</p>
                 <p className="mt-1 text-xs text-slate-400">
@@ -473,7 +473,7 @@ export function AdminOverview() {
               </div>
               {item.status === "REQUESTED" ? (
                 <div className="flex gap-2">
-                  <button type="button" className="rounded-lg bg-[#7b3f55] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[#914e68] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac]" onClick={() => api.reviewReturn(item.id, { decision: "APPROVED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Approve</button>
+                  <button type="button" className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400" onClick={() => api.reviewReturn(item.id, { decision: "APPROVED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Approve</button>
                   <button type="button" className="rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 transition-colors duration-200 hover:border-rose-700 hover:bg-rose-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400" onClick={() => api.reviewReturn(item.id, { decision: "REJECTED", ...(returnNote ? { adminNote: returnNote } : {}) }).then(() => load())}>Reject</button>
                 </div>
               ) : null}
@@ -483,7 +483,7 @@ export function AdminOverview() {
         </div>
       </section>
       <section className="grid gap-4 xl:grid-cols-[1.7fr_0.8fr]">
-        <article className="rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-5 shadow-sm">
+        <article className="rounded-2xl border border-slate-700 border-t border-t-amber-600 bg-[#202630] p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/40 bg-amber-950/25 text-amber-200"><Icon d="M3 3v18h18M7 14l4-4 4 3 6-7" /></span>
@@ -492,7 +492,7 @@ export function AdminOverview() {
                 <p className="mt-0.5 text-xs text-slate-400">Revenue performance</p>
               </div>
             </div>
-            <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">Last 8 days</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300"><Icon d="M7 3v4m10-4v4M4 9h16M5 5h14v16H5z" />Last 8 days</span>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3 border-y border-slate-700 py-4 text-sm">
             <div className="min-w-0">
@@ -515,7 +515,7 @@ export function AdminOverview() {
             />
           </div>
         </article>
-        <article className="rounded-2xl border border-slate-700 border-t-2 border-t-[#9b6075] bg-[#202630] p-5 shadow-sm">
+        <article className="rounded-2xl border border-slate-700 border-t border-t-emerald-700 bg-[#202630] p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-700/40 bg-emerald-950/25 text-emerald-200"><Icon d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 18a1.5 1.5 0 1 0 0.01 0M17 18a1.5 1.5 0 1 0 0.01 0" /></span>
             <div>
@@ -532,23 +532,23 @@ export function AdminOverview() {
               <span className="font-semibold text-slate-100">{pendingDelivery}</span>
             </p>
             <p className="flex items-center justify-between text-slate-500">
-              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#7b3f55]" /> Delivered</span>
+              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#7f2929]" /> Delivered</span>
               <span className="font-semibold text-slate-100">{delivered}</span>
             </p>
           </div>
         </article>
       </section>
       <section className="grid gap-4 xl:grid-cols-[1.7fr_0.8fr]">
-        <article className="rounded-2xl border border-slate-700 border-t-2 border-t-[#7b3f55] bg-[#202630] p-5 shadow-sm">
+        <article className="rounded-2xl border border-slate-700 border-t border-t-emerald-600 bg-[#202630] p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-xl border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[#f0c0cf]"><Icon d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8" /></span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-700/50 bg-emerald-950/25 text-emerald-200"><Icon d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8" /></span>
               <div>
                 <h2 className="text-sm font-semibold text-slate-100">Top selling products</h2>
                 <p className="mt-0.5 text-xs text-slate-400">Most purchased in recent orders</p>
               </div>
             </div>
-            <Link to="/admin/products" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-600 bg-[#171c24] text-slate-300 transition-colors duration-200 hover:border-[#9b6075] hover:text-white" aria-label="All products" title="All products">›</Link>
+            <Link to="/admin/products" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-600 bg-[#171c24] text-slate-300 transition-colors duration-200 hover:border-emerald-600 hover:bg-emerald-950/30 hover:text-emerald-200" aria-label="All products" title="All products">›</Link>
           </div>
           {top.length === 0 ? <p className="mt-4 rounded-xl border border-dashed border-slate-700 bg-[#171c24] px-4 py-6 text-center text-sm text-slate-400">No sold products yet.</p> : null}
           <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -564,7 +564,7 @@ export function AdminOverview() {
             ))}
           </div>
         </article>
-        <article className="rounded-2xl border border-slate-700 border-t-2 border-t-amber-500/60 bg-[#202630] p-5 shadow-sm">
+        <article className="rounded-2xl border border-slate-700 border-t border-t-amber-500/60 bg-[#202630] p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/40 bg-amber-950/25 text-amber-200"><Icon d="M12 3l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" /></span>
             <div>
@@ -586,9 +586,9 @@ export function AdminOverview() {
                     <p className="font-medium text-slate-100">{offer.name}</p>
                     <p className="shrink-0 rounded-md border border-slate-700 bg-[#171c24] px-2 py-0.5 text-[10px] text-slate-400">{offer.endsAt ? `Ends ${when(offer.endsAt)}` : "Active"}</p>
                   </div>
-                  <p className="mt-1 text-xs text-[#e8b6c6]">{label}</p>
+                  <p className="mt-1 text-xs text-amber-200">{label}</p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-700">
-                    <div className="h-full rounded-full bg-[#7b3f55]" style={{ width: `${progress}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-300" style={{ width: `${progress}%` }} />
                   </div>
                 </li>
               );
@@ -602,7 +602,7 @@ export function AdminOverview() {
 
 function Metric({ accent, icon, tone, label, value, hint }: { accent: string; icon: string; tone: string; label: string; value: string; hint: string }) {
   return (
-    <article className={`group flex items-start justify-between rounded-2xl border border-slate-700 border-t-2 ${accent} bg-[#202630] p-4 shadow-sm transition-colors duration-200 hover:border-[#9b6075]`}>
+    <article className={`flex items-start justify-between rounded-2xl border border-slate-700 border-t ${accent} bg-[#202630] p-4 shadow-sm`}>
       <div>
         <p className="text-xs font-medium text-slate-400">{label}</p>
         <p className="mt-2 text-[26px] leading-none font-semibold tracking-tight text-slate-100">{value}</p>
@@ -635,14 +635,14 @@ function OrderTable({ orders }: { orders: AdminOrder[] }) {
           {orders.map((order) => (
             <tr key={order.id} className="border-t border-slate-700 transition-colors duration-200 hover:bg-slate-700/20">
               <td className="px-5 py-3.5">
-                <Link to={`/admin/orders/${order.id}`} className="inline-flex items-center gap-1.5 rounded-md font-semibold text-white transition-colors duration-200 hover:text-[#f0c0cf]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#d39aac]" />{order.orderNumber}
+                <Link to={`/admin/orders/${order.id}`} className="inline-flex items-center gap-1.5 rounded-md font-semibold text-white transition-colors duration-200 hover:text-sky-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />{order.orderNumber}
                 </Link>
                 <p className="mt-1 text-xs text-slate-400">{when(order.placedAt)}</p>
               </td>
               <td className="px-5 py-3.5">
                 <div className="flex items-center gap-2.5">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#9b6075]/50 bg-[#7b3f55]/20 text-[10px] font-semibold text-[#f0c0cf]">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-sky-700/50 bg-sky-950/40 text-[10px] font-semibold text-sky-200">
                     {buyer(order).split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}
                   </span>
                   <div className="min-w-0">
@@ -652,7 +652,7 @@ function OrderTable({ orders }: { orders: AdminOrder[] }) {
                 </div>
               </td>
               <td className="px-5 py-3.5 text-slate-300">{order.shippingCity || "—"}</td>
-              <td className="px-5 py-3.5 font-semibold text-[#f0c0cf]">{money(order.total)}</td>
+              <td className="px-5 py-3.5 font-semibold text-sky-200">{money(order.total)}</td>
               <td className="px-5 py-3.5"><StatusBadge status={order.status} /></td>
             </tr>
           ))}
@@ -901,7 +901,7 @@ export function AdminOrderDetail() {
                   <p className="truncate font-medium text-slate-100">{item.productName}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <span className="rounded-md border border-slate-700 bg-[#171c24] px-2 py-0.5 text-[11px] text-slate-400">SKU {item.sku}</span>
-                    <span className="rounded-md border border-[#9b6075]/40 bg-[#7b3f55]/15 px-2 py-0.5 text-[11px] font-medium text-[#e8b6c6]">Qty {item.quantity}</span>
+                    <span className="rounded-md border border-sky-800/50 bg-sky-950/30 px-2 py-0.5 text-[11px] font-medium text-sky-200">Qty {item.quantity}</span>
                   </div>
                 </div>
                 <p className="shrink-0 rounded-lg bg-[#171c24] px-2.5 py-1.5 font-semibold text-slate-100">{money(item.lineTotal)}</p>
@@ -912,7 +912,7 @@ export function AdminOrderDetail() {
             <div className="flex justify-between text-slate-400"><dt>Subtotal</dt><dd className="text-slate-200">{money(order.subtotal)}</dd></div>
             <div className="flex justify-between text-slate-400"><dt>Discount</dt><dd className="text-emerald-300">−{money(order.discountAmount)}</dd></div>
             <div className="flex justify-between text-slate-400"><dt>Shipping</dt><dd className="text-slate-200">{money(order.shippingAmount)}</dd></div>
-            <div className="flex justify-between border-t border-slate-700 pt-3 text-base font-semibold text-slate-100"><dt>Total</dt><dd className="text-[#f0c0cf]">{money(order.total)}</dd></div>
+            <div className="flex justify-between border-t border-slate-700 pt-3 text-base font-semibold text-slate-100"><dt>Total</dt><dd className="text-sky-200">{money(order.total)}</dd></div>
           </dl>
         </section>
         <div className="space-y-4">
@@ -1072,7 +1072,7 @@ export function AdminProducts() {
             <p className="mt-0.5 text-xs text-slate-400">{search ? `Results for “${search}”` : meta ? `${meta.total} products in your catalog` : loading ? <SkeletonBlock className="h-3.5 w-28" /> : "Manage your product range"}</p>
           </div>
         </div>
-        <Link to="/admin/products/new" className="inline-flex items-center gap-2 rounded-xl bg-[#7b3f55] px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-[#914e68] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac]">
+        <Link to="/admin/products/new" className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-emerald-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
           <Icon d="M12 5v14m-7-7h14" />
           Add product
         </Link>
@@ -1090,7 +1090,7 @@ export function AdminProducts() {
           <div className="flex flex-wrap gap-2">
             <span className="rounded-lg border border-slate-600 bg-[#171c24] px-2.5 py-1 text-xs text-slate-300">{items.length} shown</span>
             <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/25 px-2.5 py-1 text-xs text-emerald-200">{visibleStock} units</span>
-            <span className="rounded-lg border border-amber-800/60 bg-amber-950/25 px-2.5 py-1 text-xs text-amber-200">{lowStockProducts} low stock</span>
+            <span className="rounded-lg border border-rose-800/60 bg-rose-950/25 px-2.5 py-1 text-xs text-rose-200">{lowStockProducts} low stock</span>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -1116,7 +1116,7 @@ export function AdminProducts() {
                       <div className="flex items-center gap-3">
                         {coverImage(product) ? <img src={coverImage(product) ?? ""} alt="" className="h-11 w-11 shrink-0 rounded-lg border border-slate-700 bg-[#171c24] object-cover" /> : <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-slate-700 bg-[#171c24] text-sm font-semibold text-[#f0c0cf]">{product.name.slice(0, 1)}</span>}
                         <div className="min-w-0">
-                          <Link to={`/product/${product.id}`} className="block truncate font-medium text-slate-100 transition-colors duration-200 ease-out hover:text-[#e7b5c4]">{product.name}</Link>
+                          <Link to={`/product/${product.id}`} className="block truncate font-medium text-slate-100 transition-colors duration-200 ease-out hover:text-emerald-300">{product.name}</Link>
                           <p className="mt-0.5 truncate text-xs text-slate-400">{product.brand?.name ?? "Unbranded"}</p>
                         </div>
                       </div>
@@ -1129,7 +1129,7 @@ export function AdminProducts() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           to={`/admin/products/${product.id}/edit`}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#d39aac]/30 bg-[#7b3f55]/20 px-3 text-sm font-medium text-[#f0c0cf] transition-colors duration-200 hover:border-[#7b3f55] hover:bg-[#7b3f55] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d39aac] focus-visible:ring-offset-2 focus-visible:ring-offset-[#202630]"
+                          className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-600 bg-[#202630] px-3 text-sm font-medium text-slate-300 transition-colors duration-200 hover:border-emerald-700 hover:bg-emerald-950/40 hover:text-emerald-200"
                         >
                           <Icon d="m15 5 4 4M4 20l4.5-1 10.2-10.2a2.1 2.1 0 0 0-3-3L5.5 16 4 20z" />
                           Edit
