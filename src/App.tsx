@@ -27,18 +27,8 @@ import { ShopPage } from "./pages/ShopPage";
 import { ToastViewport } from "./components/ToastViewport";
 
 function StoreShell() {
-  const [theme] = useState<"light" | "dark">(() => {
-    const stored = localStorage.getItem("store_theme");
-    if (stored === "light" || stored === "dark") return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("store_theme", theme);
-  }, [theme]);
-
   return (
-    <div className={`store-shell theme-${theme}`}>
+    <div className="store-shell theme-light">
       <Header />
       <main className="page">
         <div className="page-container">

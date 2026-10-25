@@ -671,25 +671,58 @@ h1, h2, h3, p { margin: 0; }
 
 .footer {
   flex: 0 0 auto;
-  border-top: 1px solid var(--line);
-  padding: 36px 16px 28px;
-  background: #141820;
+  padding: 8px clamp(16px, 3vw, 40px) 12px;
+  background: #fff;
 }
 .footer-grid {
-  max-width: 1360px;
+  max-width: 1634px;
   margin: 0 auto;
   display: grid;
-  gap: 28px;
+  grid-template-columns: minmax(300px, 2.1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(190px, 1.2fr) minmax(205px, 1fr);
+  gap: clamp(18px, 2.6vw, 44px);
+  border-top: 1px solid #e5e7e9;
+  padding: 20px 0 34px;
 }
 .footer h3 {
+  margin: 0 0 11px;
+  color: #15191d;
   font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-weight: 500;
-  margin-bottom: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
 }
-.footer a, .footer p { display: block; color: #d5dbe3; margin: 6px 0; font-size: 14px; }
-.footer a:hover { text-decoration: underline; }
+.footer-column { min-width: 0; }
+.footer-column > a { display: block; width: fit-content; max-width: 100%; margin: 5px 0; color: #62676d; font-size: 13px; line-height: 1.4; }
+.footer-column > a:hover { color: #1d5f97; text-decoration: underline; }
+.footer-contact-list { display: grid; gap: 7px; }
+.footer-contact-item { display: flex !important; align-items: flex-start; gap: 8px; margin: 0 !important; color: #62676d !important; font-size: 13px !important; line-height: 1.4; }
+.footer-contact-item > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.footer-contact-icon { display: grid; width: 18px; height: 18px; flex: none; place-items: center; border-radius: 50%; background: #8a8d90; color: #fff; }
+.footer-contact-icon svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.footer-contact-icon .footer-pin-shape, .footer-contact-icon .footer-phone-shape { fill: currentColor; stroke: none; }
+.footer-contact-icon:has(.footer-pin-shape) circle { fill: #8a8d90; stroke: none; }
+.footer-business-ids { margin-top: 7px; color: #6b7076; font-size: 12px; line-height: 1.5; }
+.footer-business-ids strong { color: #5b6066; font-weight: 700; }
+.footer-socials { display: flex; flex-wrap: wrap; gap: 8px; margin: 1px 0 19px; }
+.footer-social-icon { display: grid; width: 21px; height: 21px; flex: none; place-items: center; border-radius: 50%; color: #fff !important; font-family: Arial, sans-serif; font-size: 13px !important; font-weight: 700; line-height: 1; text-decoration: none !important; }
+.footer-business-ids p { margin: 0; }
+.footer-facebook, .footer-linkedin { background: #1877f2; }
+.footer-linkedin { font-size: 10px !important; }
+.footer-youtube { background: #f00; font-size: 10px !important; }
+.footer-instagram { background: linear-gradient(35deg, #ffd45d, #f04b4b 50%, #9146c8); font-size: 17px !important; }
+.footer-tiktok, .footer-x { background: #050505; font-size: 15px !important; }
+.footer-socials-dheu { margin-bottom: 17px; }
+.footer h3.footer-dheu-heading { margin: 0 0 10px; }
+.footer h3.footer-app-heading { margin: 0 0 8px; }
+.footer-app-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.footer-app-links a { display: flex; min-height: 32px; align-items: center; gap: 5px; border: 1px solid #292d31; border-radius: 5px; padding: 2px 6px; background: #08090a; color: #fff; }
+.footer-app-links a:hover { background: #25282b; }
+.footer-app-links a > span:last-child { display: grid; line-height: 1.05; }
+.footer-app-links small { font-size: 6px; }
+.footer-app-links strong { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.footer-play-mark { width: 20px; height: 20px; }
+.footer-apple-mark { width: 18px; height: 20px; }
+.footer-bottom { max-width: 1634px; margin: 0 auto; border-top: 1px solid #e5e7e9; padding: 15px 0 0; color: #15191d; font-size: 13px; font-weight: 500; text-align: center; }
 .news { display: flex; gap: 8px; margin-top: 8px; }
 .news input { flex: 1; height: 40px; border: 1px solid #d7d7d7; padding: 0 10px; }
 .news button, .btn, .btn-line {
@@ -1930,7 +1963,6 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
     aspect-ratio: auto;
     height: clamp(340px, 31.5vw, 500px);
   }
-  .footer-grid { grid-template-columns: 1.3fr 1fr 1fr 1fr; max-width: 1800px; }
   .shop {
     display: grid;
     grid-template-columns: 230px 1fr;
@@ -2023,9 +2055,14 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 .store-shell .section-head h2 { color: #20262d; }
 .store-shell .cat-photo { background: #f0f2f3; color: #68727d; }
 .store-shell .cat-tile span { color: #3f4852; }
-.store-shell .footer { background: #f4f5f6; border-top-color: #e1e4e7; }
+.store-shell .footer { background: #fff; border-top: 0; }
 .store-shell .footer h3 { color: #252c33; }
 .store-shell .footer a, .store-shell .footer p { color: #535e69; }
+.store-shell .footer-column > a { display: block; margin: 7px 0; color: #62676d; }
+.store-shell .footer-contact-item { display: flex !important; margin: 0 !important; color: #62676d !important; }
+.store-shell .footer .footer-social-icon { display: grid; margin: 0; color: #fff !important; }
+.store-shell .footer-app-links a { display: flex; margin: 0; color: #fff; }
+.store-shell .footer-bottom { color: #15191d; }
 .store-shell .error { color: #b42336; }
 .store-shell .search input, .store-shell .search-pop input,
 .store-shell .field input, .store-shell .field select, .store-shell .field textarea,
@@ -2222,4 +2259,390 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 
 @media (max-width: 420px) {
   .auth-name-grid { grid-template-columns: 1fr; gap: 0; }
+}
+
+@media (max-width: 899px) {
+  .store-shell,
+  .store-shell .page,
+  .store-shell .page-container,
+  .store-shell .home,
+  .store-shell .shop,
+  .store-shell .pdp,
+  .store-shell .checkout,
+  .store-shell .account-shell {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .store-shell .shop-bar {
+    flex-wrap: wrap;
+  }
+
+  .store-shell .shop-bar select,
+  .store-shell .shop-bar .sort {
+    max-width: 100%;
+  }
+
+  .store-shell .home .deals {
+    padding: clamp(12px, 3vw, 22px);
+  }
+
+  .store-shell .home .deals .section-head,
+  .store-shell .home .deals .deal-header-wrap {
+    flex-wrap: wrap;
+  }
+
+  .store-shell .home .deals .product-row {
+    grid-auto-columns: calc((100% - 20px) / 3);
+    gap: 10px;
+  }
+
+  .store-shell .home .mosaic-2 > a,
+  .store-shell .home .mosaic-4 > a {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .store-shell .receipt-header {
+    flex-wrap: wrap;
+  }
+
+  .store-shell .receipt-order-ref {
+    flex-wrap: wrap;
+  }
+
+  .store-shell .merchant-amount,
+  .store-shell .merchant-account {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 599px) {
+  .store-shell .page-container,
+  .store-shell .home {
+    padding-inline: 12px;
+  }
+
+  .store-shell .topbar {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .store-shell .topbar .sara-logo {
+    max-width: 48px;
+  }
+
+  .store-shell .header-search {
+    min-width: 64px;
+  }
+
+  .store-shell .header-search input {
+    padding-inline: 9px 34px;
+  }
+
+  .store-shell .header-tools {
+    gap: 0;
+  }
+
+  .store-shell .header-tools .icon-btn {
+    width: 28px;
+  }
+
+  .store-shell .account-chip.account-actions {
+    gap: 4px;
+  }
+
+  .store-shell .account-chip.account-actions a {
+    min-height: 30px;
+    padding-inline: 6px;
+    font-size: 10px;
+  }
+
+  .store-shell .home .deals .product-row {
+    grid-auto-columns: calc((100% - 12px) / 2);
+    gap: 12px;
+  }
+
+  .store-shell .home .deals .countdown-box {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 5px 8px;
+  }
+
+  .store-shell .home .deals .countdown-stack {
+    min-width: 34px;
+    padding: 4px 5px;
+  }
+
+  .store-shell .home .deals .countdown-stack strong {
+    font-size: 14px;
+  }
+
+  .store-shell .home .deals .deal-card h3 {
+    min-height: 0;
+    font-size: 12px;
+  }
+
+  .store-shell .home .mosaic-2,
+  .store-shell .home .mosaic-4 {
+    gap: 8px;
+  }
+
+  .store-shell .home .mosaic-2 > a,
+  .store-shell .home .mosaic-4 > a {
+    aspect-ratio: 0.85;
+  }
+
+  .store-shell .pay-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .store-shell .pay-card {
+    min-height: 84px;
+    padding: 14px 44px 14px 14px;
+  }
+
+  .store-shell .receipt-modern {
+    padding: 18px 14px;
+  }
+
+  .store-shell .receipt-modern h1 {
+    font-size: clamp(19px, 6vw, 25px);
+  }
+
+  .store-shell .receipt-order-ref {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .store-shell .merchant-amount strong {
+    font-size: 18px;
+  }
+
+  .store-shell .auth.auth-layout {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .store-shell .auth-aside,
+  .store-shell .auth-form {
+    padding: 24px;
+  }
+
+  .store-shell .auth-aside {
+    min-height: 200px;
+  }
+
+  .store-shell .auth-aside h1 {
+    font-size: clamp(26px, 8vw, 34px);
+  }
+}
+
+@media (max-width: 359px) {
+  .store-shell .topbar {
+    gap: 4px;
+    padding-inline: 8px;
+  }
+
+  .store-shell .topbar .sara-logo {
+    max-width: 42px;
+  }
+
+  .store-shell .header-tools .icon-btn {
+    width: 26px;
+  }
+
+  .store-shell .account-chip.account-actions a {
+    padding-inline: 4px;
+  }
+
+  .store-shell .home .deals {
+    padding: 10px;
+  }
+
+  .store-shell .receipt-modern {
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 899px) {
+  .store-shell .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 18px;
+  }
+
+  .store-shell .footer-contact {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1099px) {
+  .store-shell .footer-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .store-shell .footer-contact {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 399px) {
+  .store-shell .footer-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .store-shell .footer-contact {
+    grid-column: auto;
+  }
+
+  .store-shell .footer-bottom {
+    font-size: 11px;
+  }
+}
+
+.store-shell .header-container { max-width: 1638px; }
+.store-shell .topbar {
+  height: 64px;
+  gap: clamp(18px, 2.5vw, 44px);
+  padding-inline: 0;
+}
+.store-shell .header-brands {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 440px;
+  align-items: center;
+  gap: 12px;
+}
+.store-shell .header-brands .sara-logo { gap: 0; }
+.store-shell .sara-logo-main { display: flex; align-items: center; gap: 4px; font-size: 26px; letter-spacing: -0.09em; }
+.store-shell .sara-brand-mark { color: #245fa2; font-size: 21px; line-height: 1; }
+.store-shell .sara-logo-sub { margin-top: 2px; color: #245fa2; font-size: 5px; letter-spacing: 0.28em; }
+.store-shell .header-brand-divider { width: 2px; height: 28px; flex: none; background: #2864a8; }
+.store-shell .header-dheu { flex: none; color: #202124; font-size: 23px; font-weight: 800; letter-spacing: 0.01em; }
+.store-shell .header-marketplace { color: #2864a8; font-size: 22px; font-weight: 800; letter-spacing: 0.015em; }
+.store-shell .header-search {
+  min-width: 180px;
+  max-width: none;
+  flex: 1 1 auto;
+  margin: 0;
+}
+.store-shell .header-search input {
+  height: 36px;
+  border: 1px solid #2864a8;
+  border-radius: 5px;
+  padding-inline: 12px 48px;
+  font-size: 12px;
+}
+.store-shell .header-search button {
+  top: 3px;
+  right: 3px;
+  width: 42px;
+  height: 30px;
+  border-radius: 4px;
+  background: #2864a8;
+  color: #fff;
+}
+.store-shell .header-tools { flex: none; gap: 16px; }
+.store-shell .header-tools .icon-btn { width: 30px; height: 36px; color: #2363a5; }
+.store-shell .header-tools .icon-btn svg { width: 24px; height: 24px; }
+.store-shell .header-account-guest { display: inline-flex; align-items: center; gap: 8px; }
+.store-shell .header-account-avatar,
+.store-shell .header-account-pending {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #d0d1d2;
+  border-radius: 50%;
+  background: #f3f4f5;
+  color: #aeb2b6;
+}
+.store-shell .header-account-avatar svg,
+.store-shell .header-account-pending svg { width: 29px; height: 29px; }
+.store-shell .header-tools .header-account-guest .account-chip.account-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.store-shell .header-tools .header-account-guest .account-chip.account-actions a {
+  min-height: 0;
+  padding: 1px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #155ba5;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.store-shell .header-tools .header-account-guest .account-chip.account-actions a:hover {
+  background: transparent;
+  color: #0d447e;
+  box-shadow: none;
+  text-decoration: underline;
+}
+
+@media (min-width: 900px) {
+  .store-shell .topbar { padding-inline: 0; }
+}
+
+@media (max-width: 899px) {
+  .store-shell { --header: 168px; }
+  .store-shell:not(:has(.promo)) { --header: 140px; }
+  .store-shell .topbar {
+    height: auto;
+    min-height: 96px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 8px 16px 10px;
+  }
+  .store-shell .header-brands {
+    flex: 1 1 auto;
+    gap: 7px;
+  }
+  .store-shell .header-brands .sara-logo { max-width: 58px; }
+  .store-shell .sara-logo-main { font-size: 21px; }
+  .store-shell .sara-brand-mark { font-size: 16px; }
+  .store-shell .sara-logo-sub { font-size: 4px; }
+  .store-shell .header-brand-divider { height: 23px; }
+  .store-shell .header-dheu { font-size: 17px; }
+  .store-shell .header-marketplace { display: inline; font-size: 14px; }
+  .store-shell .header-search {
+    order: 3;
+    min-width: 100%;
+    flex: 1 0 100%;
+  }
+  .store-shell .header-search input { height: 34px; }
+  .store-shell .header-search button { height: 28px; }
+  .store-shell .header-tools { gap: 7px; margin-left: auto; }
+  .store-shell .header-tools .icon-btn { width: 27px; height: 32px; }
+  .store-shell .header-tools .icon-btn svg { width: 21px; height: 21px; }
+  .store-shell .header-account-guest { gap: 5px; }
+  .store-shell .header-account-avatar,
+  .store-shell .header-account-pending { width: 32px; height: 32px; }
+  .store-shell .header-account-avatar svg,
+  .store-shell .header-account-pending svg { width: 25px; height: 25px; }
+  .store-shell .header-tools .header-account-guest .account-chip.account-actions a { font-size: 10px; }
+  .store-shell .header-marketplace { display: inline; }
+}
+
+@media (max-width: 399px) {
+  .store-shell .topbar { padding-inline: 10px; gap: 7px; }
+  .store-shell .header-brands { gap: 5px; }
+  .store-shell .header-brands .sara-logo { max-width: 47px; }
+  .store-shell .sara-logo-main { font-size: 18px; }
+  .store-shell .sara-logo-sub { font-size: 3px; }
+  .store-shell .header-brand-divider { height: 20px; }
+  .store-shell .header-dheu { font-size: 14px; }
+  .store-shell .header-marketplace { font-size: 11px; }
+  .store-shell .header-tools { gap: 4px; }
+  .store-shell .header-tools .icon-btn { width: 24px; }
+  .store-shell .header-account-guest { gap: 3px; }
+  .store-shell .header-account-avatar,
+  .store-shell .header-account-pending { width: 28px; height: 28px; }
 }
