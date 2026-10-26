@@ -167,7 +167,7 @@ export function AdminLayout() {
         </aside>
         {open ? <button type="button" className="absolute inset-0 z-30 bg-slate-900/30 lg:hidden" aria-label="Close menu" onClick={() => setOpen(false)} /> : null}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="admin-theme-topbar flex min-h-[68px] flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6">
+          <header className="admin-theme-topbar relative flex min-h-[68px] flex-wrap items-center gap-3 px-4 py-2.5 sm:px-6">
             <button type="button" className="admin-topbar-icon-button grid h-9 w-9 place-items-center rounded-xl lg:hidden" aria-label="Menu" onClick={() => setOpen(true)}>
               <Icon d="M4 7h16M4 12h16M4 17h16" />
             </button>
@@ -176,7 +176,7 @@ export function AdminLayout() {
               <h1 className="mt-0.5 text-lg font-semibold leading-tight text-white">{title}</h1>
             </div>
             <form
-              className="admin-topbar-search relative mx-auto hidden w-full max-w-[390px] md:block"
+              className="admin-topbar-search relative order-last mx-auto block w-full max-w-[390px] xl:absolute xl:left-1/2 xl:top-1/2 xl:order-none xl:-translate-x-1/2 xl:-translate-y-1/2 xl:mx-0"
               onSubmit={(event) => {
                 event.preventDefault();
                 const term = query.trim();
@@ -305,12 +305,12 @@ function AreaChart({ points, labels }: { points: number[]; labels: string[] }) {
       <svg viewBox={`0 0 ${width} ${height}`} className="h-40 w-full" role="img" aria-label="Revenue over the last 8 days">
         <defs>
           <linearGradient id="sales-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7f2929" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#7f2929" stopOpacity="0.02" />
+            <stop offset="0%" stopColor="#d97706" stopOpacity="0.32" />
+            <stop offset="100%" stopColor="#d97706" stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={fill} fill="url(#sales-fill)" />
-        <path d={line} fill="none" stroke="#7f2929" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={line} fill="none" stroke="#d97706" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <div className="mt-1 flex justify-between text-[11px] text-slate-400">
         {labels.map((label) => (
@@ -337,7 +337,7 @@ function StatusRing({ delivered, open }: { delivered: number; open: number }) {
         cy="80"
         r={radius}
         fill="none"
-        stroke="#7f2929"
+        stroke="#047857"
         strokeWidth="14"
         strokeLinecap="round"
         strokeDasharray={`${circumference * outer} ${circumference}`}
@@ -532,7 +532,7 @@ export function AdminOverview() {
               <span className="font-semibold text-slate-100">{pendingDelivery}</span>
             </p>
             <p className="flex items-center justify-between text-slate-500">
-              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#7f2929]" /> Delivered</span>
+              <span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-700" /> Delivered</span>
               <span className="font-semibold text-slate-100">{delivered}</span>
             </p>
           </div>

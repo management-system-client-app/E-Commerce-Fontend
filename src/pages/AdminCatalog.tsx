@@ -179,7 +179,7 @@ export function AdminCategories() {
         </div>
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-4 shadow-sm">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-4 shadow-sm lg:sticky lg:top-4 lg:self-start">
         <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-800 text-xs font-bold text-white">01</span>
           <div>
@@ -490,7 +490,7 @@ export function AdminBanners() {
         </div>
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm lg:sticky lg:top-4 lg:self-start">
         <div className="mb-1 flex items-center gap-2 border-b border-slate-700 pb-3">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-700 text-xs font-bold text-white">01</span>
           <div>

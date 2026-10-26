@@ -78,7 +78,7 @@ export function AdminCoupons() {
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-500 bg-[#202630] p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-500 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center gap-3 border-b border-slate-700 pb-4"><span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/60 bg-amber-950/35 text-xs font-semibold text-amber-300">01</span><div><h2 className="text-sm font-semibold text-slate-100">{editing ? "Edit coupon" : "Create coupon"}</h2><p className="text-xs text-slate-400">Set a code and discount value</p></div></div>
           {editing ? <div className="rounded-xl border border-amber-800/50 bg-[#171c24] px-3 py-2.5"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Coupon code</p><p className="mt-0.5 font-mono text-sm font-semibold tracking-wider text-amber-200">{editingCoupon?.code}</p></div> : <label className="block text-xs font-medium text-slate-300">Coupon code<input className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm font-mono uppercase tracking-wider text-white outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-400" required minLength={3} placeholder="e.g. WELCOME10" value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>}
           <label className="block text-xs font-medium text-slate-300">Discount type<select className="mt-1.5 h-11 w-full rounded-xl border-2 border-slate-600 bg-[#171c24] px-4 text-sm text-white outline-none focus:border-amber-400" value={type} onChange={(event) => setType(event.target.value)}><option value="PERCENTAGE">Percentage</option><option value="FIXED_AMOUNT">Fixed amount</option></select></label>
@@ -157,7 +157,7 @@ export function AdminPromotions() {
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-500/60 bg-[#202630] p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-500/60 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-700/50 bg-amber-950/25 text-xs font-semibold text-amber-200">01</span>
             <div><h2 className="text-sm font-semibold text-slate-100">Create promotion</h2><p className="text-xs text-slate-400">Define a discount campaign</p></div>
@@ -392,7 +392,7 @@ export function AdminColors() {
       </header>
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
         <form
-          className="space-y-4 rounded-2xl border border-slate-700 border-t-2 bg-[#202630] p-5 shadow-sm"
+          className="space-y-4 rounded-2xl border border-slate-700 border-t-2 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start"
           style={{ borderTopColor: hexCode }}
           onSubmit={async (event) => {
             event.preventDefault();
@@ -542,7 +542,7 @@ function MiniCreate({
   const isSize = title === "Size";
   return (
     <form
-      className={`space-y-4 rounded-2xl border border-slate-700 border-t-2 ${isBrand ? "border-t-cyan-500" : "border-t-blue-500"} bg-[#202630] p-4 shadow-sm`}
+      className={`space-y-4 rounded-2xl border border-slate-700 border-t-2 ${isBrand ? "border-t-cyan-500" : "border-t-blue-500"} bg-[#202630] p-4 shadow-sm lg:sticky lg:top-4 lg:self-start`}
       onSubmit={async (event) => {
         event.preventDefault();
         if (submittingRef.current) return;
@@ -671,7 +671,7 @@ export function AdminOutlets() {
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-emerald-600 bg-[#202630] p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-emerald-600 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-700/60 bg-emerald-950/25 text-xs font-semibold text-emerald-200">01</span>
             <div>
@@ -817,7 +817,7 @@ export function AdminPages() {
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-cyan-600 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center justify-between gap-3 border-b border-slate-700 pb-4">
             <div className="flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-xl border border-cyan-800/60 bg-cyan-950/25 text-cyan-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg></span>
@@ -949,7 +949,7 @@ export function AdminDelivery() {
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
       <form
-        className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-sky-700 bg-[#202630] p-5 shadow-sm"
+        className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-sky-700 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start"
         onSubmit={async (event) => {
           event.preventDefault();
           setBusy(true);
@@ -1454,7 +1454,7 @@ export function AdminSizeGuides() {
       </header>
       {error ? <p className="rounded-xl border border-rose-800/60 bg-rose-950/30 px-4 py-3 text-sm text-rose-200" role="alert">{error}</p> : null}
       <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-blue-600 bg-[#202630] p-5 shadow-sm">
+        <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-blue-600 bg-[#202630] p-5 shadow-sm lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-blue-800/60 bg-blue-950/25 text-blue-200"><svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg></span>
             <div><h2 className="text-sm font-semibold text-slate-100">Create a fit guide</h2><p className="text-xs text-slate-400">Choose a category and name your chart</p></div>
@@ -1644,7 +1644,7 @@ export function AdminVariants() {
         </dl>
       </section>
       <form
-        className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm"
+        className="space-y-4 rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] p-4 shadow-sm lg:sticky lg:top-4 lg:self-start"
         onSubmit={async (event) => {
           event.preventDefault();
           setSaving(true);

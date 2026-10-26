@@ -1,6 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { api } from "../api";
 import { RowsSkeleton } from "./Skeleton";
 import { money } from "../format";
 import { categoryImage, useAuth, useCart, useStore } from "../state";
@@ -29,15 +28,16 @@ function IconSearch() {
 function IconHeart() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 19s-7-4.4-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.6-7 9-7 9Z" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 21s-8-4.9-8-10.2A4.8 4.8 0 0 1 12 7.7a4.8 4.8 0 0 1 8 3.1C20 16.1 12 21 12 21Z" fill="currentColor" />
     </svg>
   );
 }
 function IconBag() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M6 8h12l-1 12H7L6 8Z" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M9 8V7a3 3 0 0 1 6 0v1" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M2 3h2l2.4 12.1a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L21 8H5.1" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="9" cy="20" r="1.6" fill="currentColor" />
+      <circle cx="18" cy="20" r="1.6" fill="currentColor" />
     </svg>
   );
 }
@@ -206,11 +206,16 @@ export function Header() {
         ) : null}
         <div className="header-container">
         <div className="topbar">
-          <Link to="/" className="logo sara-logo" aria-label="SaRa Lifestyle home">
-            <span className="sara-logo-main">SaRa</span>
-            <span className="sara-logo-sub">LIFESTYLE</span>
-          </Link>
-          <Link to="/shop" className="header-marketplace">Marketplace</Link>
+          <div className="header-brands">
+            <Link to="/" className="logo sara-logo" aria-label="SaRa Lifestyle home">
+              <span className="sara-logo-main">SaRa <span className="sara-brand-mark" aria-hidden="true">✿</span></span>
+              <span className="sara-logo-sub">LIFESTYLE LTD.</span>
+            </Link>
+            <span className="header-brand-divider" aria-hidden="true" />
+            <Link to="/shop" className="header-dheu">DHEU</Link>
+            <span className="header-brand-divider" aria-hidden="true" />
+            <Link to="/shop" className="header-marketplace">Marketplace</Link>
+          </div>
           <form onSubmit={onSearch} className="header-search">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I'm shopping for ..." aria-label="Search products" />
             <button type="submit" aria-label="Search"><IconSearch /></button>
@@ -229,11 +234,14 @@ export function Header() {
                 <span>{user.accountType === "ADMIN" ? "Dashboard" : user.firstName}</span>
               </Link>
             ) : !ready ? (
-              <span className="account-chip" aria-label="Checking account status">Account</span>
+              <span className="header-account-pending" aria-label="Checking account status"><IconUser /></span>
             ) : (
-              <span className="account-chip account-actions">
+              <span className="header-account-guest">
+                <span className="header-account-avatar" aria-hidden="true"><IconUser /></span>
+                <span className="account-chip account-actions">
                 <Link to="/login">Login</Link>
                 <Link to="/register">Register</Link>
+                </span>
               </span>
             )}
           </div>
@@ -396,64 +404,105 @@ function CartDrawer() {
 
 export function Footer() {
   const { settings, settingsReady } = useStore();
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setMessage("");
-    try {
-      await api.subscribe(email);
-      setEmail("");
-      setMessage("You are on the list.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not subscribe");
-    }
-  }
+  const contactAddress = settings.address || "Avenue #02A, Road #13, House No #1339, Mirpur DOHS, Dhaka-1216, Bangladesh.";
+  const contactPhone = settings.supportPhone || "+88-01885-998899";
+  const contactEmail = settings.supportEmail || "support@saralifestyle.com";
+  const saraSocials = [
+    { name: "Facebook", mark: "f", className: "footer-facebook", href: settings.facebookUrl },
+    { name: "LinkedIn", mark: "in", className: "footer-linkedin" },
+    { name: "YouTube", mark: "▶", className: "footer-youtube" },
+    { name: "Instagram", mark: "◎", className: "footer-instagram", href: settings.instagramUrl },
+    { name: "TikTok", mark: "♪", className: "footer-tiktok" },
+    { name: "X", mark: "X", className: "footer-x" },
+  ];
+  const dheuSocials = [
+    { name: "Facebook", mark: "f", className: "footer-facebook" },
+    { name: "YouTube", mark: "▶", className: "footer-youtube" },
+    { name: "Instagram", mark: "◎", className: "footer-instagram" },
+    { name: "TikTok", mark: "♪", className: "footer-tiktok" },
+  ];
 
   return (
     <footer className="footer">
       <div className="footer-grid">
-        <div>
-          <h3>Contact</h3>
+        <section className="footer-column footer-contact">
+          <h3>Contact Us</h3>
           {!settingsReady ? <RowsSkeleton rows={3} /> : (
-            <>
-              {settings.address ? <p>{settings.address}</p> : null}
-              {settings.supportPhone ? <a href={`tel:${settings.supportPhone}`}>{settings.supportPhone}</a> : null}
-              {settings.supportEmail ? <a href={`mailto:${settings.supportEmail}`}>{settings.supportEmail}</a> : null}
-              <div className="socials">
-                {settings.facebookUrl ? <a href={settings.facebookUrl} target="_blank" rel="noreferrer">Facebook</a> : null}
-                {settings.instagramUrl ? <a href={settings.instagramUrl} target="_blank" rel="noreferrer">Instagram</a> : null}
+            <div className="footer-contact-list">
+              <p className="footer-contact-item">
+                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path className="footer-pin-shape" d="M10 18s6-5.4 6-10a6 6 0 1 0-12 0c0 4.6 6 10 6 10Z" /><circle cx="10" cy="8" r="2" /></svg></span>
+                <span>{contactAddress}</span>
+              </p>
+              <a className="footer-contact-item" href={`tel:${contactPhone}`}>
+                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path className="footer-phone-shape" d="M5 2.8 7.5 2l2 4-1.7 1.6a12 12 0 0 0 4.6 4.6L14 10.5l4 2-.8 2.5c-.4 1.2-1.6 2-2.9 1.7C8.8 15.4 4.6 11.2 3.3 5.7 3 4.4 3.8 3.2 5 2.8Z" /></svg></span>
+                <span>{contactPhone}</span>
+              </a>
+              <a className="footer-contact-item" href={`mailto:${contactEmail}`}>
+                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="12" rx="2" /><path d="m3 6 7 5 7-5" /></svg></span>
+                <span>{contactEmail}</span>
+              </a>
+              <div className="footer-business-ids">
+                <p>DBID Number: <strong>204425796</strong></p>
+                <p>D-U-N-S Number: <strong>731926671</strong></p>
               </div>
-            </>
+            </div>
           )}
-        </div>
-        <div>
+        </section>
+        <nav className="footer-column" aria-label="Company">
           <h3>Company</h3>
-          <Link to="/pages/about">About</Link>
+          <Link to="/pages/blogs">Blogs</Link>
+          <Link to="/pages/media">Media</Link>
           <Link to="/outlets">Outlets</Link>
-        </div>
-        <div>
+          <Link to="/pages/careers">Careers</Link>
+          <Link to="/pages/about">About Us</Link>
+          <Link to="/pages/contact">Contact Us</Link>
+        </nav>
+        <nav className="footer-column" aria-label="Customer">
+          <h3>Customer</h3>
+          <Link to="/login">Login</Link>
+          <Link to="/register">Register</Link>
+          <Link to="/shop">Brands</Link>
+          <Link to="/shop?sort=price_asc">Best Deals</Link>
+          <Link to="/shop">Marketplace</Link>
+        </nav>
+        <nav className="footer-column" aria-label="Help">
           <h3>Help</h3>
-          <Link to="/pages/shipping">Shipping</Link>
-          <Link to="/pages/returns">Returns</Link>
-          <Link to="/track">Order tracking</Link>
-        </div>
-        <div>
-          <h3>Newsletter</h3>
-          <form className="news" onSubmit={onSubmit}>
-            <input
-              type="email"
-              required
-              value={email}
-              placeholder="Email"
-              aria-label="Email"
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <button type="submit">Join</button>
-          </form>
-          {message ? <p className="note">{message}</p> : null}
-        </div>
+          <Link to="/pages/faqs">FAQs</Link>
+          <Link to="/pages/privacy-policy">Privacy Policy</Link>
+          <Link to="/pages/cookies-policy">Cookies Policy</Link>
+          <Link to="/pages/terms-and-conditions">Terms &amp; Conditions</Link>
+          <Link to="/pages/replacement-policy">Replacement Policy</Link>
+          <Link to="/pages/emi-terms-and-conditions">EMI Terms &amp; Conditions</Link>
+        </nav>
+        <section className="footer-column footer-social-column">
+          <h3>Social Media for SaRa</h3>
+          <div className="footer-socials" aria-label="SaRa social media">
+            {saraSocials.map((social) => {
+              const className = `footer-social-icon ${social.className}`;
+              return social.href
+                ? <a key={social.name} className={className} href={social.href} target="_blank" rel="noreferrer" aria-label={social.name}>{social.mark}</a>
+                : <span key={social.name} className={className} aria-label={social.name}>{social.mark}</span>;
+            })}
+          </div>
+          <h3 className="footer-dheu-heading">Social Media for DHEU</h3>
+          <div className="footer-socials footer-socials-dheu" aria-label="DHEU social media">
+            {dheuSocials.map((social) => <span key={social.name} className={`footer-social-icon ${social.className}`} aria-label={social.name}>{social.mark}</span>)}
+          </div>
+          <h3 className="footer-app-heading">Download App</h3>
+          <div className="footer-app-links">
+            <a href="https://play.google.com/store" target="_blank" rel="noreferrer" aria-label="Browse apps on Google Play">
+              <svg className="footer-play-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#42d392" d="M3 2.8v18.4l10-9.2z" /><path fill="#4ba3ff" d="m3 2.8 12.2 7 3.1-3.1z" /><path fill="#ffcf4a" d="m15.2 10 5.2 3-5.2 3-2.2-4z" /><path fill="#ff6b6b" d="m3 21.2 12.2-7-3.1-3.2z" /></svg>
+              <span><small>GET IT ON</small><strong>Google Play</strong></span>
+            </a>
+            <a href="https://www.apple.com/app-store/" target="_blank" rel="noreferrer" aria-label="Browse apps on the App Store">
+              <svg className="footer-apple-mark" viewBox="0 0 20 22" aria-hidden="true"><path fill="currentColor" d="M15.9 11.7c0-2.1 1.7-3.1 1.8-3.2a4 4 0 0 0-3.2-1.7c-1.3-.1-2.5.8-3.2.8s-1.7-.8-2.8-.8a4.2 4.2 0 0 0-3.5 2.1c-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7s1.7.7 2.8.7c1.2 0 1.9-1 2.6-2 .8-1.1 1.1-2.2 1.1-2.3-.1 0-2-.8-2-3.6ZM13.8 5.4a3.9 3.9 0 0 0 .9-2.8 4 4 0 0 0-2.6 1.3 3.7 3.7 0 0 0-.9 2.7 3.4 3.4 0 0 0 2.6-1.2Z" /></svg>
+              <span><small>Available on the</small><strong>App Store</strong></span>
+            </a>
+          </div>
+        </section>
+      </div>
+      <div className="footer-bottom">
+        © {new Date().getFullYear()} SaRa Lifestyle Ltd. All Rights Reserved
       </div>
     </footer>
   );
