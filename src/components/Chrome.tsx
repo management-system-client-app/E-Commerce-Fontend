@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { RowsSkeleton } from "./Skeleton";
 import { money } from "../format";
@@ -73,50 +73,6 @@ function IconUser({ size = 18 }: { size?: number } = {}) {
   );
 }
 
-function findNamed(categories: Category[], key: string) {
-  const names = key === "women" ? ["women", "woman"] : [key];
-  return categories.find((category) =>
-    names.some(
-      (name) =>
-        category.slug === name ||
-        category.name.toLowerCase() === name ||
-        category.slug.startsWith(`${name}-`),
-    ),
-  );
-}
-
-export function useMenus() {
-  const { catalog } = useStore();
-  return useMemo(() => {
-    const categories = catalog.categories;
-    const roots = categories.filter((category) => !category.parentId);
-    const kidsOf = (parent?: Category) =>
-      parent ? categories.filter((category) => category.parentId === parent.id) : [];
-    const toLinks = (list: Category[], gender?: string) => {
-      const links = list.map((category) => ({
-        href: `/shop?categoryId=${category.id}`,
-        label: category.name,
-      }));
-      if (gender) links.unshift({ href: `/shop?gender=${gender}`, label: "Shop all" });
-      return links;
-    };
-    const women = findNamed(categories, "women");
-    const men = findNamed(categories, "men");
-    const kids = findNamed(categories, "kids");
-    const rootLinks = roots.map((category) => ({
-      href: `/shop?categoryId=${category.id}`,
-      label: category.name,
-    }));
-    return [
-      { label: "Home", href: "/", items: rootLinks },
-      { label: "Women", href: "/shop?gender=WOMEN", items: toLinks(kidsOf(women), "WOMEN") },
-      { label: "Men", href: "/shop?gender=MEN", items: toLinks(kidsOf(men), "MEN") },
-      { label: "Kids", href: "/shop?gender=KIDS", items: toLinks(kidsOf(kids), "KIDS") },
-      { label: "Best Deals", href: "/shop", items: rootLinks },
-    ];
-  }, [catalog.categories]);
-}
-
 function navClass(href: string, isActive: boolean, pathname: string, search: string) {
   const url = new URL(href, "http://local");
   const here = new URLSearchParams(search);
@@ -183,10 +139,10 @@ export function Header() {
   const { promo, catalog } = useStore();
   const { user, ready } = useAuth();
   const { cart, setDrawer } = useCart();
-  const menus = useMenus();
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -194,7 +150,15 @@ export function Header() {
     event.preventDefault();
     const term = query.trim();
     navigate(term ? `/shop?search=${encodeURIComponent(term)}` : "/shop");
+    setSearchOpen(false);
   }
+
+  const navLinks = [
+    { label: "Home", href: "/" },
+    { label: "Mens", href: "/shop?gender=MEN" },
+    { label: "Womens", href: "/shop?gender=WOMEN" },
+    { label: "Kids", href: "/shop?gender=KIDS" },
+  ];
 
   return (
     <>
@@ -211,20 +175,25 @@ export function Header() {
               <span className="sara-logo-main">SaRa <span className="sara-brand-mark" aria-hidden="true">✿</span></span>
               <span className="sara-logo-sub">LIFESTYLE LTD.</span>
             </Link>
-            <span className="header-brand-divider" aria-hidden="true" />
-            <Link to="/shop" className="header-dheu">DHEU</Link>
-            <span className="header-brand-divider" aria-hidden="true" />
-            <Link to="/shop" className="header-marketplace">Marketplace</Link>
           </div>
-          <form onSubmit={onSearch} className="header-search">
+          <form onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I'm shopping for ..." aria-label="Search products" />
             <button type="submit" aria-label="Search"><IconSearch /></button>
           </form>
           <div className="header-tools">
-            <Link to="/wishlist" className="icon-btn" aria-label="Wishlist" title="Wishlist">
+            <button
+              type="button"
+              className="icon-btn mobile-search-toggle"
+              aria-label={searchOpen ? "Close search" : "Open search"}
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen((open) => !open)}
+            >
+              <IconSearch />
+            </button>
+            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label="Wishlist" title="Wishlist">
               <IconHeart />
             </Link>
-            <button type="button" className="icon-btn" aria-label="Cart" onClick={() => setDrawer(true)}>
+            <button type="button" className="icon-btn header-cart" aria-label="Cart" onClick={() => setDrawer(true)}>
               <IconBag />
               {cart.summary.itemCount > 0 ? <span className="badge">{cart.summary.itemCount}</span> : null}
             </button>
@@ -267,29 +236,16 @@ export function Header() {
             <span>Shop by category</span>
           </button>
           <nav className="top-nav" aria-label="Shop">
-            <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>Home</NavLink>
-            {menus.filter((item) => item.label !== "Home").map((item) => (
-              <div className="menu-item" key={item.label}>
-                <Link
-                  to={item.href}
-                  className={navClass(item.href, false, location.pathname, location.search)}
-                  aria-current={navClass(item.href, false, location.pathname, location.search) ? "page" : undefined}
-                >
-                  {item.label}
-                </Link>
-                {item.items.length > 0 ? (
-                  <div className="dropdown">
-                    {item.items.map((child) => <Link key={child.href + child.label} to={child.href}>{child.label}</Link>)}
-                  </div>
-                ) : null}
-              </div>
-            ))}
+            {navLinks.map((item) => {
+              const active = item.label === "Home"
+                ? location.pathname === "/"
+                : navClass(item.href, false, location.pathname, location.search);
+              return <Link key={item.label} to={item.href} className={`${item.label === "Home" ? "home-link " : ""}${active ? "on" : ""}`} aria-current={active ? "page" : undefined}>{item.label}</Link>;
+            })}
           </nav>
-          {location.pathname === "/" ? (
-            <div className="category-nav-tools">
-              <Link to="/track"><IconTracking />Order Tracking</Link>
-            </div>
-          ) : null}
+          <div className="category-nav-tools">
+            <Link to="/track"><IconTracking />Order Tracking</Link>
+          </div>
           {menuOpen ? (
             <>
               <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
@@ -325,6 +281,10 @@ export function Header() {
           <IconGrid />
           Category
         </button>
+        <NavLink to="/wishlist" className={({ isActive }) => (isActive ? "on" : "")}>
+          <IconHeart />
+          Wishlist
+        </NavLink>
         <NavLink to="/cart" className={({ isActive }) => (isActive ? "on" : "")}>
           <IconBag />
           Cart
