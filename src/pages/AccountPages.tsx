@@ -340,15 +340,9 @@ export function WishlistPage() {
       .finally(() => setLoading(false));
   }, [ready, user]);
 
-  if (!ready || loading) return <ProductGridSkeleton />;
-
-  if (ready && !user) {
-    return (
-      <p className="empty">
-        <Link to="/login">Login</Link> to see your wishlist.
-      </p>
-    );
-  }
+  if (!ready) return <ProductGridSkeleton />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <ProductGridSkeleton />;
 
   return (
     <div>
