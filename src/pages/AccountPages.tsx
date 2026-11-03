@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet as RouterOutlet, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { API_BASE, ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
+import { ArrowLeft, Eye, EyeOff, ImagePlus, UserRound } from "lucide-react";
+import { ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { UserFace } from "../components/Chrome";
 import { ProductGrid } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
@@ -55,11 +56,39 @@ export function AuthCallbackPage() {
   );
 }
 
+function StandaloneAuthLayout({ activeTab, children }: { activeTab: "login" | "register"; children: ReactNode }) {
+  return (
+    <main className="login-standalone">
+      <div className="login-content">
+        <Link className="login-back" to="/">
+          <ArrowLeft size={14} strokeWidth={1.8} /> Back To Home
+        </Link>
+        <div className="login-brand-row" aria-label="SaRa, DHEU, Marketplace">
+          <span className="login-brand-sara"><strong>SaRa <span aria-hidden="true">✿</span></strong><small>LIFESTYLE LTD.</small></span>
+          <span className="login-brand-divider" />
+          <strong className="login-brand-dheu">DHEU</strong>
+          <span className="login-brand-divider" />
+          <strong className="login-brand-marketplace">MARKETPLACE</strong>
+        </div>
+        <section className="login-card">
+          <nav className="login-tabs" aria-label="Account access">
+            <Link to="/login" className={`login-tab${activeTab === "login" ? " login-tab-active" : ""}`} aria-current={activeTab === "login" ? "page" : undefined}>Login</Link>
+            <Link to="/register" className={`login-tab${activeTab === "register" ? " login-tab-active" : ""}`} aria-current={activeTab === "register" ? "page" : undefined}>Register</Link>
+          </nav>
+          <div className="login-divider" />
+          {children}
+        </section>
+      </div>
+    </main>
+  );
+}
+
 export function LoginPage() {
   const { user, ready, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   async function onSubmit(event: FormEvent) {
@@ -77,39 +106,32 @@ export function LoginPage() {
   if (user) return <Navigate to={user.accountType === "ADMIN" ? "/admin" : "/"} replace />;
 
   return (
-    <form className="auth auth-layout auth-login" onSubmit={onSubmit}>
-      <div className="auth-aside">
-        <p className="auth-kicker">MEMBER ACCESS</p>
-        <h1>Welcome back.</h1>
-        <p>Pick up right where you left off.</p>
-      </div>
-      <div className="auth-form">
-        <p className="label">ACCOUNT LOGIN</p>
-        <h2>Sign in</h2>
-        <label className="field">
-          <span>Email</span>
-          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button className="btn wide" type="submit">
-          Login
-        </button>
-        <p className="note">
-          New here? <Link to="/register">Create an account</Link>
-          {" · "}
-          <Link to="/forgot-password">Forgot password?</Link>
-        </p>
-        <div className="auth-social">
-          <a href={`${API_BASE}/auth/google`}>Google</a>
-          <a href={`${API_BASE}/auth/facebook`}>Facebook</a>
-        </div>
-        <p className="note">Admin accounts sign in with this same form.</p>
-      </div>
-    </form>
+    <StandaloneAuthLayout activeTab="login">
+      <form className="login-form" onSubmit={onSubmit}>
+          <label className="login-field">
+            <span>E-mail / Phone Number <b>*</b></span>
+            <input type="text" autoComplete="username" placeholder="Enter Your E-mail address / Phone number" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          </label>
+          <label className="login-field">
+            <span>Password <b>*</b></span>
+            <span className="login-password-control">
+              <input type={showPassword ? "text" : "password"} autoComplete="current-password" placeholder="Enter Your Password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+              <button
+                type="button"
+                className="login-password-toggle"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            </span>
+          </label>
+          <div className="login-forgot-row"><Link to="/forgot-password">Forgot Password?</Link></div>
+          {error ? <p className="login-error" role="alert">{error}</p> : null}
+          <button className="login-submit" type="submit">Login</button>
+      </form>
+    </StandaloneAuthLayout>
   );
 }
 
@@ -159,35 +181,36 @@ export function ForgotPage() {
   }
 
   return (
-    <form className="auth" onSubmit={step === "email" ? sendCode : step === "code" ? confirmCode : changePassword}>
-      <h1 className="label">Forgot password</h1>
-      <div style={{ height: 16 }} />
-      <label className="field">
-        <span>Email</span>
-        <input type="email" required value={email} readOnly={step !== "email"} onChange={(event) => setEmail(event.target.value)} />
-      </label>
-      {step !== "email" ? (
-        <label className="field">
-          <span>Code from email</span>
-          <input required inputMode="numeric" minLength={6} maxLength={6} value={code} readOnly={step === "password"} onChange={(event) => setCode(event.target.value)} />
+    <StandaloneAuthLayout activeTab="login">
+      <form className="login-form" onSubmit={step === "email" ? sendCode : step === "code" ? confirmCode : changePassword}>
+        <h1 className="login-flow-title">Forgot Password</h1>
+        <label className="login-field">
+          <span>E-mail <b>*</b></span>
+          <input type="email" placeholder="Enter Your E-mail address" required value={email} readOnly={step !== "email"} onChange={(event) => setEmail(event.target.value)} />
         </label>
-      ) : null}
-      {step === "password" ? (
-        <>
-          <label className="field">
-            <span>New password</span>
-            <input type="password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} />
+        {step !== "email" ? (
+          <label className="login-field">
+            <span>Code from email <b>*</b></span>
+            <input placeholder="Enter the 6-digit code" required inputMode="numeric" minLength={6} maxLength={6} value={code} readOnly={step === "password"} onChange={(event) => setCode(event.target.value)} />
           </label>
-          <label className="field">
-            <span>Confirm password</span>
-            <input type="password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
-          </label>
-        </>
-      ) : null}
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="note">{note}</p> : null}
-      <button className="btn wide" type="submit">{step === "email" ? "Send code" : step === "code" ? "Continue" : "Change password"}</button>
-    </form>
+        ) : null}
+        {step === "password" ? (
+          <>
+            <label className="login-field">
+              <span>New password <b>*</b></span>
+              <input type="password" placeholder="Enter New Password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} />
+            </label>
+            <label className="login-field">
+              <span>Confirm password <b>*</b></span>
+              <input type="password" placeholder="Confirm New Password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+            </label>
+          </>
+        ) : null}
+        {error ? <p className="login-error" role="alert">{error}</p> : null}
+        {note ? <p className="login-note">{note}</p> : null}
+        <button className="login-submit" type="submit">{step === "email" ? "Send Code" : step === "code" ? "Continue" : "Change Password"}</button>
+      </form>
+    </StandaloneAuthLayout>
   );
 }
 
@@ -209,16 +232,17 @@ export function ResetPage() {
   }
 
   return (
-    <form className="auth" onSubmit={onSubmit}>
-      <h1 className="label">Reset password</h1>
-      <div style={{ height: 16 }} />
-      <label className="field"><span>Email</span><input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-      <label className="field"><span>Code</span><input required minLength={6} maxLength={6} value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} /></label>
-      <label className="field"><span>New password</span><input type="password" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
-      <label className="field"><span>Confirm password</span><input type="password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
-      {error ? <p className="error">{error}</p> : null}
-      <button className="btn wide" type="submit">Reset</button>
-    </form>
+    <StandaloneAuthLayout activeTab="login">
+      <form className="login-form" onSubmit={onSubmit}>
+        <h1 className="login-flow-title">Reset Password</h1>
+        <label className="login-field"><span>E-mail <b>*</b></span><input type="email" placeholder="Enter Your E-mail address" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label className="login-field"><span>Code <b>*</b></span><input placeholder="Enter the 6-digit code" required minLength={6} maxLength={6} value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} /></label>
+        <label className="login-field"><span>New password <b>*</b></span><input type="password" placeholder="Enter New Password" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
+        <label className="login-field"><span>Confirm password <b>*</b></span><input type="password" placeholder="Confirm New Password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
+        {error ? <p className="login-error" role="alert">{error}</p> : null}
+        <button className="login-submit" type="submit">Reset Password</button>
+      </form>
+    </StandaloneAuthLayout>
   );
 }
 
@@ -256,64 +280,44 @@ export function RegisterPage() {
   if (user) return <Navigate to="/" replace />;
 
   return (
-    <form className="auth auth-layout auth-register" onSubmit={onSubmit}>
-      <div className="auth-aside">
-        <p className="auth-kicker">YOUR ACCOUNT</p>
-        <h1>A fresh start.</h1>
-        <p>Set up your profile and make checkout yours.</p>
-      </div>
-      <div className="auth-form">
-        <p className="label">CREATE ACCOUNT</p>
-        <h2>Join us</h2>
-        {preview ? <img className="user-face auth-avatar" src={preview} alt="Profile preview" /> : <UserFace className="auth-avatar" user={{ firstName: form.firstName, email: form.email, avatarUrl: null }} size={72} />}
-        <label className="field">
-          <span>Profile photo</span>
-          <input
-            type="file"
-            accept="image/avif,image/jpeg,image/png,image/webp"
-            onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
-              setPhoto(file);
-              setPreview((current) => {
-                if (current) URL.revokeObjectURL(current);
-                return file ? URL.createObjectURL(file) : "";
-              });
-            }}
-          />
-        </label>
-        <div className="auth-name-grid">
-          <label className="field">
-            <span>First name</span>
-            <input autoComplete="given-name" required value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} />
-          </label>
-          <label className="field">
-            <span>Last name</span>
-            <input autoComplete="family-name" required value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} />
+    <StandaloneAuthLayout activeTab="register">
+      <form className="login-form register-form" onSubmit={onSubmit}>
+        <h1 className="login-flow-title">Create Account</h1>
+        <div className="register-photo-row">
+          <div className="register-avatar-preview">
+            {preview ? <img src={preview} alt="Profile preview" /> : <UserRound size={30} strokeWidth={1.6} />}
+          </div>
+          <label className="register-photo-picker">
+            <ImagePlus size={18} strokeWidth={1.8} aria-hidden="true" />
+            <span>{photo ? photo.name : "Choose a profile photo"}</span>
+            <input
+              type="file"
+              accept="image/avif,image/jpeg,image/png,image/webp"
+              aria-label="Choose a profile photo"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setPhoto(file);
+                setPreview((current) => {
+                  if (current) URL.revokeObjectURL(current);
+                  return file ? URL.createObjectURL(file) : "";
+                });
+              }}
+            />
           </label>
         </div>
-        <label className="field">
-          <span>Email</span>
-          <input type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
-        </label>
-        <label className="field">
-          <span>Phone</span>
-          <input type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input type="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} />
-        </label>
-        <label className="field">
-          <span>Confirm password</span>
-          <input type="password" autoComplete="new-password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button className="btn wide" type="submit">
-          Create account
-        </button>
-        <p className="note">Already have an account? <Link to="/login">Sign in</Link></p>
-      </div>
-    </form>
+        <div className="register-name-grid">
+          <label className="login-field"><span>First name <b>*</b></span><input autoComplete="given-name" required value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} /></label>
+          <label className="login-field"><span>Last name <b>*</b></span><input autoComplete="family-name" required value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} /></label>
+        </div>
+        <label className="login-field"><span>Email <b>*</b></span><input type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label className="login-field"><span>Phone</span><input type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+        <label className="login-field"><span>Password <b>*</b></span><input type="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
+        <label className="login-field"><span>Confirm password <b>*</b></span><input type="password" autoComplete="new-password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
+        {error ? <p className="login-error" role="alert">{error}</p> : null}
+        <button className="login-submit" type="submit">Create Account</button>
+        <p className="login-note">Already have an account? <Link to="/login">Sign in</Link></p>
+      </form>
+    </StandaloneAuthLayout>
   );
 }
 
@@ -380,43 +384,48 @@ export function TrackPage() {
   }
 
   return (
-    <div className="narrow">
-      <h1 className="label">Order tracking</h1>
-      <form onSubmit={onSubmit} style={{ marginTop: 16 }}>
-        <label className="field">
-          <span>Order number</span>
-          <input required value={orderNumber} onChange={(event) => setOrderNumber(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>Phone</span>
-          <input required minLength={7} value={phone} onChange={(event) => setPhone(event.target.value)} />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button className="btn" type="submit">
-          Track
-        </button>
-      </form>
-      {loading ? <RowsSkeleton rows={3} /> : null}
-      {order ? (
-        <div style={{ marginTop: 20 }}>
-          <p>
-            {order.orderNumber} · {titleCaseStatus(order.status)}
-          </p>
-          <p>{money(order.total)}</p>
-          {order.items.map((item) => (
-            <div className="line" key={item.sku + item.productName}>
-              {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <div className="photo-fallback" />}
-              <div>
-                <h3>{item.productName}</h3>
-                <p className="note">
-                  {item.size} {item.color} · × {item.quantity}
-                </p>
+    <section className="tracking-card">
+      <div className="tracking-page">
+        <h1 className="tracking-title">Track Your Order</h1>
+        <p className="tracking-description">
+          To track your order please enter your Order Invoice No &amp; Email/Phone number (Provided in your order). Then Press Track Order button.
+        </p>
+        <form onSubmit={onSubmit} className="tracking-form">
+          <label className="field tracking-field">
+            <span>Order No <b className="tracking-required">*</b></span>
+            <input required placeholder="Enter Your Order No" value={orderNumber} onChange={(event) => setOrderNumber(event.target.value)} />
+          </label>
+          <label className="field tracking-field">
+            <span>Email/Mobile Number <b className="tracking-required">*</b></span>
+            <input required minLength={7} placeholder="Enter Your Email/Mobile Number" value={phone} onChange={(event) => setPhone(event.target.value)} />
+          </label>
+          <button className="btn tracking-submit" type="submit">
+            Track Order
+          </button>
+          {error ? <p className="error tracking-error">{error}</p> : null}
+        </form>
+        {loading ? <RowsSkeleton rows={3} /> : null}
+        {order ? (
+          <div style={{ marginTop: 20 }}>
+            <p>
+              {order.orderNumber} · {titleCaseStatus(order.status)}
+            </p>
+            <p>{money(order.total)}</p>
+            {order.items.map((item) => (
+              <div className="line" key={item.sku + item.productName}>
+                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <div className="photo-fallback" />}
+                <div>
+                  <h3>{item.productName}</h3>
+                  <p className="note">
+                    {item.size} {item.color} · × {item.quantity}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { ArrowRight, Heart, House, LayoutGrid, Mail, MapPin, PackageSearch, Phone, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
 import { RowsSkeleton } from "./Skeleton";
 import { money } from "../format";
 import { categoryImage, useAuth, useCart, useStore } from "../state";
@@ -12,64 +13,8 @@ export function UserFace({ user, size = 32, className = "" }: { user: Pick<User,
   }
   return (
     <span className={`user-face user-face-default ${className}`} style={style} role="img" aria-label="Default user avatar">
-      <IconUser size={Math.max(13, Math.round(size * 0.58))} />
+      <UserRound size={Math.max(13, Math.round(size * 0.58))} strokeWidth={1.7} />
     </span>
-  );
-}
-
-function IconSearch() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M16 16.5 20 20.5" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-function IconHeart() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 21s-8-4.9-8-10.2A4.8 4.8 0 0 1 12 7.7a4.8 4.8 0 0 1 8 3.1C20 16.1 12 21 12 21Z" fill="currentColor" />
-    </svg>
-  );
-}
-function IconBag() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M2 3h2l2.4 12.1a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L21 8H5.1" fill="currentColor" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <circle cx="9" cy="20" r="1.6" fill="currentColor" />
-      <circle cx="18" cy="20" r="1.6" fill="currentColor" />
-    </svg>
-  );
-}
-function IconHome() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 11.5 12 4l8 7.5V20H4v-8.5Z" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-function IconGrid() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  );
-}
-function IconTracking() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="7.5" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="17.5" cy="18" r="1.7" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
-}
-function IconUser({ size = 18 }: { size?: number } = {}) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5 19.2c1.4-3 3.8-4.4 7-4.4s5.6 1.4 7 4.4" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
   );
 }
 
@@ -136,7 +81,7 @@ function CategoryList({
 }
 
 export function Header() {
-  const { promo, catalog } = useStore();
+  const { catalog } = useStore();
   const { user, ready } = useAuth();
   const { cart, setDrawer } = useCart();
   const navigate = useNavigate();
@@ -144,6 +89,7 @@ export function Header() {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   function onSearch(event: FormEvent) {
@@ -163,11 +109,6 @@ export function Header() {
   return (
     <>
       <header className={location.pathname === "/" ? "header home-header" : "header"}>
-        {promo ? (
-          <div className="promo">
-            <Link to="/shop">{promo}</Link>
-          </div>
-        ) : null}
         <div className="header-container">
         <div className="topbar">
           <div className="header-brands">
@@ -178,7 +119,7 @@ export function Header() {
           </div>
           <form onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I'm shopping for ..." aria-label="Search products" />
-            <button type="submit" aria-label="Search"><IconSearch /></button>
+            <button type="submit" aria-label="Search"><Search size={20} strokeWidth={1.7} /></button>
           </form>
           <div className="header-tools">
             <button
@@ -188,13 +129,13 @@ export function Header() {
               aria-expanded={searchOpen}
               onClick={() => setSearchOpen((open) => !open)}
             >
-              <IconSearch />
+              <Search size={20} strokeWidth={1.7} />
             </button>
             <Link to="/wishlist" className="icon-btn header-wishlist" aria-label="Wishlist" title="Wishlist">
-              <IconHeart />
+              <Heart size={20} strokeWidth={1.7} />
             </Link>
             <button type="button" className="icon-btn header-cart" aria-label="Cart" onClick={() => setDrawer(true)}>
-              <IconBag />
+              <ShoppingBag size={20} strokeWidth={1.7} />
               {cart.summary.itemCount > 0 ? <span className="badge">{cart.summary.itemCount}</span> : null}
             </button>
             {user ? (
@@ -203,10 +144,10 @@ export function Header() {
                 <span>{user.accountType === "ADMIN" ? "Dashboard" : user.firstName}</span>
               </Link>
             ) : !ready ? (
-              <span className="header-account-pending" aria-label="Checking account status"><IconUser /></span>
+              <span className="header-account-pending" aria-label="Checking account status"><UserRound size={18} strokeWidth={1.7} /></span>
             ) : (
               <span className="header-account-guest">
-                <span className="header-account-avatar" aria-hidden="true"><IconUser /></span>
+                <span className="header-account-avatar" aria-hidden="true"><UserRound size={18} strokeWidth={1.7} /></span>
                 <span className="account-chip account-actions">
                 <Link to="/login">Login</Link>
                 <Link to="/register">Register</Link>
@@ -232,7 +173,7 @@ export function Header() {
             }}
             onClick={() => setMenuOpen((open) => !open)}
           >
-            <IconGrid />
+            <LayoutGrid size={18} strokeWidth={1.7} />
             <span>Shop by category</span>
           </button>
           <nav className="top-nav" aria-label="Shop">
@@ -244,17 +185,15 @@ export function Header() {
             })}
           </nav>
           <div className="category-nav-tools">
-            <Link to="/track"><IconTracking />Order Tracking</Link>
+            <Link to="/track"><PackageSearch size={16} strokeWidth={1.7} />Order Tracking</Link>
           </div>
           {menuOpen ? (
             <>
               <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
-              <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="Shop by category">
+              <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="All Categories">
                 <header className="category-menu-heading">
-                  <span><IconGrid /> Shop By Category</span>
-                  <button type="button" onClick={() => setMenuOpen(false)}>
-                    ×
-                  </button>
+                  <span>All Categories</span>
+                  <button type="button" aria-label="Close category menu" onClick={() => setMenuOpen(false)}>×</button>
                 </header>
                 <div className="category-menu-body">
                   <CategoryList
@@ -274,26 +213,71 @@ export function Header() {
       </header>
       <nav className="bottom-nav" aria-label="Mobile">
         <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>
-          <IconHome />
+          <House size={18} strokeWidth={1.7} />
           Home
         </NavLink>
-        <button type="button" onClick={() => setMenuOpen(true)}>
-          <IconGrid />
+        <button type="button" onClick={() => { setAccountMenuOpen(false); setMenuOpen(true); }}>
+          <LayoutGrid size={18} strokeWidth={1.7} />
           Category
         </button>
         <NavLink to="/wishlist" className={({ isActive }) => (isActive ? "on" : "")}>
-          <IconHeart />
+          <Heart size={18} strokeWidth={1.7} />
           Wishlist
         </NavLink>
-        <NavLink to="/cart" className={({ isActive }) => (isActive ? "on" : "")}>
-          <IconBag />
+        <button
+          type="button"
+          className={location.pathname === "/cart" ? "on" : ""}
+          aria-haspopup="dialog"
+          onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(true); }}
+        >
+          <ShoppingBag size={18} strokeWidth={1.7} />
           Cart
-        </NavLink>
-        <NavLink to={user ? (user.accountType === "ADMIN" ? "/admin" : "/account") : "/login"} className={({ isActive }) => (isActive ? "on" : "")}>
-          {user ? <UserFace user={user} size={22} /> : <IconUser />}
+        </button>
+        <button
+          type="button"
+          className={accountMenuOpen || location.pathname.startsWith("/account") || location.pathname === "/login" || location.pathname === "/register" ? "on" : ""}
+          aria-expanded={accountMenuOpen}
+          aria-controls="account-menu-panel"
+          onClick={() => { setMenuOpen(false); setAccountMenuOpen((open) => !open); }}
+        >
+          {user ? <UserFace user={user} size={18} /> : <UserRound size={18} strokeWidth={1.7} />}
           Account
-        </NavLink>
+        </button>
       </nav>
+      {accountMenuOpen ? (
+        <>
+          <button className="sheet-back account-menu-backdrop" aria-label="Close account menu" onClick={() => setAccountMenuOpen(false)} />
+          <aside id="account-menu-panel" className="account-menu-panel" role="dialog" aria-modal="true" aria-label="My Account">
+            <header className="account-menu-heading">
+              <span>My Account</span>
+              <button type="button" aria-label="Close account menu" onClick={() => setAccountMenuOpen(false)}>×</button>
+            </header>
+            <div className="account-menu-profile">
+              {user ? <UserFace user={user} size={60} /> : <span className="account-menu-avatar"><UserRound size={42} strokeWidth={1.4} /></span>}
+              <strong>{user ? user.firstName : "User Account"}</strong>
+            </div>
+            <nav className="account-menu-links" aria-label="Account links">
+              {user ? (
+                user.accountType === "ADMIN" ? (
+                  <Link to="/admin" onClick={() => setAccountMenuOpen(false)}>Dashboard</Link>
+                ) : (
+                  <>
+                    <Link to="/account" onClick={() => setAccountMenuOpen(false)}>Profile</Link>
+                    <Link to="/account/orders" onClick={() => setAccountMenuOpen(false)}>Orders</Link>
+                    <Link to="/account/wishlist" onClick={() => setAccountMenuOpen(false)}>Wishlist</Link>
+                  </>
+                )
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setAccountMenuOpen(false)}>Login</Link>
+                  <Link to="/register" onClick={() => setAccountMenuOpen(false)}>Register</Link>
+                </>
+              )}
+              <Link to="/track" onClick={() => setAccountMenuOpen(false)}>Order Tracking</Link>
+            </nav>
+          </aside>
+        </>
+      ) : null}
       <CartDrawer />
     </>
   );
@@ -304,32 +288,45 @@ function CartDrawer() {
   if (!drawer) return null;
   return (
     <>
-      <button className="drawer-back" aria-label="Close cart" onClick={() => setDrawer(false)} />
-      <aside className="drawer" role="dialog" aria-label="Cart">
-        <header>
-          Cart
-          <button type="button" onClick={() => setDrawer(false)}>
-            Close
+      <button className="drawer-back cart-drawer-back" aria-label="Close cart" onClick={() => setDrawer(false)} />
+      <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping bag">
+        <header className="cart-drawer-header">
+          <div className="cart-drawer-title">
+            <span className="cart-drawer-mark"><ShoppingBag size={21} strokeWidth={1.8} /></span>
+            <span><strong>Your Bag</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
+          </div>
+          <button type="button" className="cart-drawer-close" aria-label="Close cart" onClick={() => setDrawer(false)}>
+            <X size={20} />
           </button>
         </header>
-        <div className="drawer-body">
+        <div className="drawer-body cart-drawer-body">
           {loading ? <RowsSkeleton rows={3} /> : null}
-          {!loading && cart.items.length === 0 ? <p className="empty">Your cart is empty.</p> : null}
+          {!loading && cart.items.length === 0 ? (
+            <div className="cart-empty-state">
+              <span><ShoppingBag size={30} strokeWidth={1.5} /></span>
+              <strong>Your bag is waiting</strong>
+              <p>Find something you love and it will appear here.</p>
+              <Link to="/shop" onClick={() => setDrawer(false)}>Explore the store <ArrowRight size={15} /></Link>
+            </div>
+          ) : null}
           {!loading && cart.items.map((line) => (
-            <div className="line" key={line.id}>
-              {line.imageUrl ? (
-                <img src={line.imageUrl} alt="" />
-              ) : (
-                <div className="photo-fallback">Photo</div>
-              )}
-              <div>
-                <h3>{line.variant.product.name}</h3>
-                <p className="note">
+            <article className="cart-line" key={line.id}>
+              <div className="cart-line-image">
+                {line.imageUrl ? <img src={line.imageUrl} alt="" /> : <ShoppingBag size={24} strokeWidth={1.5} />}
+              </div>
+              <div className="cart-line-details">
+                <div className="cart-line-heading">
+                  <h3>{line.variant.product.name}</h3>
+                  <button type="button" className="cart-remove" disabled={busy} onClick={() => remove(line.id)} aria-label={`Remove ${line.variant.product.name}`} title="Remove item">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+                <p className="cart-line-meta">
                   {line.variant.size.name}
                   {line.variant.color ? ` / ${line.variant.color.name}` : ""} / {line.variant.fabric.name}
                 </p>
-                <p>{money(line.lineTotal)}</p>
-                <div className="qty">
+                <div className="cart-line-bottom">
+                  <div className="cart-quantity-controls">
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity - 1)} aria-label="Decrease">
                     −
                   </button>
@@ -337,26 +334,25 @@ function CartDrawer() {
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity + 1)} aria-label="Increase">
                     +
                   </button>
+                  </div>
+                  <strong className="cart-line-price">{money(line.lineTotal)}</strong>
                 </div>
-                <button type="button" className="note" onClick={() => remove(line.id)}>
-                  Remove
-                </button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
-        <footer>
-          <div className="sub">
+        {cart.items.length > 0 ? <footer className="cart-drawer-footer">
+          <div className="cart-subtotal">
             <span>Subtotal</span>
             <strong>{money(cart.summary.subtotal)}</strong>
           </div>
-          <Link to="/cart" className="btn-line wide" style={{ display: "grid", placeItems: "center" }} onClick={() => setDrawer(false)}>
-            View cart
+          <Link to="/checkout" className="cart-checkout" onClick={() => setDrawer(false)}>
+            Checkout <ArrowRight size={17} />
           </Link>
-          <Link to="/checkout" className="btn wide" style={{ display: "grid", placeItems: "center" }} onClick={() => setDrawer(false)}>
-            Checkout
+          <Link to="/cart" className="cart-view-link" onClick={() => setDrawer(false)}>
+            View full cart
           </Link>
-        </footer>
+        </footer> : null}
       </aside>
     </>
   );
@@ -390,15 +386,15 @@ export function Footer() {
           {!settingsReady ? <RowsSkeleton rows={3} /> : (
             <div className="footer-contact-list">
               <p className="footer-contact-item">
-                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path className="footer-pin-shape" d="M10 18s6-5.4 6-10a6 6 0 1 0-12 0c0 4.6 6 10 6 10Z" /><circle cx="10" cy="8" r="2" /></svg></span>
+                <span className="footer-contact-icon" aria-hidden="true"><MapPin size={12} strokeWidth={1.7} /></span>
                 <span>{contactAddress}</span>
               </p>
               <a className="footer-contact-item" href={`tel:${contactPhone}`}>
-                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><path className="footer-phone-shape" d="M5 2.8 7.5 2l2 4-1.7 1.6a12 12 0 0 0 4.6 4.6L14 10.5l4 2-.8 2.5c-.4 1.2-1.6 2-2.9 1.7C8.8 15.4 4.6 11.2 3.3 5.7 3 4.4 3.8 3.2 5 2.8Z" /></svg></span>
+                <span className="footer-contact-icon" aria-hidden="true"><Phone size={12} strokeWidth={1.7} /></span>
                 <span>{contactPhone}</span>
               </a>
               <a className="footer-contact-item" href={`mailto:${contactEmail}`}>
-                <span className="footer-contact-icon" aria-hidden="true"><svg viewBox="0 0 20 20"><rect x="2" y="4" width="16" height="12" rx="2" /><path d="m3 6 7 5 7-5" /></svg></span>
+                <span className="footer-contact-icon" aria-hidden="true"><Mail size={12} strokeWidth={1.7} /></span>
                 <span>{contactEmail}</span>
               </a>
               <div className="footer-business-ids">
@@ -462,7 +458,7 @@ export function Footer() {
         </section>
       </div>
       <div className="footer-bottom">
-        © {new Date().getFullYear()} SaRa Lifestyle Ltd. All Rights Reserved
+        © {new Date().getFullYear()} Mahi's Creation. All Rights Reserved
       </div>
     </footer>
   );

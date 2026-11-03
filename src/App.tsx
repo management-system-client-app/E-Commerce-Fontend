@@ -101,6 +101,10 @@ export function App() {
         <Route path="variants" element={<AdminVariants />} />
         <Route path="colors" element={<AdminColors />} />
         </Route>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPage />} />
+        <Route path="/reset-password" element={<ResetPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route element={<StoreShell />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
@@ -109,10 +113,6 @@ export function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPage />} />
-        <Route path="/reset-password" element={<ResetPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/track" element={<TrackPage />} />
         <Route path="/outlets" element={<OutletsPage />} />
