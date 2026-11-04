@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronRight, Heart, House, LayoutGrid, Mail, MapPin, Menu, Minus, PackageSearch, Phone, Plus, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { ArrowRight, Heart, House, LayoutGrid, Mail, MapPin, PackageSearch, Phone, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
 import { RowsSkeleton } from "./Skeleton";
 import { money } from "../format";
 import { categoryImage, useAuth, useCart, useStore } from "../state";
@@ -34,13 +34,11 @@ function CategoryList({
   categories,
   expandedCategory,
   onToggle,
-  onHover,
   onNavigate,
 }: {
   categories: Category[];
   expandedCategory: string | null;
   onToggle: (id: string) => void;
-  onHover: (id: string | null) => void;
   onNavigate: () => void;
 }) {
   const roots = categories.filter((category) => !category.parentId);
@@ -50,19 +48,10 @@ function CategoryList({
         const children = categories.filter((item) => item.parentId === category.id);
         const expanded = expandedCategory === category.id;
         return (
-          <div
-            className="category-menu-group"
-            key={category.id}
-            onMouseEnter={() => {
-              if (window.matchMedia("(min-width: 900px)").matches) onHover(children.length > 0 ? category.id : null);
-            }}
-          >
-            <div className={`category-menu-row${expanded ? " is-expanded" : ""}`}>
-              <Link className="category-menu-link" to={`/shop?categoryId=${category.id}`} onClick={onNavigate}>
-                <span className="category-menu-thumb">
-                  {category.imageUrl ? <img src={category.imageUrl} alt="" loading="lazy" /> : <LayoutGrid size={20} strokeWidth={1.6} />}
-                </span>
-                <strong>{category.name}</strong>
+          <div className="category-menu-group" key={category.id}>
+            <div className="category-menu-row">
+              <Link to={`/shop?categoryId=${category.id}`} onClick={onNavigate}>
+                {category.name}
               </Link>
               {children.length > 0 ? (
                 <button
@@ -71,9 +60,9 @@ function CategoryList({
                   aria-expanded={expanded}
                   onClick={() => onToggle(category.id)}
                 >
-                  <ChevronRight size={16} />
+                  <span aria-hidden="true">›</span>
                 </button>
-              ) : <span className="category-menu-arrow" aria-hidden="true"><ChevronRight size={16} /></span>}
+              ) : null}
             </div>
             {expanded ? (
               <div className="category-menu-children">
@@ -93,7 +82,7 @@ function CategoryList({
 
 export function Header() {
   const { catalog } = useStore();
-  const { user, ready, logout } = useAuth();
+  const { user, ready } = useAuth();
   const { cart, setDrawer } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -150,22 +139,10 @@ export function Header() {
               {cart.summary.itemCount > 0 ? <span className="badge">{cart.summary.itemCount}</span> : null}
             </button>
             {user ? (
-              <div className="header-account-wrap">
-                <div className="account-chip header-account-profile" tabIndex={0} role="group" aria-label="Account options">
-                  <UserFace user={user} size={40} />
-                  <span className="header-account-profile-copy">
-                    <strong>{`${user.firstName} ${user.lastName}`.trim()}</strong>
-                    <small>{user.phone || user.email}</small>
-                  </span>
-                </div>
-                <nav className="header-account-dropdown" aria-label="Account menu">
-                  <Link to={user.accountType === "ADMIN" ? "/admin" : "/account"}>Dashboard</Link>
-                  <Link to={user.accountType === "ADMIN" ? "/admin/orders" : "/account/orders"}>My Orders</Link>
-                  <Link to={user.accountType === "ADMIN" ? "/admin/settings" : "/account/profile"}>My Account</Link>
-                  <Link to="/track">Order Tracking</Link>
-                  <button type="button" onClick={() => { logout().then(() => navigate("/")); }}>Logout</button>
-                </nav>
-              </div>
+              <Link className="account-chip" to={user.accountType === "ADMIN" ? "/admin" : "/account"}>
+                <UserFace user={user} />
+                <span>{user.accountType === "ADMIN" ? "Dashboard" : user.firstName}</span>
+              </Link>
             ) : !ready ? (
               <span className="header-account-pending" aria-label="Checking account status"><UserRound size={18} strokeWidth={1.7} /></span>
             ) : (
@@ -179,55 +156,26 @@ export function Header() {
             )}
           </div>
         </div>
-        <nav className="category-nav" aria-label="Product categories">
-          <div
-            className="category-menu-anchor"
-            onMouseLeave={() => {
-              if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(false);
+        <nav
+          className="category-nav"
+          aria-label="Product categories"
+          onMouseLeave={() => {
+            if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(false);
+          }}
+        >
+          <button
+            type="button"
+            className="cat-btn"
+            aria-expanded={menuOpen}
+            aria-controls="category-menu-panel"
+            onMouseEnter={() => {
+              if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(true);
             }}
+            onClick={() => setMenuOpen((open) => !open)}
           >
-            <button
-              type="button"
-              className="cat-btn"
-              aria-expanded={menuOpen}
-              aria-controls="category-menu-panel"
-              onMouseEnter={() => {
-                if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(true);
-              }}
-            >
-              <Menu size={20} strokeWidth={2.8} />
-              <span>Shop By Category</span>
-            </button>
-            {menuOpen ? (
-              <>
-                <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
-                <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="All Categories">
-                  <header className="category-menu-heading">
-                    <div className="category-menu-heading-copy">
-                      <span className="category-menu-heading-mark"><LayoutGrid size={19} strokeWidth={1.7} /></span>
-                      <span><strong>Shop by category</strong></span>
-                    </div>
-                    <button type="button" aria-label="Close category menu" onClick={() => setMenuOpen(false)}><X size={19} /></button>
-                  </header>
-                  <div className="category-menu-body">
-                    <div className="category-menu-section-head">
-                      <span>Departments</span>
-                      <span className="category-menu-count">{catalog.categories.filter((category) => !category.parentId).length}</span>
-                    </div>
-                    <CategoryList
-                      categories={catalog.categories}
-                      expandedCategory={expandedCategory}
-                      onToggle={(categoryId) =>
-                        setExpandedCategory((current) => (current === categoryId ? null : categoryId))
-                      }
-                      onHover={setExpandedCategory}
-                      onNavigate={() => setMenuOpen(false)}
-                    />
-                  </div>
-                </aside>
-              </>
-            ) : null}
-          </div>
+            <LayoutGrid size={18} strokeWidth={1.7} />
+            <span>Shop by category</span>
+          </button>
           <nav className="top-nav" aria-label="Shop">
             {navLinks.map((item) => {
               const active = item.label === "Home"
@@ -239,6 +187,27 @@ export function Header() {
           <div className="category-nav-tools">
             <Link to="/track"><PackageSearch size={16} strokeWidth={1.7} />Order Tracking</Link>
           </div>
+          {menuOpen ? (
+            <>
+              <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
+              <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="All Categories">
+                <header className="category-menu-heading">
+                  <span>All Categories</span>
+                  <button type="button" aria-label="Close category menu" onClick={() => setMenuOpen(false)}>×</button>
+                </header>
+                <div className="category-menu-body">
+                  <CategoryList
+                    categories={catalog.categories}
+                    expandedCategory={expandedCategory}
+                    onToggle={(categoryId) =>
+                      setExpandedCategory((current) => (current === categoryId ? null : categoryId))
+                    }
+                    onNavigate={() => setMenuOpen(false)}
+                  />
+                </div>
+              </aside>
+            </>
+          ) : null}
         </nav>
         </div>
       </header>
@@ -247,12 +216,7 @@ export function Header() {
           <House size={18} strokeWidth={1.7} />
           Home
         </NavLink>
-        <button
-          type="button"
-          className={`bottom-nav-category${menuOpen ? " on" : ""}`}
-          aria-expanded={menuOpen}
-          onClick={() => { setAccountMenuOpen(false); setMenuOpen(true); }}
-        >
+        <button type="button" onClick={() => { setAccountMenuOpen(false); setMenuOpen(true); }}>
           <LayoutGrid size={18} strokeWidth={1.7} />
           Category
         </button>
@@ -284,38 +248,32 @@ export function Header() {
         <>
           <button className="sheet-back account-menu-backdrop" aria-label="Close account menu" onClick={() => setAccountMenuOpen(false)} />
           <aside id="account-menu-panel" className="account-menu-panel" role="dialog" aria-modal="true" aria-label="My Account">
-            <header className="category-menu-heading account-menu-heading">
-              <div className="category-menu-heading-copy">
-                <span className="category-menu-heading-mark"><UserRound size={19} strokeWidth={1.7} /></span>
-                <span><strong>My Account</strong></span>
-              </div>
-              <button type="button" aria-label="Close account menu" onClick={() => setAccountMenuOpen(false)}><X size={19} /></button>
+            <header className="account-menu-heading">
+              <span>My Account</span>
+              <button type="button" aria-label="Close account menu" onClick={() => setAccountMenuOpen(false)}>×</button>
             </header>
             <div className="account-menu-profile">
-              {user ? <UserFace user={user} size={48} /> : <span className="account-menu-avatar"><UserRound size={24} strokeWidth={1.5} /></span>}
-              <span className="account-menu-profile-copy">
-                <strong>{user ? user.firstName : "User Account"}</strong>
-                <small>{user ? user.email : "Sign in or create an account"}</small>
-              </span>
+              {user ? <UserFace user={user} size={60} /> : <span className="account-menu-avatar"><UserRound size={42} strokeWidth={1.4} /></span>}
+              <strong>{user ? user.firstName : "User Account"}</strong>
             </div>
             <nav className="account-menu-links" aria-label="Account links">
               {user ? (
                 user.accountType === "ADMIN" ? (
-                  <Link to="/admin" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><LayoutGrid size={17} /></span><span>Dashboard</span><ArrowRight size={16} /></Link>
+                  <Link to="/admin" onClick={() => setAccountMenuOpen(false)}>Dashboard</Link>
                 ) : (
                   <>
-                    <Link to="/account/profile" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><UserRound size={17} /></span><span>Profile</span><ArrowRight size={16} /></Link>
-                    <Link to="/account/orders" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><PackageSearch size={17} /></span><span>Orders</span><ArrowRight size={16} /></Link>
-                    <Link to="/account/wishlist" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><Heart size={17} /></span><span>Wishlist</span><ArrowRight size={16} /></Link>
+                    <Link to="/account" onClick={() => setAccountMenuOpen(false)}>Profile</Link>
+                    <Link to="/account/orders" onClick={() => setAccountMenuOpen(false)}>Orders</Link>
+                    <Link to="/account/wishlist" onClick={() => setAccountMenuOpen(false)}>Wishlist</Link>
                   </>
                 )
               ) : (
                 <>
-                  <Link to="/login" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><UserRound size={17} /></span><span>Login</span><ArrowRight size={16} /></Link>
-                  <Link to="/register" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><Mail size={17} /></span><span>Register</span><ArrowRight size={16} /></Link>
+                  <Link to="/login" onClick={() => setAccountMenuOpen(false)}>Login</Link>
+                  <Link to="/register" onClick={() => setAccountMenuOpen(false)}>Register</Link>
                 </>
               )}
-              <Link to="/track" onClick={() => setAccountMenuOpen(false)}><span className="account-menu-link-icon"><PackageSearch size={17} /></span><span>Order Tracking</span><ArrowRight size={16} /></Link>
+              <Link to="/track" onClick={() => setAccountMenuOpen(false)}>Order Tracking</Link>
             </nav>
           </aside>
         </>
@@ -332,9 +290,9 @@ function CartDrawer() {
     <>
       <button className="drawer-back cart-drawer-back" aria-label="Close cart" onClick={() => setDrawer(false)} />
       <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping bag">
-        <header className="category-menu-heading cart-drawer-header">
-          <div className="category-menu-heading-copy cart-drawer-title">
-            <span className="category-menu-heading-mark cart-drawer-mark"><ShoppingBag size={21} strokeWidth={1.8} /></span>
+        <header className="cart-drawer-header">
+          <div className="cart-drawer-title">
+            <span className="cart-drawer-mark"><ShoppingBag size={21} strokeWidth={1.8} /></span>
             <span><strong>Your Bag</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
           </div>
           <button type="button" className="cart-drawer-close" aria-label="Close cart" onClick={() => setDrawer(false)}>
@@ -370,11 +328,11 @@ function CartDrawer() {
                 <div className="cart-line-bottom">
                   <div className="cart-quantity-controls">
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity - 1)} aria-label="Decrease">
-                    <Minus size={14} />
+                    −
                   </button>
                   <span>{line.quantity}</span>
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity + 1)} aria-label="Increase">
-                    <Plus size={14} />
+                    +
                   </button>
                   </div>
                   <strong className="cart-line-price">{money(line.lineTotal)}</strong>

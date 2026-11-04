@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Footer, Header } from "./components/Chrome";
-import { AccountCoupons, AccountDashboard, AccountLayout, AccountNotifications, AccountOrders, AccountProfile, AccountReturns, AccountReviews, AuthCallbackPage, CartPage, ChangePasswordPage, CmsPageView, DeliveryAddressPage, ForgotPage, LoginPage, OutletsPage, RegisterPage, ResetPage, TrackPage, WishlistPage } from "./pages/AccountPages";
+import { AccountLayout, AccountOrders, AccountProfile, AccountReturns, AuthCallbackPage, CartPage, ChangePasswordPage, CmsPageView, DeliveryAddressPage, ForgotPage, LoginPage, OutletsPage, RegisterPage, ResetPage, TrackPage, WishlistPage } from "./pages/AccountPages";
 import { AdminLayout, AdminOrderDetail, AdminOrders, AdminOverview, AdminProducts } from "./pages/AdminDashboard";
 import { AdminBanners, AdminCategories } from "./pages/AdminCatalog";
 import {
@@ -117,16 +117,12 @@ export function App() {
         <Route path="/track" element={<TrackPage />} />
         <Route path="/outlets" element={<OutletsPage />} />
         <Route path="/account" element={<AccountLayout />}>
-          <Route index element={<AccountDashboard />} />
-          <Route path="profile" element={<AccountProfile />} />
+          <Route index element={<AccountProfile />} />
           <Route path="address" element={<DeliveryAddressPage />} />
           <Route path="password" element={<ChangePasswordPage />} />
           <Route path="orders" element={<AccountOrders />} />
           <Route path="returns" element={<AccountReturns />} />
           <Route path="wishlist" element={<WishlistPage />} />
-          <Route path="coupons" element={<AccountCoupons />} />
-          <Route path="reviews" element={<AccountReviews />} />
-          <Route path="notifications" element={<AccountNotifications />} />
         </Route>
         <Route path="/pages/:slug" element={<CmsPageView />} />
         <Route path="*" element={<p className="empty">Sorry! No result.</p>} />
