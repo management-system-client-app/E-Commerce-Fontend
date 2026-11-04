@@ -1,13 +1,13 @@
 import { FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet as RouterOutlet, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, ImagePlus, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, Bell, Clock3, Eye, EyeOff, Heart, ImagePlus, LayoutDashboard, LogOut, MapPin, PackageCheck, PackageOpen, ShieldCheck, ShoppingBag, Star, Ticket, Truck, UserRound } from "lucide-react";
 import { ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { UserFace } from "../components/Chrome";
 import { ProductGrid } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
 import { money, titleCaseStatus } from "../format";
 import { useAuth, useCart } from "../state";
-import type { CmsPage, Outlet, ProductCardData, SavedAddress, TrackedOrder } from "../types";
+import type { CmsPage, Coupon, Outlet, ProductCardData, SavedAddress, TrackedOrder } from "../types";
 
 const OAUTH_TOKEN_KEY = "oauth_token";
 
@@ -345,14 +345,22 @@ export function WishlistPage() {
   if (loading) return <ProductGridSkeleton />;
 
   return (
-    <div>
-      <div className="section-head">
-        <h1>Wishlist</h1>
-      </div>
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">SAVED FOR LATER</span><h1>Wishlist</h1></div>
+        {products.length > 0 ? <span className="account-count-badge">{products.length} items</span> : null}
+      </header>
       {error ? <p className="error">{error}</p> : null}
-      {!error && products.length === 0 ? <p className="empty">Sorry! No result.</p> : null}
+      {!error && products.length === 0 ? (
+        <div className="account-surface customer-empty-state">
+          <span><Heart size={25} /></span>
+          <h2>Your wishlist is empty</h2>
+          <p>Save the pieces you love and find them here later.</p>
+          <Link className="account-primary-action" to="/shop">Browse products <ArrowRight size={16} /></Link>
+        </div>
+      ) : null}
       {products.length > 0 ? <ProductGrid products={products} /> : null}
-    </div>
+    </section>
   );
 }
 
@@ -614,38 +622,186 @@ export function AccountLayout() {
   if (!user) return <LoginPage />;
   if (user.accountType === "ADMIN") return <Navigate to="/admin" replace />;
 
+  const accountNav = [
+    { label: "Dashboard", to: "/account", icon: LayoutDashboard, end: true },
+    { label: "My Profile", to: "/account/profile", icon: UserRound },
+    { label: "My Orders", to: "/account/orders", icon: PackageOpen },
+    { label: "Wishlist", to: "/account/wishlist", icon: Heart },
+    { label: "Coupon", to: "/account/coupons", icon: Ticket },
+    { label: "Review", to: "/account/reviews", icon: Star },
+    { label: "Address Book", to: "/account/address", icon: MapPin },
+    { label: "Notification", to: "/account/notifications", icon: Bell },
+  ];
+
   return (
-    <div className="account-shell">
-      <aside className="account-side">
+    <div className="account-shell customer-account-shell">
+      <aside className="account-side customer-account-side">
         <div className="account-who">
-          <UserFace user={user} size={56} />
-          <div>
+          <UserFace user={user} size={48} />
+          <div className="account-who-copy">
             <strong>{user.firstName} {user.lastName}</strong>
-            <p className="note">{user.email}</p>
+            <p>{user.phone || user.email}</p>
           </div>
         </div>
-        <p className="group">Manage My Account</p>
-        <NavLink to="/account" end className={({ isActive }) => (isActive ? "on" : "")}>Profile</NavLink>
-        <NavLink to="/account/address" className={({ isActive }) => (isActive ? "on" : "")}>Delivery address</NavLink>
-        <NavLink to="/account/password" className={({ isActive }) => (isActive ? "on" : "")}>Change password</NavLink>
-        <p className="group">My Orders</p>
-        <NavLink to="/account/orders" className={({ isActive }) => (isActive ? "on" : "")}>Orders</NavLink>
-        <NavLink to="/account/returns" className={({ isActive }) => (isActive ? "on" : "")}>Returns</NavLink>
-        <p className="group">Saved</p>
-        <NavLink to="/account/wishlist" className={({ isActive }) => (isActive ? "on" : "")}>Wishlist</NavLink>
-        <button
-          type="button"
-          className="see-more"
-          onClick={() => {
-            logout().then(() => navigate("/"));
-          }}
-        >
-          Logout
-        </button>
+        <nav className="account-side-nav" aria-label="My account">
+          {accountNav.map(({ label, to, icon: Icon, end = false }) => (
+            <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? "on" : "")}>
+              <Icon size={18} strokeWidth={1.9} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+          <NavLink to="/account/returns" className={({ isActive }) => (isActive ? "on" : "")}>
+            <ArrowRight size={18} strokeWidth={1.9} />
+            <span>Returns</span>
+          </NavLink>
+          <NavLink to="/account/password" className={({ isActive }) => (isActive ? "on" : "")}>
+            <ShieldCheck size={18} strokeWidth={1.9} />
+            <span>Change password</span>
+          </NavLink>
+        </nav>
+        <div className="account-side-footer">
+          <button type="button" onClick={() => { logout().then(() => navigate("/")); }}>
+            <LogOut size={17} /> Logout
+          </button>
+        </div>
       </aside>
-      <div className="account-panel">
+      <main className="account-panel customer-account-panel">
         <RouterOutlet />
+      </main>
+    </div>
+  );
+}
+
+type CustomerOrder = Awaited<ReturnType<typeof api.orders>>[number];
+
+export function AccountDashboard() {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [couponCount, setCouponCount] = useState(0);
+  const [hasAddress, setHasAddress] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      api.orders().catch(() => []),
+      api.wishlist().catch(() => []),
+      api.coupons().catch(() => []),
+      api.defaultAddress().catch(() => null),
+    ]).then(([nextOrders, wishlist, coupons, address]) => {
+      if (!active) return;
+      setOrders(nextOrders);
+      setWishlistCount(wishlist.length);
+      setCouponCount(coupons.filter((coupon) => coupon.isActive).length);
+      setHasAddress(Boolean(address));
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const normalizeStatus = (status: string) => status.toUpperCase().replace(/[\s-]+/g, "_");
+  const statusTiles = [
+    { label: "Processing", icon: Clock3, statuses: ["PENDING", "CONFIRMED", "PROCESSING"], tone: "violet" },
+    { label: "Ready to ship", icon: PackageCheck, statuses: ["READY_TO_SHIP", "PACKED"], tone: "teal" },
+    { label: "Shipped", icon: Truck, statuses: ["SHIPPED", "IN_TRANSIT"], tone: "blue" },
+    { label: "Delivered", icon: BadgeCheck, statuses: ["DELIVERED", "COMPLETED"], tone: "green" },
+  ];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  return (
+    <div className="customer-dashboard">
+      <header className="customer-dashboard-welcome">
+        <div>
+          <span className="customer-eyebrow">ACCOUNT OVERVIEW</span>
+          <h1>{greeting}, <strong>{user?.firstName}!</strong></h1>
+        </div>
+        <Link className="account-text-link" to="/account/orders">All orders <ArrowRight size={16} /></Link>
+      </header>
+
+      <div className="customer-dashboard-top">
+        <div className="customer-dashboard-left">
+          <section className="customer-orders-overview">
+            <header className="customer-section-heading">
+              <div><span className="customer-eyebrow">YOUR ACTIVITY</span><h2>My Orders</h2></div>
+              <Link to="/account/orders" aria-label="See all orders"><ArrowRight size={18} /></Link>
+            </header>
+            <div className="customer-status-grid">
+              {statusTiles.map(({ label, icon: Icon, statuses, tone }) => {
+                const count = orders.filter((order) => statuses.includes(normalizeStatus(order.status))).length;
+                return (
+                  <Link className="customer-status-tile" to="/account/orders" key={label}>
+                    <span className={`customer-status-icon ${tone}`}><Icon size={19} /></span>
+                    <strong>{loading ? "–" : count}</strong>
+                    <small>{label}</small>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="customer-shortcuts">
+            <Link to="/track" className="customer-shortcut">
+              <span className="customer-shortcut-icon teal"><Truck size={20} /></span>
+              <span><strong>Order Tracking</strong><small>Follow a delivery</small></span>
+              <ArrowRight size={16} />
+            </Link>
+            <Link to="/account/address" className="customer-shortcut">
+              <span className="customer-shortcut-icon blue"><MapPin size={20} /></span>
+              <span><strong>Address Book</strong><small>{hasAddress ? "Manage your address" : "Add a delivery address"}</small></span>
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+
+        <div className="customer-feature-grid">
+          <Link to="/account/orders" className="customer-feature-tile orders">
+            <span className="customer-feature-art"><PackageOpen size={34} /></span>
+            <strong>My Orders</strong>
+            <small>All of your orders in one place</small>
+            <span className="customer-feature-count">{loading ? "–" : orders.length}</span>
+          </Link>
+          <Link to="/account/wishlist" className="customer-feature-tile wishlist">
+            <span className="customer-feature-art"><Heart size={34} /></span>
+            <strong>Wishlist</strong>
+            <small>Save the pieces you love</small>
+            <span className="customer-feature-count">{loading ? "–" : wishlistCount}</span>
+          </Link>
+          <Link to="/account/coupons" className="customer-feature-tile coupons">
+            <span className="customer-feature-art"><Ticket size={34} /></span>
+            <strong>Coupon</strong>
+            <small>Offers for your next order</small>
+            <span className="customer-feature-count">{loading ? "–" : couponCount}</span>
+          </Link>
+        </div>
       </div>
+
+      <section className="customer-recent-orders">
+        <header className="customer-section-heading">
+          <div><span className="customer-eyebrow">YOUR PURCHASES</span><h2>Recent Orders</h2></div>
+          {orders.length > 0 ? <Link className="account-text-link" to="/account/orders">See all <ArrowRight size={16} /></Link> : null}
+        </header>
+        {loading ? <RowsSkeleton rows={2} /> : orders.length === 0 ? (
+          <div className="customer-empty-state compact">
+            <span><PackageOpen size={22} /></span>
+            <div><strong>No orders yet</strong><p>Your next favorite is waiting in the shop.</p></div>
+            <Link to="/shop">Explore the shop <ArrowRight size={15} /></Link>
+          </div>
+        ) : (
+          <div className="customer-recent-list">
+            {orders.slice(0, 4).map((order) => (
+              <article className="customer-recent-row" key={order.id}>
+                <span className="customer-recent-icon"><ShoppingBag size={18} /></span>
+                <span className="customer-recent-order"><strong>{order.orderNumber}</strong><small>{new Date(order.placedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</small></span>
+                <span className="customer-order-status">{titleCaseStatus(order.status)}</span>
+                <strong className="customer-recent-total">{money(order.total)}</strong>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -654,6 +810,7 @@ export function AccountProfile() {
   const { user, updateProfile, saveAvatar } = useAuth();
   const [profile, setProfile] = useState({ firstName: "", lastName: "", phone: "" });
   const [profileNote, setProfileNote] = useState("");
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -663,43 +820,75 @@ export function AccountProfile() {
   if (!user) return null;
 
   return (
-    <div>
-      <h1 className="label">Profile</h1>
-      <UserFace user={user} size={72} />
-      {user.accountType === "USER" ? (
-        <label className="field" style={{ marginTop: 12 }}>
-          <span>Profile photo</span>
-          <input
-            type="file"
-            accept="image/avif,image/jpeg,image/png,image/webp"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              setProfileNote("");
-              saveAvatar(file).then(() => setProfileNote("Photo saved")).catch((reason: unknown) => setProfileNote(reason instanceof Error ? reason.message : "Could not save the photo"));
-            }}
-          />
-        </label>
-      ) : null}
-      <form
-        style={{ marginTop: 16, maxWidth: 420 }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          setProfileNote("");
-          updateProfile({
-            firstName: profile.firstName,
-            lastName: profile.lastName,
-            phone: profile.phone || null,
-          }).then(() => setProfileNote("Profile saved")).catch((reason: unknown) => setProfileNote(reason instanceof Error ? reason.message : "Could not save"));
-        }}
-      >
-        <label className="field"><span>First name</span><input required value={profile.firstName} onChange={(event) => setProfile({ ...profile, firstName: event.target.value })} /></label>
-        <label className="field"><span>Last name</span><input required value={profile.lastName} onChange={(event) => setProfile({ ...profile, lastName: event.target.value })} /></label>
-        <label className="field"><span>Phone</span><input value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} /></label>
-        <button className="btn" type="submit">Save profile</button>
-        {profileNote ? <p className="note">{profileNote}</p> : null}
-      </form>
-    </div>
+    <section className="account-page account-profile-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">YOUR DETAILS</span><h1>My Account</h1></div>
+        <button type="button" className="account-secondary-action" onClick={() => { setEditing((current) => !current); setProfileNote(""); }}>
+          {editing ? "Cancel edit" : "Edit Profile"}
+        </button>
+      </header>
+      <div className="account-profile-grid">
+        <section className="account-surface account-profile-main">
+          <header className="account-surface-heading"><h2>Profile Information</h2></header>
+          <div className="account-profile-content">
+            <div className="account-profile-photo">
+              <UserFace user={user} size={92} />
+              {editing && user.accountType === "USER" ? (
+                <label className="account-photo-upload">
+                  <ImagePlus size={16} /> Upload Photo
+                  <input
+                    type="file"
+                    accept="image/avif,image/jpeg,image/png,image/webp"
+                    aria-label="Upload profile photo"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      setProfileNote("");
+                      saveAvatar(file).then(() => setProfileNote("Photo saved")).catch((reason: unknown) => setProfileNote(reason instanceof Error ? reason.message : "Could not save the photo"));
+                    }}
+                  />
+                </label>
+              ) : null}
+            </div>
+            {editing ? (
+              <form className="account-profile-form" onSubmit={async (event) => {
+                event.preventDefault();
+                setProfileNote("");
+                try {
+                  await updateProfile({ firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone || null });
+                  setEditing(false);
+                  setProfileNote("Profile updated");
+                } catch (reason) {
+                  setProfileNote(reason instanceof Error ? reason.message : "Could not save profile");
+                }
+              }}>
+                <div className="account-field-grid">
+                  <label className="field"><span>First name</span><input required value={profile.firstName} onChange={(event) => setProfile({ ...profile, firstName: event.target.value })} /></label>
+                  <label className="field"><span>Last name</span><input required value={profile.lastName} onChange={(event) => setProfile({ ...profile, lastName: event.target.value })} /></label>
+                  <label className="field"><span>Mobile number</span><input type="tel" value={profile.phone} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} /></label>
+                  <label className="field"><span>Email</span><input value={user.email} readOnly /></label>
+                </div>
+                <button className="account-primary-action" type="submit">Save changes <ArrowRight size={16} /></button>
+                {profileNote ? <p className="account-form-note" role="status">{profileNote}</p> : null}
+              </form>
+            ) : (
+              <dl className="account-profile-details">
+                <div><dt><UserRound size={15} />Full Name</dt><dd>{user.firstName} {user.lastName}</dd></div>
+                <div><dt><MapPin size={15} />Contact Number</dt><dd>{user.phone || "Not added"}</dd></div>
+                <div><dt><Bell size={15} />Email</dt><dd>{user.email}</dd></div>
+              </dl>
+            )}
+          </div>
+          {!editing && profileNote ? <p className="account-form-note" role="status">{profileNote}</p> : null}
+        </section>
+        <aside className="account-surface account-security-card">
+          <span className="account-security-icon"><ShieldCheck size={21} /></span>
+          <h2>Account Security</h2>
+          <p>Keep your account secure with a strong password.</p>
+          <Link to="/account/password">Change password <ArrowRight size={15} /></Link>
+        </aside>
+      </div>
+    </section>
   );
 }
 
@@ -716,6 +905,7 @@ export function DeliveryAddressPage() {
   });
   const [addressNote, setAddressNote] = useState("");
   const [loading, setLoading] = useState(true);
+  const hasAddress = Boolean(address.line1);
 
   useEffect(() => {
     let active = true;
@@ -740,11 +930,14 @@ export function DeliveryAddressPage() {
   }, []);
 
   return (
-    <div>
-      <h1 className="label">Delivery address</h1>
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">DELIVERY DETAILS</span><h1>Shipping Address</h1></div>
+        <span className={`account-default-badge${hasAddress ? " is-saved" : ""}`}><MapPin size={15} />{hasAddress ? "Default address" : "Address book"}</span>
+      </header>
       {loading ? <DetailSkeleton /> : (
       <form
-        style={{ marginTop: 16, maxWidth: 420 }}
+        className="account-surface account-address-form"
         onSubmit={(event) => {
           event.preventDefault();
           setAddressNote("");
@@ -767,19 +960,23 @@ export function DeliveryAddressPage() {
           }).catch((reason: unknown) => setAddressNote(reason instanceof Error ? reason.message : "Could not save address"));
         }}
       >
-        <label className="field"><span>Full name</span><input required value={address.fullName} onChange={(event) => setAddress({ ...address, fullName: event.target.value })} /></label>
-        <label className="field"><span>Phone</span><input required minLength={7} value={address.phone} onChange={(event) => setAddress({ ...address, phone: event.target.value })} /></label>
-        <label className="field"><span>Address</span><input required value={address.line1} onChange={(event) => setAddress({ ...address, line1: event.target.value })} /></label>
-        <label className="field"><span>Address line 2</span><input value={address.line2} onChange={(event) => setAddress({ ...address, line2: event.target.value })} /></label>
-        <label className="field"><span>City</span><input required minLength={2} value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })} /></label>
-        <label className="field"><span>State</span><input value={address.state} onChange={(event) => setAddress({ ...address, state: event.target.value })} /></label>
-        <label className="field"><span>Postal code</span><input required value={address.postalCode} onChange={(event) => setAddress({ ...address, postalCode: event.target.value })} /></label>
-        <label className="field"><span>Country</span><input required value={address.country} onChange={(event) => setAddress({ ...address, country: event.target.value })} /></label>
-        <button className="btn" type="submit">Save delivery address</button>
-        {addressNote ? <p className="note">{addressNote}</p> : null}
+        <div className="account-field-grid">
+          <label className="field"><span>Recipient name</span><input required value={address.fullName} onChange={(event) => setAddress({ ...address, fullName: event.target.value })} /></label>
+          <label className="field"><span>Contact number</span><input required minLength={7} value={address.phone} onChange={(event) => setAddress({ ...address, phone: event.target.value })} /></label>
+          <label className="field"><span>Country</span><input required value={address.country} onChange={(event) => setAddress({ ...address, country: event.target.value })} /></label>
+          <label className="field"><span>District / City</span><input required minLength={2} value={address.city} onChange={(event) => setAddress({ ...address, city: event.target.value })} /></label>
+          <label className="field"><span>Area / State</span><input value={address.state} onChange={(event) => setAddress({ ...address, state: event.target.value })} /></label>
+          <label className="field"><span>Post code</span><input required value={address.postalCode} onChange={(event) => setAddress({ ...address, postalCode: event.target.value })} /></label>
+          <label className="field account-field-wide"><span>Address</span><input required value={address.line1} onChange={(event) => setAddress({ ...address, line1: event.target.value })} /></label>
+          <label className="field account-field-wide"><span>Address line 2</span><input value={address.line2} onChange={(event) => setAddress({ ...address, line2: event.target.value })} /></label>
+        </div>
+        <div className="account-address-footer">
+          <p className="account-form-note" role="status">{addressNote || "Your saved address will be ready at checkout."}</p>
+          <button className="account-primary-action" type="submit">Save address <ArrowRight size={16} /></button>
+        </div>
       </form>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -813,27 +1010,125 @@ export function AccountOrders() {
   }, []);
 
   return (
-    <div>
-      <h1 className="label">My Orders</h1>
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">ORDER HISTORY</span><h1>My Orders</h1></div>
+        <Link className="account-secondary-action" to="/track">Track an order</Link>
+      </header>
       {ordersError ? <p className="error">{ordersError}</p> : null}
       {loading ? <RowsSkeleton rows={4} /> : null}
-      {!loading && orders.length === 0 && !ordersError ? <p className="note">No orders yet.</p> : null}
-      <div className="order-list">
+      {!loading && orders.length === 0 && !ordersError ? (
+        <div className="account-surface customer-empty-state">
+          <span><PackageOpen size={27} /></span>
+          <h2>No orders yet</h2>
+          <p>Once you place an order, you can follow its progress here.</p>
+          <Link className="account-primary-action" to="/shop">Explore the shop <ArrowRight size={16} /></Link>
+        </div>
+      ) : null}
+      <div className="order-list account-order-list">
         {orders.map((order) => (
-          <article className="receipt compact" key={order.id}>
-            <p className="receipt-number">{order.orderNumber}</p>
-            <p className="note">{titleCaseStatus(order.status)}</p>
+          <article className="account-surface account-order-card" key={order.id}>
+            <header><div><span className="account-page-kicker">ORDER NUMBER</span><strong>{order.orderNumber}</strong></div><span className="account-order-status">{titleCaseStatus(order.status)}</span></header>
+            <p className="account-order-date">Placed {new Date(order.placedAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}</p>
             {(order.items ?? []).map((item) => (
-              <div className="sub" key={item.id}>
-                <span>{item.productName} × {item.quantity}</span>
-                <span>{item.lineTotal != null ? money(item.lineTotal) : ""}</span>
-              </div>
+              <div className="account-order-item" key={item.id}><span>{item.productName} <small>× {item.quantity}</small></span><strong>{item.lineTotal != null ? money(item.lineTotal) : ""}</strong></div>
             ))}
-            <div className="sub receipt-total"><strong>Total</strong><strong>{money(order.total)}</strong></div>
+            <footer><span>Total</span><strong>{money(order.total)}</strong></footer>
           </article>
         ))}
       </div>
-    </div>
+    </section>
+  );
+}
+
+export function AccountCoupons() {
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"available" | "special">("available");
+
+  useEffect(() => {
+    let active = true;
+    api.coupons().then((items) => {
+      if (active) setCoupons(items);
+    }).catch((reason: unknown) => {
+      if (active) setError(reason instanceof Error ? reason.message : "Could not load coupons");
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const now = Date.now();
+  const availableCoupons = coupons.filter((coupon) => coupon.isActive && new Date(coupon.startsAt).getTime() <= now && new Date(coupon.endsAt).getTime() >= now);
+
+  return (
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">SAVINGS FOR YOU</span><h1>Coupon</h1></div>
+      </header>
+      <div className="account-tabs" role="tablist" aria-label="Coupons">
+        <button type="button" className={activeTab === "available" ? "on" : ""} role="tab" aria-selected={activeTab === "available"} onClick={() => setActiveTab("available")}>All Vouchers</button>
+        <button type="button" className={activeTab === "special" ? "on" : ""} role="tab" aria-selected={activeTab === "special"} onClick={() => setActiveTab("special")}>My Special Vouchers</button>
+      </div>
+      {error ? <p className="error" role="alert">{error}</p> : null}
+      {loading ? <RowsSkeleton rows={3} /> : activeTab === "special" || availableCoupons.length === 0 ? (
+        <div className="account-surface customer-empty-state">
+          <span><Ticket size={25} /></span>
+          <h2>{activeTab === "special" ? "No special vouchers yet" : "No coupons available"}</h2>
+          <p>Available offers will appear here when there’s something for your next order.</p>
+        </div>
+      ) : (
+        <div className="account-coupon-grid">
+          {availableCoupons.map((coupon) => {
+            const percentage = coupon.type.toUpperCase().includes("PERCENT");
+            return (
+              <article className="account-surface account-coupon-card" key={coupon.id}>
+                <span className="account-coupon-icon"><Ticket size={20} /></span>
+                <div><span className="account-page-kicker">YOUR VOUCHER</span><strong>{percentage ? `${coupon.value}% OFF` : `${money(coupon.value)} OFF`}</strong></div>
+                <code>{coupon.code}</code>
+                <small>Valid until {new Date(coupon.endsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</small>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function AccountReviews() {
+  const [activeTab, setActiveTab] = useState<"pending" | "history">("pending");
+  return (
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">YOUR FEEDBACK</span><h1>Reviews</h1></div>
+      </header>
+      <div className="account-tabs" role="tablist" aria-label="Reviews">
+        <button type="button" className={activeTab === "pending" ? "on" : ""} role="tab" aria-selected={activeTab === "pending"} onClick={() => setActiveTab("pending")}>To Review</button>
+        <button type="button" className={activeTab === "history" ? "on" : ""} role="tab" aria-selected={activeTab === "history"} onClick={() => setActiveTab("history")}>Review History</button>
+      </div>
+      <div className="account-surface customer-empty-state">
+        <span><Star size={25} /></span>
+        <h2>{activeTab === "pending" ? "No pending reviews" : "No reviews yet"}</h2>
+        <p>{activeTab === "pending" ? "Delivered items that are ready for a review will appear here." : "Reviews you share about your purchases will appear here."}</p>
+      </div>
+    </section>
+  );
+}
+
+export function AccountNotifications() {
+  return (
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">UPDATES</span><h1>Notification</h1></div>
+      </header>
+      <div className="account-surface customer-empty-state">
+        <span><Bell size={25} /></span>
+        <h2>All caught up</h2>
+        <p>There are no notifications for you right now.</p>
+      </div>
+    </section>
   );
 }
 
