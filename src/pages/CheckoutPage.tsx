@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, CreditCard, MapPin, Percent, ShieldCheck, ShoppingBag } from "lucide-react";
 import { ApiError, api } from "../api";
 import { RowsSkeleton } from "../components/Skeleton";
 import { money, titleCaseStatus } from "../format";
@@ -317,10 +318,22 @@ export function CheckoutPage() {
   }
 
   return (
-    <form className="checkout" onSubmit={place}>
-      <div>
-        <h1 className="label">Checkout</h1>
-        <div style={{ height: 16 }} />
+    <form className="checkout checkout-unique" onSubmit={place}>
+      <div className="checkout-details">
+        <header className="checkout-intro">
+          <span className="checkout-kicker">ALMOST YOURS</span>
+          <h1>Complete your order</h1>
+          <p>Delivery details, payment, and you’re all set.</p>
+          <div className="checkout-steps" aria-label="Checkout steps">
+            <span className="current"><i>1</i> Delivery</span>
+            <span className="step-connector" />
+            <span><i>2</i> Payment</span>
+            <span className="step-connector" />
+            <span><i>3</i> Confirmation</span>
+          </div>
+        </header>
+        <section className="checkout-form-section checkout-delivery-section">
+        <div className="checkout-section-title"><span><MapPin size={17} /></span><div><strong>Delivery information</strong><small>Where should we send your order?</small></div></div>
         {user && !addressLoaded ? <RowsSkeleton rows={3} /> : null}
         {user && addressLoaded && savedAddress ? (
           <div className="saved-address">
@@ -336,15 +349,15 @@ export function CheckoutPage() {
           <>
             <label className="field">
               <span>Full name</span>
-              <input required value={form.shippingFullName} onChange={(event) => setForm({ ...form, shippingFullName: event.target.value })} />
+              <input required placeholder="Enter your full name" value={form.shippingFullName} onChange={(event) => setForm({ ...form, shippingFullName: event.target.value })} />
             </label>
             <label className="field">
               <span>Phone</span>
-              <input required minLength={7} value={form.shippingPhone} onChange={(event) => setForm({ ...form, shippingPhone: event.target.value })} />
+              <input required minLength={7} placeholder="e.g. 01XXXXXXXXX" value={form.shippingPhone} onChange={(event) => setForm({ ...form, shippingPhone: event.target.value })} />
             </label>
           <label className="field">
             <span>Email</span>
-            <input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <input required type="email" placeholder="you@example.com" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           </label>
           </>
         )}
@@ -352,41 +365,43 @@ export function CheckoutPage() {
           <>
             {user ? (
               <>
-                <label className="field"><span>Full name</span><input required value={form.shippingFullName} onChange={(event) => setForm({ ...form, shippingFullName: event.target.value })} /></label>
-                <label className="field"><span>Phone</span><input required minLength={7} value={form.shippingPhone} onChange={(event) => setForm({ ...form, shippingPhone: event.target.value })} /></label>
+                <label className="field"><span>Full name</span><input required placeholder="Enter your full name" value={form.shippingFullName} onChange={(event) => setForm({ ...form, shippingFullName: event.target.value })} /></label>
+                <label className="field"><span>Phone</span><input required minLength={7} placeholder="e.g. 01XXXXXXXXX" value={form.shippingPhone} onChange={(event) => setForm({ ...form, shippingPhone: event.target.value })} /></label>
               </>
             ) : null}
             <label className="field">
               <span>Address</span>
-              <input required value={form.shippingLine1} onChange={(event) => setForm({ ...form, shippingLine1: event.target.value })} />
+              <input required placeholder="House, road, area" value={form.shippingLine1} onChange={(event) => setForm({ ...form, shippingLine1: event.target.value })} />
             </label>
             <label className="field">
               <span>Address line 2</span>
-              <input value={form.shippingLine2} onChange={(event) => setForm({ ...form, shippingLine2: event.target.value })} />
+              <input placeholder="Apartment, suite, floor (optional)" value={form.shippingLine2} onChange={(event) => setForm({ ...form, shippingLine2: event.target.value })} />
             </label>
             <label className="field">
               <span>City</span>
-              <input required minLength={2} value={form.shippingCity} onChange={(event) => setForm({ ...form, shippingCity: event.target.value })} />
+              <input required minLength={2} placeholder="Enter your city" value={form.shippingCity} onChange={(event) => setForm({ ...form, shippingCity: event.target.value })} />
             </label>
             <label className="field">
               <span>State</span>
-              <input value={form.shippingState} onChange={(event) => setForm({ ...form, shippingState: event.target.value })} />
+              <input placeholder="State or division" value={form.shippingState} onChange={(event) => setForm({ ...form, shippingState: event.target.value })} />
             </label>
             <label className="field">
               <span>Postal code</span>
-              <input required value={form.shippingPostalCode} onChange={(event) => setForm({ ...form, shippingPostalCode: event.target.value })} />
+              <input required placeholder="Postal code" value={form.shippingPostalCode} onChange={(event) => setForm({ ...form, shippingPostalCode: event.target.value })} />
             </label>
             <label className="field">
               <span>Country</span>
-              <input required value={form.shippingCountry} onChange={(event) => setForm({ ...form, shippingCountry: event.target.value })} />
+              <input required placeholder="Country" value={form.shippingCountry} onChange={(event) => setForm({ ...form, shippingCountry: event.target.value })} />
             </label>
           </>
         ) : null}
         <label className="field">
           <span>Note</span>
-          <textarea value={form.customerNote} onChange={(event) => setForm({ ...form, customerNote: event.target.value })} />
+          <textarea placeholder="Any delivery instructions? (optional)" value={form.customerNote} onChange={(event) => setForm({ ...form, customerNote: event.target.value })} />
         </label>
-        <p className="option-label">Pay with</p>
+        </section>
+        <section className="checkout-form-section checkout-payment-section">
+        <div className="checkout-section-title checkout-payment-title"><span><CreditCard size={17} /></span><div><strong>Payment method</strong><small>Choose how you’d like to pay</small></div></div>
         <div className="pay-grid">
           {payments.map((option) => {
             const walletNumber = option.id === "BKASH" ? settings.bkashNumber : option.id === "NAGAD" ? settings.nagadNumber : option.id === "ROCKET" ? settings.rocketNumber : null;
@@ -407,40 +422,49 @@ export function CheckoutPage() {
             );
           })}
         </div>
+        </section>
         {error ? <p className="error">{error}</p> : null}
-        <button className="btn wide" type="submit" disabled={busy || cartLoading || cart.items.length === 0 || (Boolean(user) && !addressLoaded)}>
-          Place order
+        <button className="btn wide checkout-place-order" type="submit" disabled={busy || cartLoading || cart.items.length === 0 || (Boolean(user) && !addressLoaded)}>
+          <span>{busy ? "Placing order..." : "Place your order"}</span><ArrowRight size={17} />
         </button>
       </div>
-      <aside className="summary-box">
-        <h2 className="label">Summary</h2>
+      <aside className="summary-box checkout-summary">
+        <header className="checkout-summary-heading">
+          <span><ShoppingBag size={18} /></span>
+          <div><small>YOUR ORDER</small><h2>Order summary</h2></div>
+          {!cartLoading && cart.items.length > 0 ? <b>{cart.summary.itemCount}</b> : null}
+        </header>
         {cartLoading ? <RowsSkeleton rows={3} /> : null}
         {!cartLoading && cart.items.map((line) => (
-          <div className="sub" key={line.id}>
+          <div className="sub checkout-summary-item" key={line.id}>
             <span>
               {line.variant.product.name} × {line.quantity}
             </span>
             <span>{money(line.lineTotal)}</span>
           </div>
         ))}
-        <div className="sub">
+        <div className="sub checkout-summary-row">
           <span>Subtotal</span>
           <span>{money(cart.summary.subtotal)}</span>
         </div>
-        <div className="sub">
+        <div className="sub checkout-summary-row">
           <span>Delivery {zone ? `(${zone})` : ""}</span>
           <span>{shipping == null ? "—" : money(fee)}</span>
         </div>
-        <div className="sub">
+        <div className="sub checkout-summary-row">
           <span>Discount {discountLabel}</span>
           <span>{money(discount)}</span>
         </div>
-        <div className="sub">
+        <div className="sub checkout-summary-total">
           <strong>Total</strong>
           <strong>{money(total)}</strong>
         </div>
         {user ? (
-          <form onSubmit={applyCode} className="news" style={{ marginTop: 12 }}>
+          <form onSubmit={applyCode} className="news checkout-coupon">
+            <div className="checkout-coupon-heading">
+              <span><Percent size={14} /></span>
+              <div><strong>Have a promo code?</strong><small>Apply it to your order</small></div>
+            </div>
             <input
               value={form.couponCode}
               placeholder="Code"
@@ -451,6 +475,7 @@ export function CheckoutPage() {
           </form>
         ) : null}
         {quoteError ? <p className="error">{quoteError}</p> : null}
+        <div className="checkout-secure-note"><ShieldCheck size={16} /><span>Secure checkout · Your information is protected</span></div>
       </aside>
     </form>
   );

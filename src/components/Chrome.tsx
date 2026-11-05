@@ -106,11 +106,37 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   function closeCategoryMenu() {
     setMenuOpen(false);
     setExpandedCategory(null);
   }
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      setWishlistCount(0);
+      return;
+    }
+
+    let active = true;
+    const loadWishlistCount = () => {
+      api.wishlist()
+        .then((items) => {
+          if (active) setWishlistCount(items.length);
+        })
+        .catch((reason: unknown) => {
+          console.error("Could not load wishlist count", reason);
+        });
+    };
+    loadWishlistCount();
+    window.addEventListener("wishlist-updated", loadWishlistCount);
+    return () => {
+      active = false;
+      window.removeEventListener("wishlist-updated", loadWishlistCount);
+    };
+  }, [ready, user, location.pathname]);
 
   useEffect(() => {
     const desktopLayout = window.matchMedia("(min-width: 900px)");
@@ -300,8 +326,9 @@ export function Header() {
             >
               <Search size={20} strokeWidth={1.7} />
             </button>
-            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label="Wishlist" title="Wishlist">
+            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} items` : "Wishlist"} title="Wishlist">
               <Heart size={20} strokeWidth={1.7} />
+              {wishlistCount > 0 ? <span className="badge">{wishlistCount}</span> : null}
             </Link>
             <button type="button" className="icon-btn header-cart" aria-label="Cart" onClick={() => setDrawer(true)}>
               <ShoppingBag size={20} strokeWidth={1.7} />
@@ -494,11 +521,11 @@ function CartDrawer() {
   return (
     <>
       <button className="drawer-back cart-drawer-back" aria-label="Close cart" onClick={() => setDrawer(false)} />
-      <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping bag">
+      <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
         <header className="category-menu-heading cart-drawer-header">
           <div className="category-menu-heading-copy cart-drawer-title">
             <span className="category-menu-heading-mark cart-drawer-mark"><ShoppingBag size={21} strokeWidth={1.8} /></span>
-            <span><strong>Your Bag</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
+            <span><strong>Your Cart</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
           </div>
           <button type="button" className="cart-drawer-close" aria-label="Close cart" onClick={() => setDrawer(false)}>
             <X size={20} />
@@ -509,7 +536,7 @@ function CartDrawer() {
           {!loading && cart.items.length === 0 ? (
             <div className="cart-empty-state">
               <span><ShoppingBag size={30} strokeWidth={1.5} /></span>
-              <strong>Your bag is waiting</strong>
+              <strong>Your cart is waiting</strong>
               <p>Find something you love and it will appear here.</p>
               <Link to="/shop" onClick={() => setDrawer(false)}>Explore the store <ArrowRight size={15} /></Link>
             </div>
@@ -526,10 +553,11 @@ function CartDrawer() {
                     <Trash2 size={16} />
                   </button>
                 </div>
-                <p className="cart-line-meta">
-                  {line.variant.size.name}
-                  {line.variant.color ? ` / ${line.variant.color.name}` : ""} / {line.variant.fabric.name}
-                </p>
+                <div className="cart-line-meta">
+                  <span>{line.variant.size.name}</span>
+                  {line.variant.color ? <span>{line.variant.color.name}</span> : null}
+                  <span>{line.variant.fabric.name}</span>
+                </div>
                 <div className="cart-line-bottom">
                   <div className="cart-quantity-controls">
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity - 1)} aria-label="Decrease">
