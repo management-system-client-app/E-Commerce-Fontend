@@ -507,7 +507,7 @@ export function HomePage() {
       ) : null}
 
       {deals.length > 0 ? (
-        <section className="section deals">
+        <section className="section deals" id="daily-deals">
           <div className="section-head">
             <div className="deal-header-wrap">
               <h2>Daily Deals</h2>

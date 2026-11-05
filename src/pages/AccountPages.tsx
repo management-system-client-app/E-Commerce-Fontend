@@ -282,7 +282,6 @@ export function RegisterPage() {
   return (
     <StandaloneAuthLayout activeTab="register">
       <form className="login-form register-form" onSubmit={onSubmit}>
-        <h1 className="login-flow-title">Create Account</h1>
         <div className="register-photo-row">
           <div className="register-avatar-preview">
             {preview ? <img src={preview} alt="Profile preview" /> : <UserRound size={30} strokeWidth={1.6} />}
@@ -306,13 +305,13 @@ export function RegisterPage() {
           </label>
         </div>
         <div className="register-name-grid">
-          <label className="login-field"><span>First name <b>*</b></span><input autoComplete="given-name" required value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} /></label>
-          <label className="login-field"><span>Last name <b>*</b></span><input autoComplete="family-name" required value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} /></label>
+          <label className="login-field"><span>First name <b>*</b></span><input autoComplete="given-name" placeholder="Enter your first name" required value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} /></label>
+          <label className="login-field"><span>Last name <b>*</b></span><input autoComplete="family-name" placeholder="Enter your last name" required value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} /></label>
         </div>
-        <label className="login-field"><span>Email <b>*</b></span><input type="email" autoComplete="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-        <label className="login-field"><span>Phone</span><input type="tel" autoComplete="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
-        <label className="login-field"><span>Password <b>*</b></span><input type="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
-        <label className="login-field"><span>Confirm password <b>*</b></span><input type="password" autoComplete="new-password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
+        <label className="login-field"><span>Email <b>*</b></span><input type="email" autoComplete="email" placeholder="Enter your email address" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
+        <label className="login-field"><span>Phone</span><input type="tel" autoComplete="tel" placeholder="Enter your phone number" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+        <label className="login-field"><span>Password <b>*</b></span><input type="password" autoComplete="new-password" placeholder="Create a password (8+ characters)" required minLength={8} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
+        <label className="login-field"><span>Confirm password <b>*</b></span><input type="password" autoComplete="new-password" placeholder="Confirm your password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
         {error ? <p className="login-error" role="alert">{error}</p> : null}
         <button className="login-submit" type="submit">Create Account</button>
         <p className="login-note">Already have an account? <Link to="/login">Sign in</Link></p>
@@ -388,10 +387,14 @@ export function TrackPage() {
   return (
     <section className="tracking-card">
       <div className="tracking-page">
-        <h1 className="tracking-title">Track Your Order</h1>
-        <p className="tracking-description">
-          To track your order please enter your Order Invoice No &amp; Email/Phone number (Provided in your order). Then Press Track Order button.
-        </p>
+        <header className="tracking-heading">
+          <div>
+            <span className="tracking-kicker">ORDER SUPPORT</span>
+            <h1 className="tracking-title">Track your order</h1>
+            <p className="tracking-description">Enter the order number and contact details used at checkout.</p>
+          </div>
+          <span className="tracking-mark"><PackageOpen size={25} /></span>
+        </header>
         <form onSubmit={onSubmit} className="tracking-form">
           <label className="field tracking-field">
             <span>Order No <b className="tracking-required">*</b></span>
@@ -401,30 +404,31 @@ export function TrackPage() {
             <span>Email/Mobile Number <b className="tracking-required">*</b></span>
             <input required minLength={7} placeholder="Enter Your Email/Mobile Number" value={phone} onChange={(event) => setPhone(event.target.value)} />
           </label>
-          <button className="btn tracking-submit" type="submit">
-            Track Order
+          <button className="btn tracking-submit" type="submit" disabled={loading}>
+            {loading ? "Checking order..." : "Track order"} <ArrowRight size={17} />
           </button>
           {error ? <p className="error tracking-error">{error}</p> : null}
         </form>
         {loading ? <RowsSkeleton rows={3} /> : null}
         {order ? (
-          <div style={{ marginTop: 20 }}>
-            <p>
-              {order.orderNumber} · {titleCaseStatus(order.status)}
-            </p>
-            <p>{money(order.total)}</p>
-            {order.items.map((item) => (
-              <div className="line" key={item.sku + item.productName}>
-                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <div className="photo-fallback" />}
-                <div>
-                  <h3>{item.productName}</h3>
-                  <p className="note">
-                    {item.size} {item.color} · × {item.quantity}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <section className="tracking-result" aria-label="Order details">
+            <header className="tracking-result-heading">
+              <div><span className="tracking-kicker">ORDER DETAILS</span><h2>{order.orderNumber}</h2></div>
+              <span className="tracking-status">{titleCaseStatus(order.status)}</span>
+            </header>
+            <div className="tracking-items">
+              {order.items.map((item) => (
+                <article className="tracking-item" key={item.sku + item.productName}>
+                  {item.imageUrl ? <img className="tracking-item-image" src={item.imageUrl} alt="" /> : <div className="tracking-item-image photo-fallback" />}
+                  <div className="tracking-item-copy">
+                    <h3>{item.productName}</h3>
+                    <p>{item.size} {item.color} <span>·</span> Qty {item.quantity}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <footer className="tracking-result-total"><span>Order total</span><strong>{money(order.total)}</strong></footer>
+          </section>
         ) : null}
       </div>
     </section>
@@ -578,23 +582,27 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <form style={{ marginTop: 24, maxWidth: 420 }} onSubmit={onSubmit}>
-      <h1 className="label">Change password</h1>
-      <label className="field">
-        <span>Current password</span>
-        <input type="password" required value={form.currentPassword} onChange={(event) => setForm({ ...form, currentPassword: event.target.value })} />
-      </label>
-      <label className="field">
-        <span>New password</span>
-        <input type="password" required minLength={8} value={form.newPassword} onChange={(event) => setForm({ ...form, newPassword: event.target.value })} />
-      </label>
-      <label className="field">
-        <span>Confirm password</span>
-        <input type="password" required value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} />
-      </label>
-      <button className="btn" type="submit">Change password</button>
-      {note ? <p className="note">{note}</p> : null}
-    </form>
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">KEEP YOUR ACCOUNT SAFE</span><h1>Change Password</h1></div>
+      </header>
+      <form className="account-surface account-password-form" onSubmit={onSubmit}>
+        <div className="account-password-intro">
+          <span><ShieldCheck size={21} /></span>
+          <div><strong>Update your password</strong><small>Use at least 8 characters for a stronger password.</small></div>
+          <span className="account-security-status"><ShieldCheck size={15} />Secure account</span>
+        </div>
+        <div className="account-password-fields">
+          <label className="field"><span>Current password</span><input type="password" required autoComplete="current-password" value={form.currentPassword} onChange={(event) => setForm({ ...form, currentPassword: event.target.value })} /></label>
+          <label className="field"><span>New password</span><input type="password" required minLength={8} autoComplete="new-password" value={form.newPassword} onChange={(event) => setForm({ ...form, newPassword: event.target.value })} /></label>
+          <label className="field"><span>Confirm new password</span><input type="password" required autoComplete="new-password" value={form.confirmPassword} onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })} /></label>
+        </div>
+        <footer className="account-form-footer">
+          {note ? <p className="account-form-note" role="status">{note}</p> : <span />}
+          <button className="account-primary-action" type="submit">Update password <ArrowRight size={16} /></button>
+        </footer>
+      </form>
+    </section>
   );
 }
 
@@ -960,6 +968,10 @@ export function DeliveryAddressPage() {
           }).catch((reason: unknown) => setAddressNote(reason instanceof Error ? reason.message : "Could not save address"));
         }}
       >
+        <div className="account-address-intro">
+          <span><MapPin size={19} /></span>
+          <div><strong>Where should we deliver?</strong><small>Save a default address to make checkout quicker.</small></div>
+        </div>
         <div className="account-field-grid">
           <label className="field"><span>Recipient name</span><input required value={address.fullName} onChange={(event) => setAddress({ ...address, fullName: event.target.value })} /></label>
           <label className="field"><span>Contact number</span><input required minLength={7} value={address.phone} onChange={(event) => setAddress({ ...address, phone: event.target.value })} /></label>
@@ -1151,20 +1163,28 @@ export function AccountReturns() {
   }
 
   useEffect(load, []);
+  const returnableOrders = orders.filter((order) => order.status === "DELIVERED" || order.status === "RETURN_REQUESTED");
 
   return (
-    <div>
-      <h1 className="label">My Returns</h1>
+    <section className="account-page">
+      <header className="account-page-heading">
+        <div><span className="account-page-kicker">AFTER-SALES SUPPORT</span><h1>Returns</h1></div>
+      </header>
       {loading ? <RowsSkeleton rows={3} /> : null}
-      {!loading && returns.length === 0 ? <p className="note">No return requests yet.</p> : null}
+      {!loading && returns.length === 0 ? (
+        <div className="account-surface customer-empty-state compact">
+          <span><ArrowRight size={20} /></span>
+          <div><h2>No return requests yet</h2><p>Eligible delivered orders can be selected below.</p></div>
+        </div>
+      ) : null}
       {!loading && returns.map((item) => (
-        <article className="receipt compact" key={item.id}>
-          <p className="receipt-number">{item.order?.orderNumber ?? "Return"}</p>
-          <p className="note">{titleCaseStatus(item.reason)} · {titleCaseStatus(item.status)}</p>
+        <article className="account-surface account-order-card" key={item.id}>
+          <header><div><span className="account-page-kicker">RETURN REQUEST</span><strong>{item.order?.orderNumber ?? "Return"}</strong></div><span className="account-order-status">{titleCaseStatus(item.status)}</span></header>
+          <p className="account-order-date">Reason: {titleCaseStatus(item.reason)}</p>
         </article>
       ))}
-      <form
-        style={{ maxWidth: 420, marginTop: 16 }}
+      {returnableOrders.length > 0 ? <form
+        className="account-surface account-return-form"
         onSubmit={(event) => {
           event.preventDefault();
           setNote("");
@@ -1181,27 +1201,24 @@ export function AccountReturns() {
           }).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : "Could not request the return"));
         }}
       >
-        <label className="field">
-          <span>Order</span>
-          <select required value={returnOrder} onChange={(event) => { setReturnOrder(event.target.value); setReturnItem(""); }}>
-            <option value="">Choose</option>
-            {orders.filter((order) => order.status === "DELIVERED" || order.status === "RETURN_REQUESTED").map((order) => <option key={order.id} value={order.id}>{order.orderNumber}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span>Item</span>
-          <select required value={returnItem} onChange={(event) => setReturnItem(event.target.value)}>
-            <option value="">Choose</option>
-            {(orders.find((order) => order.id === returnOrder)?.items ?? []).map((item) => (
-              <option key={item.id} value={item.id}>{item.productName}</option>
-            ))}
-          </select>
-        </label>
-        <label className="field"><span>Note</span><input value={returnNote} onChange={(event) => setReturnNote(event.target.value)} /></label>
-        <button className="btn" type="submit">Request return</button>
-        {note ? <p className="note">{note}</p> : null}
-      </form>
-    </div>
+        <header className="account-surface-heading"><h2>Start a return</h2><span>Choose an eligible order and item.</span></header>
+        <div className="account-field-grid">
+          <label className="field"><span>Order</span><select required value={returnOrder} onChange={(event) => { setReturnOrder(event.target.value); setReturnItem(""); }}>
+            <option value="">Choose order</option>
+            {returnableOrders.map((order) => <option key={order.id} value={order.id}>{order.orderNumber}</option>)}
+          </select></label>
+          <label className="field"><span>Item</span><select required value={returnItem} onChange={(event) => setReturnItem(event.target.value)}>
+            <option value="">Choose item</option>
+            {(returnableOrders.find((order) => order.id === returnOrder)?.items ?? []).map((item) => <option key={item.id} value={item.id}>{item.productName}</option>)}
+          </select></label>
+          <label className="field account-field-wide"><span>Note (optional)</span><input value={returnNote} onChange={(event) => setReturnNote(event.target.value)} /></label>
+        </div>
+        <footer className="account-form-footer">
+          {note ? <p className="account-form-note" role="status">{note}</p> : <span />}
+          <button className="account-primary-action" type="submit">Request return <ArrowRight size={16} /></button>
+        </footer>
+      </form> : null}
+    </section>
   );
 }
 
