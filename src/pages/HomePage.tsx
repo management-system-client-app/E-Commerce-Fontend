@@ -17,6 +17,12 @@ const getCountdownParts = (milliseconds: number) => {
   return { days, hours, minutes, seconds };
 };
 
+const getTimeUntilDailyReset = (now: number) => {
+  const tomorrow = new Date(now);
+  tomorrow.setHours(24, 0, 0, 0);
+  return tomorrow.getTime() - now;
+};
+
 const HOME_CACHE_KEY = "store_home_payload_v2";
 const LATEST_PRODUCTS_CACHE_KEY = "store_latest_products";
 const DAILY_DEALS_CACHE_KEY = "store_daily_deals";
@@ -225,8 +231,7 @@ export function HomePage() {
   const [best, setBest] = useState<ProductCardData[]>(() => readCachedProducts(BEST_SELLERS_CACHE_KEY));
   const [slide, setSlide] = useState(0);
   const [activeBannerRatio, setActiveBannerRatio] = useState<string>();
-  const [saleEndsAt] = useState(() => Date.now() + 1000 * 60 * 60 * 12 + 1000 * 30);
-  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, saleEndsAt - Date.now()));
+  const [timeLeft, setTimeLeft] = useState(() => getTimeUntilDailyReset(Date.now()));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(initialHome === null);
   const skeletonRef = useRef<HTMLDivElement>(null);
@@ -408,10 +413,10 @@ export function HomePage() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setTimeLeft(Math.max(0, saleEndsAt - Date.now()));
+      setTimeLeft(getTimeUntilDailyReset(Date.now()));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [saleEndsAt]);
+  }, []);
 
   const current = banners[slide] ?? banners[0];
   const sideBanners = campaigns.slice(0, 3);

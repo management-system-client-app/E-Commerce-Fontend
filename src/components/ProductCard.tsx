@@ -33,12 +33,23 @@ export function ProductCard({
               <img className="product-image" src={image} alt={product.name} loading="lazy" decoding="async" />
             </>
           ) : <div className="photo-fallback" />}
-          {dealCard && savings > 0 ? <span className="deal-savings">Save {money(savings)} ↓</span> : null}
-          {flags.isNew || (!dealCard && flags.onSale) || soldOut ? (
+          {dealCard ? (
+            savings > 0 || flags.isNew || soldOut ? (
+              <div className="deal-card-badges">
+                {savings > 0 ? <span className="deal-savings">Save {money(savings)} ↓</span> : null}
+                {flags.isNew || soldOut ? (
+                  <div className="flags">
+                    {soldOut ? <span className="flag sold-out-flag">Sold out</span> : null}
+                    {flags.isNew ? <span className="flag">New</span> : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null
+          ) : flags.isNew || flags.onSale || soldOut ? (
             <div className="flags">
               {soldOut ? <span className="flag sold-out-flag">Sold out</span> : null}
               {flags.isNew ? <span className="flag">New</span> : null}
-              {!dealCard && flags.onSale ? <span className="flag sale-flag">{discount ? `-${discount}%` : "Sale"}</span> : null}
+              {flags.onSale ? <span className="flag sale-flag">{discount ? `-${discount}%` : "Sale"}</span> : null}
             </div>
           ) : null}
         </div>
