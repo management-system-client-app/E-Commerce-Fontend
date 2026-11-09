@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowRight, Clock3, Heart, PackageCheck, Ruler } from "lucide-react";
 import { ApiError, api, DATA_REFRESH_INTERVAL } from "../api";
 import { ProductCarousel } from "../components/ProductCard";
 import { DetailSkeleton, ProductGridSkeleton, RowsSkeleton } from "../components/Skeleton";
@@ -82,8 +83,9 @@ function cacheProduct(product: ProductDetail) {
 
 export function ProductPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { add, busy } = useCart();
+  const { add, busy, setDrawer } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(() => readProductCache()[id] ?? null);
   const [related, setRelated] = useState<ProductCardData[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -340,6 +342,21 @@ export function ProductPage() {
     }
   }
 
+  async function onBuyNow() {
+    if (!selected) {
+      setError("Choose a size");
+      return;
+    }
+    setError("");
+    try {
+      await add(selected.id, quantity);
+      setDrawer(false);
+      navigate("/checkout");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not add to cart");
+    }
+  }
+
   async function toggleWish() {
     if (!user) {
       window.location.assign("/login");
@@ -353,6 +370,7 @@ export function ProductPage() {
         await api.saveWishlist(product!.id);
         setSaved(true);
       }
+      window.dispatchEvent(new Event("wishlist-updated"));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Wishlist failed");
     }
@@ -383,9 +401,9 @@ export function ProductPage() {
         <Link to="/">Home</Link> / <Link to={`/shop?categoryId=${product.category.id}`}>{product.category.name}</Link> /{" "}
         {product.name}
       </p>
-      <div className="pdp">
-        <div className="pdp-main">
-        <div>
+      <div className="pdp product-detail-page">
+        <div className="pdp-main product-detail-main">
+        <div className="product-gallery-column">
           <div className="gallery-main">
             {photo ? (
               <img
@@ -412,16 +430,32 @@ export function ProductPage() {
             ))}
           </div>
         </div>
-        <div>
-          <p className="label">{product.brand.name}</p>
-          <h1>{product.name}</h1>
-          <p className="price">
-            {money(unit)}
+        <div className="product-summary">
+          <div className="product-summary-heading">
+            <div>
+              <p className="product-brand-line">Brand: <strong>{product.brand.name}</strong></p>
+              <h1>{product.name}</h1>
+              <p className="product-rating">
+                <span aria-label={`${average.toFixed(1)} out of 5 stars`}>{"★".repeat(Math.round(average))}{"☆".repeat(5 - Math.round(average))}</span>
+                <small>{reviewsLoading ? "Loading rating" : average > 0 ? `${average.toFixed(1)} (${reviews.length} ratings)` : "No ratings yet"}</small>
+              </p>
+            </div>
+            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
+              <Heart size={20} fill={saved ? "currentColor" : "none"} />
+            </button>
+          </div>
+          <p className="product-price">
+            <strong>{money(unit)}</strong>
             {flags.compare != null ? <s>{money(flags.compare)}</s> : null}
           </p>
           <div className="flags" style={{ position: "static", flexDirection: "row", marginBottom: 8 }}>
             {flags.isNew ? <span className="flag">New</span> : null}
             {flags.onSale ? <span className="flag">Sale</span> : null}
+          </div>
+          <div className="product-meta">
+            <span>SKU / Style: <strong>{selected?.sku ?? "—"}</strong></span>
+            <span>Sold by: <strong>{product.brand.name}</strong></span>
+            <span>Category: <Link to={`/shop?categoryId=${product.category.id}`}>{product.category.name}</Link></span>
           </div>
           <p className="option-label">Size</p>
           <div className="sizes">
@@ -437,6 +471,11 @@ export function ProductPage() {
               </button>
             ))}
           </div>
+          {displayGuides.length > 0 ? (
+            <button className="see-more product-size-guide" type="button" onClick={() => setGuideOpen(true)}>
+              <Ruler size={15} aria-hidden="true" /> Size Measurement Details
+            </button>
+          ) : null}
           {colors.length > 0 ? (
             <>
               <p className="option-label">
@@ -494,36 +533,31 @@ export function ProductPage() {
               ))}
             </div>
           ) : (
-            <p>{selected?.fabric.name ?? fabrics[0]?.name ?? "—"}</p>
+            <p className="product-fabric-value">{selected?.fabric.name ?? fabrics[0]?.name ?? "—"}</p>
           )}
           {selected?.fabric.composition ? <p className="note">{selected.fabric.composition}</p> : null}
-          <p className="stock">{available > 0 ? `${available} in stock` : "Out of stock"}</p>
-          <p className="option-label">Quantity</p>
-          <div className="qty">
-            <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Decrease">
-              −
-            </button>
-            <span>{quantity}</span>
-            <button type="button" onClick={() => setQuantity((value) => Math.min(available || 99, value + 1))} aria-label="Increase">
-              +
-            </button>
+          <p className="stock">{available > 0 ? `In Stock: ${available}` : "Out of stock"}</p>
+          <div className="product-purchase-row">
+            <span className="option-label">Quantity</span>
+            <div className="qty">
+              <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label="Decrease">
+                −
+              </button>
+              <span>{quantity}</span>
+              <button type="button" onClick={() => setQuantity((value) => Math.min(available || 99, value + 1))} aria-label="Increase">
+                +
+              </button>
+            </div>
           </div>
           {error ? <p className="error">{error}</p> : null}
-          <div className="actions">
+          <div className="product-actions">
             <button className="btn wide" type="button" disabled={busy || available < 1} onClick={onAdd}>
               Add to cart
             </button>
-            <button className="btn-line wide" type="button" onClick={toggleWish}>
-              {saved ? "Saved" : "Wishlist"}
+            <button className="btn-line wide product-buy-now" type="button" disabled={busy || available < 1} onClick={onBuyNow}>
+              Buy now <ArrowRight size={16} />
             </button>
-            {displayGuides.length > 0 ? (
-              <button className="see-more" type="button" onClick={() => setGuideOpen(true)}>
-                Size guide
-              </button>
-            ) : null}
           </div>
-          <div className="prose">{product.description}</div>
-          {product.careInstructions ? <p className="note">Care: {product.careInstructions}</p> : null}
         </div>
         <section className="section product-info-section">
           <div className="product-info-tabs" role="tablist" aria-label="Product information">
@@ -549,43 +583,91 @@ export function ProductPage() {
           </div>
           <div id="product-info-panel" className="product-info-panel" role="tabpanel" aria-labelledby={`product-tab-${infoTab}`}>
             {infoTab === "description" ? (
-              <div className="product-description">{product.description || "No description found for this product."}</div>
+              <div className="product-description">
+                <div className="product-content-heading"><span>PRODUCT STORY</span><h2>About this product</h2></div>
+                <p className="product-description-copy">{product.description || "No description found for this product."}</p>
+                {product.careInstructions ? (
+                  <div className="product-care-note"><strong>Care instructions</strong><p>{product.careInstructions}</p></div>
+                ) : null}
+              </div>
             ) : null}
             {infoTab === "specification" ? (
-              <div className="product-specs" aria-label="Product details">
-                <p><span>Brand:</span> {product.brand.name}</p>
-                <p><span>Fabric:</span> {selected?.fabric.name ?? "—"}</p>
-                <p><span>Gender:</span> {GENDER_LABELS[product.gender] ?? product.gender}</p>
-                <p><span>Color:</span> {selected?.color?.name ?? "—"}</p>
-                <p><span>Size:</span> {selected?.size.name ?? "—"}</p>
-                <p className="product-specs-note">
-                  <span>Note:</span> The color is the same as the picture. However, it may slightly differ due to lighting.
-                </p>
+              <div className="product-specs-wrap">
+                <div className="product-content-heading"><span>PRODUCT DETAILS</span><h2>Specifications</h2></div>
+                <div className="product-specs" aria-label="Product details">
+                  <p><span>Brand</span><strong>{product.brand.name}</strong></p>
+                  <p><span>Fabric</span><strong>{selected?.fabric.name ?? "—"}</strong></p>
+                  <p><span>Gender</span><strong>{GENDER_LABELS[product.gender] ?? product.gender}</strong></p>
+                  <p><span>Color</span><strong>{selected?.color?.name ?? "—"}</strong></p>
+                  <p><span>Size</span><strong>{selected?.size.name ?? "—"}</strong></p>
+                  <p className="product-specs-note">
+                    <span>Color note</span><strong>The color is the same as the picture. However, it may slightly differ due to lighting.</strong>
+                  </p>
+                </div>
               </div>
             ) : null}
             {infoTab === "return-policy" ? (
               <div className="product-policy">
-                <p>15 Days replacement policy only for SaRa Lifestyle manufacture products.</p>
-                <p>Please contact customer support to request a replacement.</p>
+                <div className="product-content-heading"><span>SHOP WITH CONFIDENCE</span><h2>Replacement & support</h2></div>
+                <article className="product-policy-card">
+                  <span><Clock3 size={20} /></span>
+                  <div><strong>15-day replacement</strong><p>Available only for products manufactured by SaRa Lifestyle.</p></div>
+                </article>
+                <article className="product-policy-card">
+                  <span><PackageCheck size={20} /></span>
+                  <div><strong>Need a replacement?</strong><p>Please contact customer support to request a replacement.</p></div>
+                </article>
               </div>
             ) : null}
             {infoTab === "reviews" ? (
               <div className="product-reviews">
-                {average > 0 ? <p className="product-average">Average rating: {average.toFixed(1)} / 5</p> : null}
+                <section className="product-review-summary" aria-label="Customer rating summary">
+                  <div className="product-review-score">
+                    <strong>{average > 0 ? average.toFixed(1) : "—"}</strong>
+                    <span>out of 5</span>
+                  </div>
+                  <div className="product-review-summary-copy">
+                    <span className="product-review-stars" aria-label={average > 0 ? `${average.toFixed(1)} out of 5 stars` : "No ratings yet"}>
+                      {"★".repeat(Math.round(average))}{"☆".repeat(5 - Math.round(average))}
+                    </span>
+                    <strong>{average > 0 ? "Customer rating" : "Be the first to rate this product"}</strong>
+                    <small>{reviews.length} {reviews.length === 1 ? "review" : "reviews"}</small>
+                  </div>
+                </section>
                 {reviewsLoading ? <RowsSkeleton rows={3} /> : null}
-                {!reviewsLoading && reviews.length === 0 ? <p className="note">No reviews found for this product.</p> : null}
-                {reviews.map((review) => (
-                  <article key={review.id} className="product-review">
-                    <p className="stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p>
-                    {review.title ? <strong>{review.title}</strong> : null}
-                    <p>{review.comment}</p>
-                    <p className="note">{review.user.firstName} {review.user.lastName}</p>
-                  </article>
-                ))}
+                {!reviewsLoading && reviews.length === 0 ? (
+                  <div className="product-review-empty">
+                    <span className="product-review-empty-stars" aria-hidden="true">☆☆☆</span>
+                    <strong>No reviews yet</strong>
+                    <p>Share your experience with this product.</p>
+                  </div>
+                ) : null}
+                {reviews.length > 0 ? (
+                  <div className="product-review-list">
+                    {reviews.map((review) => (
+                      <article key={review.id} className="product-review">
+                        <div className="product-review-author">
+                          <span className="product-review-avatar" aria-hidden="true">{review.user.firstName.charAt(0).toUpperCase()}</span>
+                          <div><strong>{review.user.firstName} {review.user.lastName}</strong><small>Customer review</small></div>
+                          <span className="product-review-stars" aria-label={`${review.rating} out of 5 stars`}>
+                            {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                          </span>
+                        </div>
+                        {review.title ? <h3>{review.title}</h3> : null}
+                        <p>{review.comment}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : null}
                 {user ? (
-                  <form onSubmit={onReview}>
+                  <form className="product-review-form" onSubmit={onReview}>
+                    <div className="product-review-form-heading">
+                      <span>YOUR FEEDBACK</span>
+                      <h3>Write a review</h3>
+                      <p>Tell other shoppers what you think.</p>
+                    </div>
                     <label className="field">
-                      <span>Rating</span>
+                      <span>Your rating</span>
                       <div className="rating-input" role="radiogroup" aria-label="Rating">
                         {[1, 2, 3, 4, 5].map((rating) => (
                           <button
@@ -603,18 +685,18 @@ export function ProductPage() {
                       </div>
                     </label>
                     <label className="field">
-                      <span>Title</span>
-                      <input value={reviewForm.title} onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })} />
+                      <span>Review title <small>(optional)</small></span>
+                      <input placeholder="Sum up your experience" value={reviewForm.title} onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })} />
                     </label>
                     <label className="field">
-                      <span>Review</span>
-                      <textarea required minLength={2} value={reviewForm.comment} onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })} />
+                      <span>Your review</span>
+                      <textarea required minLength={2} placeholder="What did you like or dislike?" value={reviewForm.comment} onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })} />
                     </label>
-                    {reviewMessage ? <p className="note">{reviewMessage}</p> : null}
-                    <button className="btn" type="submit">Post review</button>
+                    {reviewMessage ? <p className="product-review-message" role="status">{reviewMessage}</p> : null}
+                    <button className="btn product-review-submit" type="submit">Post review <ArrowRight size={16} /></button>
                   </form>
                 ) : (
-                  <p className="note"><Link to="/login">Login</Link> to review a product you have bought.</p>
+                  <p className="product-review-login"><Link to="/login">Log in</Link> to share your review.</p>
                 )}
               </div>
             ) : null}
@@ -696,17 +778,22 @@ export function ProductPage() {
 
       {relatedLoading ? <ProductGridSkeleton count={4} /> : null}
       {!relatedLoading && related.length > 0 ? (
-        <section className="section">
+        <section className="section related-products-section">
           <div className="section-head">
-            <h2>Related</h2>
+            <div className="related-products-heading">
+              <span>CURATED FOR YOU</span>
+              <h2>You may also like</h2>
+              <p>Discover more styles selected to complement your choice.</p>
+            </div>
+            <Link to={`/shop?categoryId=${product.category.id}`}>See more <ArrowRight size={16} /></Link>
           </div>
           <ProductCarousel products={related} />
         </section>
       ) : null}
 
       {guideOpen ? (
-        <div className="modal" role="dialog" aria-label="Size guide">
-          <div className="modal-card">
+        <div className="modal size-guide-modal" role="dialog" aria-label="Size guide">
+          <div className="modal-card size-guide-card">
             <header>
               Size guide
               <button type="button" onClick={() => setGuideOpen(false)}>

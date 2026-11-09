@@ -1,10 +1,11 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ChevronRight, Heart, House, LayoutGrid, Mail, MapPin, Menu, Minus, PackageSearch, Phone, Plus, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronRight, Heart, House, LayoutGrid, Mail, MapPin, Menu, Minus, PackageSearch, Phone, Plus, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { api } from "../api";
 import { RowsSkeleton } from "./Skeleton";
-import { money } from "../format";
+import { coverImage, money } from "../format";
 import { categoryImage, useAuth, useCart, useStore } from "../state";
-import type { Category, User } from "../types";
+import type { Category, ProductCardData, User } from "../types";
 
 export function UserFace({ user, size = 32, className = "" }: { user: Pick<User, "firstName" | "email" | "avatarUrl">; size?: number; className?: string }) {
   const style = { width: size, height: size, fontSize: Math.max(11, Math.round(size * 0.4)) };
@@ -59,9 +60,6 @@ function CategoryList({
           >
             <div className={`category-menu-row${expanded ? " is-expanded" : ""}`}>
               <Link className="category-menu-link" to={`/shop?categoryId=${category.id}`} onClick={onNavigate}>
-                <span className="category-menu-thumb">
-                  {category.imageUrl ? <img src={category.imageUrl} alt="" loading="lazy" /> : <LayoutGrid size={20} strokeWidth={1.6} />}
-                </span>
                 <strong>{category.name}</strong>
               </Link>
               {children.length > 0 ? (
@@ -94,20 +92,161 @@ function CategoryList({
 export function Header() {
   const { catalog } = useStore();
   const { user, ready, logout } = useAuth();
-  const { cart, setDrawer } = useCart();
+  const { cart, drawer, setDrawer } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const [query, setQuery] = useState("");
+  const [searchError, setSearchError] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [suggestions, setSuggestions] = useState<ProductCardData[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  function closeCategoryMenu() {
+    setMenuOpen(false);
+    setExpandedCategory(null);
+  }
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!user) {
+      setWishlistCount(0);
+      return;
+    }
+
+    let active = true;
+    const loadWishlistCount = () => {
+      api.wishlist()
+        .then((items) => {
+          if (active) setWishlistCount(items.length);
+        })
+        .catch((reason: unknown) => {
+          console.error("Could not load wishlist count", reason);
+        });
+    };
+    loadWishlistCount();
+    window.addEventListener("wishlist-updated", loadWishlistCount);
+    return () => {
+      active = false;
+      window.removeEventListener("wishlist-updated", loadWishlistCount);
+    };
+  }, [ready, user, location.pathname]);
+
+  useEffect(() => {
+    const desktopLayout = window.matchMedia("(min-width: 900px)");
+    function resetCategoryMenu() {
+      closeCategoryMenu();
+    }
+    desktopLayout.addEventListener("change", resetCategoryMenu);
+    return () => desktopLayout.removeEventListener("change", resetCategoryMenu);
+  }, []);
+
+  useEffect(() => {
+    const responsiveSearch = window.matchMedia("(max-width: 699px)");
+    if (!searchOpen || !responsiveSearch.matches) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    searchInputRef.current?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSearchOpen(false);
+    }
+    function onResize() {
+      if (!responsiveSearch.matches) setSearchOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [searchOpen]);
+
+  useEffect(() => {
+    const term = query.trim();
+    if (!term) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      setActiveSuggestion(-1);
+      return;
+    }
+
+    let active = true;
+    setSuggestions([]);
+    setSuggestionsLoading(true);
+    setActiveSuggestion(-1);
+    const timer = window.setTimeout(() => {
+      api.products({ search: term, status: "ACTIVE", limit: 6, page: 1 })
+        .then(({ items }) => {
+          if (active) setSuggestions(items);
+        })
+        .catch(() => {
+          if (active) setSuggestions([]);
+        })
+        .finally(() => {
+          if (active) setSuggestionsLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
 
   function onSearch(event: FormEvent) {
     event.preventDefault();
+    if (suggestionsOpen && activeSuggestion >= 0) {
+      const selected = suggestions[activeSuggestion];
+      if (selected) {
+        navigate(`/product/${selected.id}`);
+        setSearchOpen(false);
+        setSuggestionsOpen(false);
+        return;
+      }
+    }
     const term = query.trim();
-    navigate(term ? `/shop?search=${encodeURIComponent(term)}` : "/shop");
+    if (!term) {
+      setSearchError("Enter a search term");
+      setSuggestionsOpen(false);
+      searchInputRef.current?.focus();
+      return;
+    }
+    setSearchError("");
+    navigate(`/shop?search=${encodeURIComponent(term)}`);
     setSearchOpen(false);
+    setSuggestionsOpen(false);
+  }
+
+  function selectSuggestion(product: ProductCardData) {
+    navigate(`/product/${product.id}`);
+    setSearchOpen(false);
+    setSuggestionsOpen(false);
+  }
+
+  function onSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!suggestionsOpen || suggestions.length === 0) {
+      if (event.key === "Escape") setSuggestionsOpen(false);
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestion((current) => (current + 1) % suggestions.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestion((current) => (current <= 0 ? suggestions.length - 1 : current - 1));
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      setSuggestionsOpen(false);
+      setActiveSuggestion(-1);
+    }
   }
 
   const navLinks = [
@@ -115,7 +254,10 @@ export function Header() {
     { label: "Mens", href: "/shop?gender=MEN" },
     { label: "Womens", href: "/shop?gender=WOMEN" },
     { label: "Kids", href: "/shop?gender=KIDS" },
+    { label: "Budget Deals", href: "/shop?sort=price_asc" },
+    { label: "Best Deals", href: "/#daily-deals" },
   ];
+  const bottomNavOverlayOpen = menuOpen || accountMenuOpen || drawer;
 
   return (
     <>
@@ -129,7 +271,49 @@ export function Header() {
             </Link>
           </div>
           <form onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="I'm shopping for ..." aria-label="Search products" />
+            <button type="button" className="mobile-search-back" onClick={() => setSearchOpen(false)}><ArrowLeft size={17} />Back</button>
+            <input
+              ref={searchInputRef}
+              id="header-search-input"
+              value={query}
+              onChange={(event) => { setQuery(event.target.value); setSearchError(""); setSuggestionsOpen(true); }}
+              onKeyDown={onSearchKeyDown}
+              placeholder="I'm shopping for ..."
+              aria-label="Search products"
+              aria-invalid={Boolean(searchError)}
+              aria-describedby={searchError ? "header-search-error" : undefined}
+              aria-autocomplete="list"
+              aria-expanded={suggestionsOpen && Boolean(query.trim())}
+              aria-controls="header-search-suggestions"
+              aria-activedescendant={activeSuggestion >= 0 ? `header-search-option-${activeSuggestion}` : undefined}
+            />
+            {searchError ? <p className="header-search-error" id="header-search-error" role="alert">{searchError}</p> : null}
+            {suggestionsOpen && query.trim() ? (
+              <div className="search-suggestions" id="header-search-suggestions" role="listbox" aria-label="Product suggestions">
+                {suggestionsLoading ? <p className="search-suggestions-state">Searching products...</p> : suggestions.length > 0 ? suggestions.map((product, index) => {
+                  const image = coverImage(product);
+                  return (
+                    <button
+                      type="button"
+                      className={`search-suggestion${activeSuggestion === index ? " is-active" : ""}`}
+                      id={`header-search-option-${index}`}
+                      role="option"
+                      aria-selected={activeSuggestion === index}
+                      key={product.id}
+                      onMouseEnter={() => setActiveSuggestion(index)}
+                      onClick={() => selectSuggestion(product)}
+                    >
+                      {image ? <img src={image} alt="" /> : <span className="search-suggestion-fallback"><ShoppingBag size={17} /></span>}
+                      <span className="search-suggestion-copy">
+                        <strong>{product.name}</strong>
+                        {product.brand?.name ? <small>{product.brand.name}</small> : null}
+                      </span>
+                      <span className="search-suggestion-price">{money(product.basePrice)}</span>
+                    </button>
+                  );
+                }) : <p className="search-suggestions-state">No matching products</p>}
+              </div>
+            ) : null}
             <button type="submit" aria-label="Search"><Search size={20} strokeWidth={1.7} /></button>
           </form>
           <div className="header-tools">
@@ -142,8 +326,9 @@ export function Header() {
             >
               <Search size={20} strokeWidth={1.7} />
             </button>
-            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label="Wishlist" title="Wishlist">
+            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} items` : "Wishlist"} title="Wishlist">
               <Heart size={20} strokeWidth={1.7} />
+              {wishlistCount > 0 ? <span className="badge">{wishlistCount}</span> : null}
             </Link>
             <button type="button" className="icon-btn header-cart" aria-label="Cart" onClick={() => setDrawer(true)}>
               <ShoppingBag size={20} strokeWidth={1.7} />
@@ -183,7 +368,7 @@ export function Header() {
           <div
             className="category-menu-anchor"
             onMouseLeave={() => {
-              if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(false);
+              if (window.matchMedia("(min-width: 900px)").matches) closeCategoryMenu();
             }}
           >
             <button
@@ -194,20 +379,24 @@ export function Header() {
               onMouseEnter={() => {
                 if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(true);
               }}
+              onClick={() => {
+                if (window.matchMedia("(min-width: 900px)").matches) setMenuOpen(true);
+                else setMenuOpen((open) => !open);
+              }}
             >
               <Menu size={20} strokeWidth={2.8} />
               <span>Shop By Category</span>
             </button>
             {menuOpen ? (
               <>
-                <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={() => setMenuOpen(false)} />
+                <button className="sheet-back category-menu-backdrop" aria-label="Close category menu" onClick={closeCategoryMenu} />
                 <aside id="category-menu-panel" className="category-menu-panel" role="dialog" aria-label="All Categories">
                   <header className="category-menu-heading">
                     <div className="category-menu-heading-copy">
                       <span className="category-menu-heading-mark"><LayoutGrid size={19} strokeWidth={1.7} /></span>
                       <span><strong>Shop by category</strong></span>
                     </div>
-                    <button type="button" aria-label="Close category menu" onClick={() => setMenuOpen(false)}><X size={19} /></button>
+                    <button type="button" aria-label="Close category menu" onClick={closeCategoryMenu}><X size={19} /></button>
                   </header>
                   <div className="category-menu-body">
                     <div className="category-menu-section-head">
@@ -221,7 +410,7 @@ export function Header() {
                         setExpandedCategory((current) => (current === categoryId ? null : categoryId))
                       }
                       onHover={setExpandedCategory}
-                      onNavigate={() => setMenuOpen(false)}
+                      onNavigate={closeCategoryMenu}
                     />
                   </div>
                 </aside>
@@ -233,7 +422,8 @@ export function Header() {
               const active = item.label === "Home"
                 ? location.pathname === "/"
                 : navClass(item.href, false, location.pathname, location.search);
-              return <Link key={item.label} to={item.href} className={`${item.label === "Home" ? "home-link " : ""}${active ? "on" : ""}`} aria-current={active ? "page" : undefined}>{item.label}</Link>;
+              const compactHidden = item.label === "Budget Deals" || item.label === "Best Deals";
+              return <Link key={item.label} to={item.href} className={`${item.label === "Home" ? "home-link " : ""}${compactHidden ? "compact-hidden " : ""}${active ? "on" : ""}`} aria-current={active ? "page" : undefined}>{item.label}</Link>;
             })}
           </nav>
           <div className="category-nav-tools">
@@ -243,26 +433,26 @@ export function Header() {
         </div>
       </header>
       <nav className="bottom-nav" aria-label="Mobile">
-        <NavLink to="/" end className={({ isActive }) => (isActive ? "on" : "")}>
+        <NavLink to="/" end className={({ isActive }) => (isActive && !bottomNavOverlayOpen ? "on" : "")} onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(false); }}>
           <House size={18} strokeWidth={1.7} />
           Home
         </NavLink>
         <button
           type="button"
-          className={`bottom-nav-category${menuOpen ? " on" : ""}`}
+          className={`bottom-nav-category${menuOpen && !accountMenuOpen && !drawer ? " on" : ""}`}
           aria-expanded={menuOpen}
-          onClick={() => { setAccountMenuOpen(false); setMenuOpen(true); }}
+          onClick={() => { setAccountMenuOpen(false); setDrawer(false); setMenuOpen((open) => !open); }}
         >
           <LayoutGrid size={18} strokeWidth={1.7} />
           Category
         </button>
-        <NavLink to="/wishlist" className={({ isActive }) => (isActive ? "on" : "")}>
+        <NavLink to="/wishlist" className={({ isActive }) => (isActive && !bottomNavOverlayOpen ? "on" : "")} onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(false); }}>
           <Heart size={18} strokeWidth={1.7} />
           Wishlist
         </NavLink>
         <button
           type="button"
-          className={location.pathname === "/cart" ? "on" : ""}
+          className={!menuOpen && !accountMenuOpen && (drawer || location.pathname === "/cart") ? "on" : ""}
           aria-haspopup="dialog"
           onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(true); }}
         >
@@ -271,10 +461,10 @@ export function Header() {
         </button>
         <button
           type="button"
-          className={accountMenuOpen || location.pathname.startsWith("/account") || location.pathname === "/login" || location.pathname === "/register" ? "on" : ""}
+          className={accountMenuOpen || (!menuOpen && !drawer && (location.pathname.startsWith("/account") || location.pathname === "/login" || location.pathname === "/register")) ? "on" : ""}
           aria-expanded={accountMenuOpen}
           aria-controls="account-menu-panel"
-          onClick={() => { setMenuOpen(false); setAccountMenuOpen((open) => !open); }}
+          onClick={() => { setMenuOpen(false); setDrawer(false); setAccountMenuOpen((open) => !open); }}
         >
           {user ? <UserFace user={user} size={18} /> : <UserRound size={18} strokeWidth={1.7} />}
           Account
@@ -331,11 +521,11 @@ function CartDrawer() {
   return (
     <>
       <button className="drawer-back cart-drawer-back" aria-label="Close cart" onClick={() => setDrawer(false)} />
-      <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping bag">
+      <aside className="drawer cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping cart">
         <header className="category-menu-heading cart-drawer-header">
           <div className="category-menu-heading-copy cart-drawer-title">
             <span className="category-menu-heading-mark cart-drawer-mark"><ShoppingBag size={21} strokeWidth={1.8} /></span>
-            <span><strong>Your Bag</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
+            <span><strong>Your Cart</strong><small>{cart.summary.itemCount} {cart.summary.itemCount === 1 ? "item" : "items"}</small></span>
           </div>
           <button type="button" className="cart-drawer-close" aria-label="Close cart" onClick={() => setDrawer(false)}>
             <X size={20} />
@@ -346,7 +536,7 @@ function CartDrawer() {
           {!loading && cart.items.length === 0 ? (
             <div className="cart-empty-state">
               <span><ShoppingBag size={30} strokeWidth={1.5} /></span>
-              <strong>Your bag is waiting</strong>
+              <strong>Your cart is waiting</strong>
               <p>Find something you love and it will appear here.</p>
               <Link to="/shop" onClick={() => setDrawer(false)}>Explore the store <ArrowRight size={15} /></Link>
             </div>
@@ -363,10 +553,11 @@ function CartDrawer() {
                     <Trash2 size={16} />
                   </button>
                 </div>
-                <p className="cart-line-meta">
-                  {line.variant.size.name}
-                  {line.variant.color ? ` / ${line.variant.color.name}` : ""} / {line.variant.fabric.name}
-                </p>
+                <div className="cart-line-meta">
+                  <span>{line.variant.size.name}</span>
+                  {line.variant.color ? <span>{line.variant.color.name}</span> : null}
+                  <span>{line.variant.fabric.name}</span>
+                </div>
                 <div className="cart-line-bottom">
                   <div className="cart-quantity-controls">
                   <button type="button" disabled={busy} onClick={() => setQuantity(line, line.quantity - 1)} aria-label="Decrease">
@@ -402,21 +593,14 @@ function CartDrawer() {
 
 export function Footer() {
   const { settings, settingsReady } = useStore();
+  const { user } = useAuth();
   const contactAddress = settings.address || "Avenue #02A, Road #13, House No #1339, Mirpur DOHS, Dhaka-1216, Bangladesh.";
   const contactPhone = settings.supportPhone || "+88-01885-998899";
   const contactEmail = settings.supportEmail || "support@saralifestyle.com";
-  const saraSocials = [
+  const creationSocials = [
     { name: "Facebook", mark: "f", className: "footer-facebook", href: settings.facebookUrl },
-    { name: "LinkedIn", mark: "in", className: "footer-linkedin" },
     { name: "YouTube", mark: "▶", className: "footer-youtube" },
     { name: "Instagram", mark: "◎", className: "footer-instagram", href: settings.instagramUrl },
-    { name: "TikTok", mark: "♪", className: "footer-tiktok" },
-    { name: "X", mark: "X", className: "footer-x" },
-  ];
-  const dheuSocials = [
-    { name: "Facebook", mark: "f", className: "footer-facebook" },
-    { name: "YouTube", mark: "▶", className: "footer-youtube" },
-    { name: "Instagram", mark: "◎", className: "footer-instagram" },
     { name: "TikTok", mark: "♪", className: "footer-tiktok" },
   ];
 
@@ -439,63 +623,50 @@ export function Footer() {
                 <span className="footer-contact-icon" aria-hidden="true"><Mail size={12} strokeWidth={1.7} /></span>
                 <span>{contactEmail}</span>
               </a>
-              <div className="footer-business-ids">
-                <p>DBID Number: <strong>204425796</strong></p>
-                <p>D-U-N-S Number: <strong>731926671</strong></p>
-              </div>
             </div>
           )}
         </section>
         <nav className="footer-column" aria-label="Company">
           <h3>Company</h3>
           <Link to="/pages/blogs">Blogs</Link>
-          <Link to="/pages/media">Media</Link>
           <Link to="/outlets">Outlets</Link>
-          <Link to="/pages/careers">Careers</Link>
           <Link to="/pages/about">About Us</Link>
           <Link to="/pages/contact">Contact Us</Link>
         </nav>
         <nav className="footer-column" aria-label="Customer">
           <h3>Customer</h3>
-          <Link to="/login">Login</Link>
-          <Link to="/register">Register</Link>
-          <Link to="/shop">Brands</Link>
-          <Link to="/shop?sort=price_asc">Best Deals</Link>
-          <Link to="/shop">Marketplace</Link>
+          {user ? (
+            <>
+              <Link to={user.accountType === "ADMIN" ? "/admin" : "/account"}>Dashboard</Link>
+              <Link to="/wishlist">Wishlist</Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/register">Register</Link>
+            </>
+          )}
+          <Link to="/cart">Cart</Link>
+          <Link to="/shop?sort=price_asc">Budget Deals</Link>
+          <Link to="/#daily-deals">Best Deals</Link>
         </nav>
         <nav className="footer-column" aria-label="Help">
           <h3>Help</h3>
           <Link to="/pages/faqs">FAQs</Link>
           <Link to="/pages/privacy-policy">Privacy Policy</Link>
           <Link to="/pages/cookies-policy">Cookies Policy</Link>
-          <Link to="/pages/terms-and-conditions">Terms &amp; Conditions</Link>
           <Link to="/pages/replacement-policy">Replacement Policy</Link>
-          <Link to="/pages/emi-terms-and-conditions">EMI Terms &amp; Conditions</Link>
+          <Link to="/pages/terms-and-conditions">Terms &amp; Conditions</Link>
         </nav>
         <section className="footer-column footer-social-column">
-          <h3>Social Media for SaRa</h3>
-          <div className="footer-socials" aria-label="SaRa social media">
-            {saraSocials.map((social) => {
+          <h3>Social Media for Mahi's Creation</h3>
+          <div className="footer-socials" aria-label="Mahi's Creation social media">
+            {creationSocials.map((social) => {
               const className = `footer-social-icon ${social.className}`;
               return social.href
-                ? <a key={social.name} className={className} href={social.href} target="_blank" rel="noreferrer" aria-label={social.name}>{social.mark}</a>
-                : <span key={social.name} className={className} aria-label={social.name}>{social.mark}</span>;
+                ? <div key={social.name} className="footer-social-item"><a className={className} href={social.href} target="_blank" rel="noreferrer" aria-label={social.name}>{social.mark}</a><span className="footer-social-name">{social.name}</span></div>
+                : <div key={social.name} className="footer-social-item"><span className={className} aria-hidden="true">{social.mark}</span><span className="footer-social-name">{social.name}</span></div>;
             })}
-          </div>
-          <h3 className="footer-dheu-heading">Social Media for DHEU</h3>
-          <div className="footer-socials footer-socials-dheu" aria-label="DHEU social media">
-            {dheuSocials.map((social) => <span key={social.name} className={`footer-social-icon ${social.className}`} aria-label={social.name}>{social.mark}</span>)}
-          </div>
-          <h3 className="footer-app-heading">Download App</h3>
-          <div className="footer-app-links">
-            <a href="https://play.google.com/store" target="_blank" rel="noreferrer" aria-label="Browse apps on Google Play">
-              <svg className="footer-play-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="#42d392" d="M3 2.8v18.4l10-9.2z" /><path fill="#4ba3ff" d="m3 2.8 12.2 7 3.1-3.1z" /><path fill="#ffcf4a" d="m15.2 10 5.2 3-5.2 3-2.2-4z" /><path fill="#ff6b6b" d="m3 21.2 12.2-7-3.1-3.2z" /></svg>
-              <span><small>GET IT ON</small><strong>Google Play</strong></span>
-            </a>
-            <a href="https://www.apple.com/app-store/" target="_blank" rel="noreferrer" aria-label="Browse apps on the App Store">
-              <svg className="footer-apple-mark" viewBox="0 0 20 22" aria-hidden="true"><path fill="currentColor" d="M15.9 11.7c0-2.1 1.7-3.1 1.8-3.2a4 4 0 0 0-3.2-1.7c-1.3-.1-2.5.8-3.2.8s-1.7-.8-2.8-.8a4.2 4.2 0 0 0-3.5 2.1c-1.5 2.6-.4 6.5 1.1 8.6.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7s1.7.7 2.8.7c1.2 0 1.9-1 2.6-2 .8-1.1 1.1-2.2 1.1-2.3-.1 0-2-.8-2-3.6ZM13.8 5.4a3.9 3.9 0 0 0 .9-2.8 4 4 0 0 0-2.6 1.3 3.7 3.7 0 0 0-.9 2.7 3.4 3.4 0 0 0 2.6-1.2Z" /></svg>
-              <span><small>Available on the</small><strong>App Store</strong></span>
-            </a>
           </div>
         </section>
       </div>

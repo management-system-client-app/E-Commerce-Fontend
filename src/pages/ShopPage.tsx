@@ -184,6 +184,8 @@ export function ShopPage() {
   const category = catalog.categories.find((item) => item.id === params.get("categoryId"));
   const gender = genders.find((item) => item.id === (params.get("gender") ?? defaultGender));
   const crumb = category?.name ?? gender?.label ?? (params.get("search") ? `Search: ${params.get("search")}` : "Shop");
+  const activeFilterCount = ["categoryId", "brandId", "gender", "sizeId", "colorId", "fabricId", "minPrice", "maxPrice", "inStock"]
+    .filter((key) => params.has(key)).length;
 
   const filterProps = {
     catalog,
@@ -206,20 +208,28 @@ export function ShopPage() {
   };
 
   return (
-    <div>
+    <div className="shop-page">
       <p className="crumb">
         <Link to="/">Home</Link> / {crumb}
       </p>
+      <header className="shop-intro">
+        <div>
+          <span>THE COLLECTION</span>
+          <h1>{crumb}</h1>
+          <p>Find your next favorite from our carefully selected styles.</p>
+        </div>
+        <div className="shop-intro-mark" aria-hidden="true" />
+      </header>
       <div className="shop">
         <aside className="filters">
           <Filters {...filterProps} />
         </aside>
-        <div>
+        <div className="shop-results">
           <div className="shop-bar">
             <button type="button" className="btn-line filter-toggle" onClick={() => setSheet(true)}>
-              Filter
+              Filters{activeFilterCount > 0 ? <span>{activeFilterCount}</span> : null}
             </button>
-            <span className="note">{meta ? `${meta.total} products` : ""}</span>
+            <span className="shop-result-count">{meta ? <><strong>{meta.total}</strong> {meta.total === 1 ? "piece" : "pieces"} found</> : "Loading collection"}</span>
             <select
               className="sort"
               aria-label="Sort"
@@ -236,7 +246,7 @@ export function ShopPage() {
           {error ? <p className="error">{error}</p> : null}
           {loading ? <ProductGridSkeleton /> : null}
           {!loading && items.length === 0 && !error ? <p className="empty">Sorry! No result.</p> : null}
-          {!loading && items.length > 0 ? <ProductGrid products={items} /> : null}
+          {!loading && items.length > 0 ? <ProductGrid products={items} shopCards /> : null}
           {meta && meta.totalPages > 1 ? (
             <div className="pager">
               {Array.from({ length: meta.totalPages }, (_, index) => index + 1).map((page) => (
@@ -301,10 +311,11 @@ function Filters({
   const selected = (key: string) => params.get(key) ?? (key === "gender" ? defaultGender ?? null : null);
 
   return (
-    <div>
-      <button type="button" className="see-more" onClick={clear}>
-        Clear
-      </button>
+    <div className="filter-panel">
+      <header className="filter-panel-heading">
+        <div className="filter-panel-title"><span>PERSONALIZE</span><h2>Refine your search</h2></div>
+        <button type="button" onClick={clear}>Reset</button>
+      </header>
       <FilterList
         title="Category"
         options={catalog.categories.map((item) => ({ id: item.id, label: item.name }))}
@@ -359,10 +370,12 @@ function Filters({
               className={selected("colorId") === color.id ? "swatch on" : "swatch"}
               style={{ background: color.hexCode }}
               aria-label={color.name}
+              title={color.name}
               onClick={() => setParam("colorId", selected("colorId") === color.id ? null : color.id)}
             />
           ))}
         </div>
+        {selected("colorId") ? <p className="selected-color-name">Selected: {colors.find((color) => color.id === selected("colorId"))?.name}</p> : null}
       </div>
       <FilterList
         title="Fabric"
