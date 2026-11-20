@@ -6,6 +6,7 @@ import { RowsSkeleton } from "./Skeleton";
 import { coverImage, money } from "../format";
 import { categoryImage, useAuth, useCart, useStore } from "../state";
 import type { Category, ProductCardData, User } from "../types";
+import brandLogo from "../assets/brand-logo.png";
 
 export function UserFace({ user, size = 32, className = "" }: { user: Pick<User, "firstName" | "email" | "avatarUrl">; size?: number; className?: string }) {
   const style = { width: size, height: size, fontSize: Math.max(11, Math.round(size * 0.4)) };
@@ -265,9 +266,8 @@ export function Header() {
         <div className="header-container">
         <div className="topbar">
           <div className="header-brands">
-            <Link to="/" className="logo sara-logo" aria-label="SaRa Lifestyle home">
-              <span className="sara-logo-main">SaRa <span className="sara-brand-mark" aria-hidden="true">✿</span></span>
-              <span className="sara-logo-sub">LIFESTYLE LTD.</span>
+            <Link to="/" className="logo sara-logo" aria-label="Store home">
+              <img src={brandLogo} alt="MC" />
             </Link>
           </div>
           <form onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
