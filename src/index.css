@@ -328,10 +328,7 @@ h1, h2, h3, p { margin: 0; }
   color: #fff;
   white-space: nowrap;
 }
-.sara-logo { display: grid; gap: 0; flex: none; line-height: 0.9; color: #ed1c24; }
-.sara-logo-main { font-size: 25px; font-weight: 800; }
-.sara-logo-sub { margin-top: 3px; color: #58738d; font-size: 7px; font-weight: 700; letter-spacing: 0.12em; }
-.header-marketplace { flex: none; color: #c9161f; font-size: 14px; font-weight: 700; text-transform: uppercase; }
+.store-brand-logo { display: grid; gap: 0; flex: none; line-height: 0.9; color: #ed1c24; }
 
 .search {
   display: none;
@@ -784,8 +781,6 @@ h1, h2, h3, p { margin: 0; }
 .footer-youtube { background: #f00; }
 .footer-instagram { background: linear-gradient(35deg, #ffd45d, #f04b4b 50%, #9146c8); }
 .footer-tiktok, .footer-x { background: #050505; }
-.footer-socials-dheu { margin-bottom: 17px; }
-.footer h3.footer-dheu-heading { margin: 0 0 10px; }
 .footer h3.footer-app-heading { margin: 0 0 8px; }
 .footer-app-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .footer-app-links a { display: flex; min-height: 32px; align-items: center; gap: 5px; border: 1px solid #292d31; border-radius: 5px; padding: 2px 6px; background: #08090a; color: #fff; }
@@ -2294,10 +2289,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
   .store-shell.theme-dark .category-menu-section-head { color: #98a4af; }
   .category-nav-tools { display: none; }
   .topbar { height: 58px; gap: 8px; padding: 0 16px; }
-  .topbar .sara-logo { max-width: 56px; }
-  .topbar .sara-logo-main { font-size: 20px; }
-  .topbar .sara-logo-sub { font-size: 6px; }
-  .header-marketplace { display: none; }
+  .topbar .store-brand-logo { max-width: 56px; }
   .header-search { min-width: 90px; flex: 1 1 auto; }
   .header-search input { height: 40px; padding-left: 12px; padding-right: 38px; font-size: 12px; }
   .header-search > button[type="submit"] { top: 4px; right: 3px; width: 32px; height: 32px; }
@@ -2484,8 +2476,6 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 .store-shell.theme-dark .header-search input:focus { border-color: #ff777d; }
 .store-shell.theme-dark .header-search > button[type="submit"] { background: #ed1c24; color: #fff; }
 .store-shell.theme-dark .logo { color: #f4f6f8; }
-.store-shell.theme-dark .sara-logo-main, .store-shell.theme-dark .header-marketplace { color: #ff6268; }
-.store-shell.theme-dark .sara-logo-sub { color: #aab3be; }
 .store-shell.theme-dark .cat-btn { background: #252b33; color: #eef1f4; }
 .store-shell.theme-dark .top-nav a, .store-shell.theme-dark .track-link, .store-shell.theme-dark .account-chip { color: #d5dbe3; }
 .store-shell.theme-dark .top-nav a.on, .store-shell.theme-dark .top-nav a.active { color: var(--accent); }
@@ -2779,7 +2769,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
     padding-inline: 10px;
   }
 
-  .store-shell .topbar .sara-logo {
+  .store-shell .topbar .store-brand-logo {
     max-width: 48px;
   }
 
@@ -2895,7 +2885,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
     padding-inline: 8px;
   }
 
-  .store-shell .topbar .sara-logo {
+  .store-shell .topbar .store-brand-logo {
     max-width: 42px;
   }
 
@@ -2967,13 +2957,6 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
   align-items: center;
   gap: 12px;
 }
-.store-shell .header-brands .sara-logo { gap: 0; }
-.store-shell .sara-logo-main { display: flex; align-items: center; gap: 4px; font-size: 26px; letter-spacing: -0.09em; }
-.store-shell .sara-brand-mark { color: #c9161f; font-size: 21px; line-height: 1; }
-.store-shell .sara-logo-sub { margin-top: 2px; color: #c9161f; font-size: 5px; letter-spacing: 0.28em; }
-.store-shell .header-brand-divider { width: 2px; height: 28px; flex: none; background: #ed1c24; }
-.store-shell .header-dheu { flex: none; color: #202124; font-size: 23px; font-weight: 800; letter-spacing: 0.01em; }
-.store-shell .header-marketplace { color: #ed1c24; font-size: 22px; font-weight: 800; letter-spacing: 0.015em; }
 .store-shell .header-search {
   min-width: 180px;
   max-width: none;
@@ -3130,10 +3113,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 
 @media (min-width: 900px) and (max-width: 1279px) {
   .store-shell .topbar { gap: 12px; }
-  .store-shell .header-brands { flex-basis: clamp(280px, 28vw, 360px); gap: 8px; }
-  .store-shell .sara-logo-main { font-size: 22px; }
-  .store-shell .header-dheu { font-size: 19px; }
-  .store-shell .header-marketplace { font-size: 17px; }
+  .store-shell .header-brands { flex-basis: auto; gap: 0; }
   .store-shell .header-tools { gap: 8px; }
 }
 
@@ -3167,13 +3147,7 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
     flex: 1 1 auto;
     gap: 7px;
   }
-  .store-shell .header-brands .sara-logo { max-width: 58px; }
-  .store-shell .sara-logo-main { font-size: 21px; }
-  .store-shell .sara-brand-mark { font-size: 16px; }
-  .store-shell .sara-logo-sub { font-size: 4px; }
-  .store-shell .header-brand-divider { height: 23px; }
-  .store-shell .header-dheu { font-size: 17px; }
-  .store-shell .header-marketplace { display: inline; font-size: 14px; }
+  .store-shell .header-brands .store-brand-logo { max-width: 58px; }
   .store-shell .header-search {
     display: none;
   }
@@ -3200,7 +3174,6 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
   .store-shell .header-account-avatar svg,
   .store-shell .header-account-pending svg { width: 25px; height: 25px; }
   .store-shell .header-tools .header-account-guest .account-chip.account-actions a { font-size: 10px; }
-  .store-shell .header-marketplace { display: inline; }
 }
 
 @media (max-width: 899px) {
@@ -3238,18 +3211,12 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 @media (max-width: 399px) {
   .store-shell .topbar { padding-inline: 10px; gap: 7px; }
   .store-shell .header-brands { gap: 5px; }
-  .store-shell .header-brands .sara-logo { max-width: 47px; }
-  .store-shell .sara-logo-main { font-size: 18px; }
-  .store-shell .sara-logo-sub { font-size: 3px; }
-  .store-shell .header-brand-divider { height: 20px; }
-  .store-shell .header-dheu { font-size: 14px; }
-  .store-shell .header-marketplace { font-size: 11px; }
+  .store-shell .header-brands .store-brand-logo { max-width: 47px; }
   .store-shell .header-tools { gap: 4px; }
   .store-shell .header-tools .icon-btn { width: 24px; }
   .store-shell .header-account-guest { gap: 3px; }
   .store-shell .header-account-avatar,
   .store-shell .header-account-pending { width: 28px; height: 28px; }
-  .store-shell .header-marketplace { display: none; }
   .store-shell .category-nav { gap: 8px; padding-inline: 8px; }
   .store-shell .category-nav .cat-btn { padding-inline: 6px; }
   .store-shell .category-nav-tools { gap: 9px; }
@@ -3478,7 +3445,6 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
 }
 
 @media (max-width: 899px) {
-  .store-shell .sara-logo-main { font-size: 25px; }
   .store-shell .category-nav .top-nav > a,
   .store-shell .category-nav .top-nav > a.home-link,
   .store-shell .category-nav .top-nav > a.on,
@@ -7224,22 +7190,22 @@ th, td { border: 1px solid var(--line); padding: 8px; text-align: left; }
     color: #ff999e;
   }
 }
-.store-shell .topbar .sara-logo {
+.store-shell .topbar .store-brand-logo {
   width: clamp(38px, 4vw, 48px);
   max-width: none;
   flex: none;
 }
-.store-shell .sara-logo img {
+.store-shell .store-brand-logo img {
   display: block;
   width: 100%;
   height: auto;
   object-fit: contain;
 }
 @media (max-width: 599px) {
-  .store-shell .topbar .sara-logo { width: 36px; }
+  .store-shell .topbar .store-brand-logo { width: 36px; }
 }
 @media (max-width: 359px) {
-  .store-shell .topbar .sara-logo { width: 32px; }
+  .store-shell .topbar .store-brand-logo { width: 32px; }
 }
 .store-shell .category-nav .top-nav > .best-deals-coming-link {
   position: relative;

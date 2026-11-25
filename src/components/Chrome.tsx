@@ -328,7 +328,7 @@ export function Header() {
         <div className="header-container">
         <div className="topbar">
           <div className="header-brands">
-            <Link to="/" className="logo sara-logo" aria-label="Store home">
+            <Link to="/" className="logo store-brand-logo" aria-label="Store home">
               <img src={brandLogo} alt="MC" />
             </Link>
           </div>
