@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ChevronRight, Heart, House, LayoutGrid, Mail, MapPin, Menu, Minus, PackageSearch, Phone, Plus, Search, ShoppingBag, Trash2, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronRight, Clock3, Heart, House, LayoutGrid, Mail, MapPin, Menu, Minus, PackageSearch, Phone, Plus, Search, ShoppingBag, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import { api } from "../api";
 import { RowsSkeleton } from "./Skeleton";
 import { coverImage, money } from "../format";
@@ -18,6 +18,54 @@ export function UserFace({ user, size = 32, className = "" }: { user: Pick<User,
       <UserRound size={Math.max(13, Math.round(size * 0.58))} strokeWidth={1.7} />
     </span>
   );
+}
+
+function ComingSoonDialog({ page, onClose }: { page: string; onClose: () => void }) {
+  useEffect(() => {
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div className="footer-coming-overlay" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className="footer-coming-dialog" role="dialog" aria-modal="true" aria-labelledby="footer-coming-title">
+        <button type="button" className="footer-coming-close" onClick={onClose} aria-label="Close">
+          <X size={18} />
+        </button>
+        <div className="footer-coming-art" aria-hidden="true">
+          <span className="footer-coming-orbit footer-coming-orbit-one" />
+          <span className="footer-coming-orbit footer-coming-orbit-two" />
+          <span className="footer-coming-icon"><Clock3 size={28} strokeWidth={1.7} /></span>
+          <span className="footer-coming-sparkle"><Sparkles size={16} /></span>
+        </div>
+        <span className="footer-coming-kicker">MAHIRA'S CREATION</span>
+        <h2 id="footer-coming-title">{page}</h2>
+        <p>Something lovely is on its way. This page is being prepared for you.</p>
+        <div className="footer-coming-status"><span />Coming soon</div>
+        <button type="button" className="footer-coming-action" onClick={onClose}>
+          Got it <ArrowRight size={16} />
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function SocialIcon({ name }: { name: string }) {
+  if (name === "Facebook") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 11.008 10.125 11.854v-8.385H7.078v-3.469h3.047V9.429c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.236 2.686.236v2.976H15.83c-1.491 0-1.956.931-1.956 1.886v2.215h3.328l-.532 3.469h-2.796v8.385C19.612 23.081 24 18.092 24 12.073Z" /></svg>;
+  }
+  if (name === "YouTube") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="5" fill="currentColor" /><path d="m10 8 6 4-6 4z" fill="#f00" /></svg>;
+  }
+  if (name === "Instagram") {
+    return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" /><circle cx="17.5" cy="6.8" r="1.2" fill="currentColor" /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.6 6.7a4.8 4.8 0 0 1-3.8-4.3V2h-3.5v13.7a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1v-3.6a6.6 6.6 0 1 0 5.5 6.5V8.9a8.3 8.3 0 0 0 4.8 1.5V6.9c-.3 0-.7-.1-1-.2Z" /></svg>;
 }
 
 function navClass(href: string, isActive: boolean, pathname: string, search: string) {
@@ -108,6 +156,7 @@ export function Header() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [comingSoonPage, setComingSoonPage] = useState<string | null>(null);
 
   function closeCategoryMenu() {
     setMenuOpen(false);
@@ -423,7 +472,10 @@ export function Header() {
                 ? location.pathname === "/"
                 : navClass(item.href, false, location.pathname, location.search);
               const compactHidden = item.label === "Budget Deals" || item.label === "Best Deals";
-              return <Link key={item.label} to={item.href} className={`${item.label === "Home" ? "home-link " : ""}${compactHidden ? "compact-hidden " : ""}${active ? "on" : ""}`} aria-current={active ? "page" : undefined}>{item.label}</Link>;
+              const className = `${item.label === "Home" ? "home-link " : ""}${compactHidden ? "compact-hidden " : ""}${active ? "on" : ""}`;
+              return item.label === "Best Deals"
+                ? <button key={item.label} type="button" className={`${className} best-deals-coming-link`} onClick={() => setComingSoonPage(item.label)}>{item.label}</button>
+                : <Link key={item.label} to={item.href} className={className} aria-current={active ? "page" : undefined}>{item.label}</Link>;
             })}
           </nav>
           <div className="category-nav-tools">
@@ -432,6 +484,7 @@ export function Header() {
         </nav>
         </div>
       </header>
+      {comingSoonPage ? <ComingSoonDialog page={comingSoonPage} onClose={() => setComingSoonPage(null)} /> : null}
       <nav className="bottom-nav" aria-label="Mobile">
         <NavLink to="/" end className={({ isActive }) => (isActive && !bottomNavOverlayOpen ? "on" : "")} onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(false); }}>
           <House size={18} strokeWidth={1.7} />
@@ -594,44 +647,47 @@ function CartDrawer() {
 export function Footer() {
   const { settings, settingsReady } = useStore();
   const { user } = useAuth();
-  const contactAddress = settings.address || "Avenue #02A, Road #13, House No #1339, Mirpur DOHS, Dhaka-1216, Bangladesh.";
-  const contactPhone = settings.supportPhone || "+88-01885-998899";
-  const contactEmail = settings.supportEmail || "support@saralifestyle.com";
+  const [comingSoonPage, setComingSoonPage] = useState<string | null>(null);
+  const contactAddress = "Sharif Market, 27 Road, Gazipura, Tongi, Gazipur";
+  const contactPhone = "01783041359";
+  const contactEmail = "shshanto1071@gmail.com";
   const creationSocials = [
-    { name: "Facebook", mark: "f", className: "footer-facebook", href: settings.facebookUrl },
-    { name: "YouTube", mark: "▶", className: "footer-youtube" },
-    { name: "Instagram", mark: "◎", className: "footer-instagram", href: settings.instagramUrl },
-    { name: "TikTok", mark: "♪", className: "footer-tiktok" },
+    { name: "Facebook", className: "footer-facebook", href: settings.facebookUrl },
+    { name: "YouTube", className: "footer-youtube", href: "" },
+    { name: "Instagram", className: "footer-instagram", href: settings.instagramUrl },
+    { name: "TikTok", className: "footer-tiktok", href: "" },
   ];
 
   return (
     <footer className="footer">
       <div className="footer-grid">
         <section className="footer-column footer-contact">
-          <h3>Contact Us</h3>
-          {!settingsReady ? <RowsSkeleton rows={3} /> : (
-            <div className="footer-contact-list">
-              <p className="footer-contact-item">
-                <span className="footer-contact-icon" aria-hidden="true"><MapPin size={12} strokeWidth={1.7} /></span>
-                <span>{contactAddress}</span>
-              </p>
-              <a className="footer-contact-item" href={`tel:${contactPhone}`}>
-                <span className="footer-contact-icon" aria-hidden="true"><Phone size={12} strokeWidth={1.7} /></span>
-                <span>{contactPhone}</span>
-              </a>
-              <a className="footer-contact-item" href={`mailto:${contactEmail}`}>
-                <span className="footer-contact-icon" aria-hidden="true"><Mail size={12} strokeWidth={1.7} /></span>
-                <span>{contactEmail}</span>
-              </a>
-            </div>
-          )}
+          <p className="footer-brand-name"><span>Mahira's</span> <span>Creation</span></p>
+          <div className="footer-contact-card">
+            <h3>Contact Us</h3>
+            {!settingsReady ? <RowsSkeleton rows={3} /> : (
+              <div className="footer-contact-list">
+                <p className="footer-contact-item">
+                  <span className="footer-contact-icon" aria-hidden="true"><MapPin size={12} strokeWidth={1.7} /></span>
+                  <span>{contactAddress}</span>
+                </p>
+                <a className="footer-contact-item" href={`tel:${contactPhone}`}>
+                  <span className="footer-contact-icon" aria-hidden="true"><Phone size={12} strokeWidth={1.7} /></span>
+                  <span>{contactPhone}</span>
+                </a>
+                <a className="footer-contact-item" href={`mailto:${contactEmail}`}>
+                  <span className="footer-contact-icon" aria-hidden="true"><Mail size={12} strokeWidth={1.7} /></span>
+                  <span>{contactEmail}</span>
+                </a>
+              </div>
+            )}
+          </div>
         </section>
         <nav className="footer-column" aria-label="Company">
           <h3>Company</h3>
-          <Link to="/pages/blogs">Blogs</Link>
-          <Link to="/outlets">Outlets</Link>
-          <Link to="/pages/about">About Us</Link>
-          <Link to="/pages/contact">Contact Us</Link>
+          {["Blogs", "Outlets", "About Us", "Contact Us"].map((item) => (
+            <button key={item} type="button" className="footer-coming-link" onClick={() => setComingSoonPage(item)}>{item}</button>
+          ))}
         </nav>
         <nav className="footer-column" aria-label="Customer">
           <h3>Customer</h3>
@@ -648,31 +704,42 @@ export function Footer() {
           )}
           <Link to="/cart">Cart</Link>
           <Link to="/shop?sort=price_asc">Budget Deals</Link>
-          <Link to="/#daily-deals">Best Deals</Link>
+          <button type="button" className="footer-coming-link" onClick={() => setComingSoonPage("Best Deals")}>Best Deals</button>
         </nav>
         <nav className="footer-column" aria-label="Help">
           <h3>Help</h3>
-          <Link to="/pages/faqs">FAQs</Link>
-          <Link to="/pages/privacy-policy">Privacy Policy</Link>
-          <Link to="/pages/cookies-policy">Cookies Policy</Link>
-          <Link to="/pages/replacement-policy">Replacement Policy</Link>
-          <Link to="/pages/terms-and-conditions">Terms &amp; Conditions</Link>
+          {["FAQs", "Privacy Policy", "Cookies Policy", "Replacement Policy", "Terms & Conditions"].map((item) => (
+            <button key={item} type="button" className="footer-coming-link" onClick={() => setComingSoonPage(item)}>{item}</button>
+          ))}
         </nav>
         <section className="footer-column footer-social-column">
           <h3>Social Media for Mahi's Creation</h3>
           <div className="footer-socials" aria-label="Mahi's Creation social media">
             {creationSocials.map((social) => {
               const className = `footer-social-icon ${social.className}`;
-              return social.href
-                ? <div key={social.name} className="footer-social-item"><a className={className} href={social.href} target="_blank" rel="noreferrer" aria-label={social.name}>{social.mark}</a><span className="footer-social-name">{social.name}</span></div>
-                : <div key={social.name} className="footer-social-item"><span className={className} aria-hidden="true">{social.mark}</span><span className="footer-social-name">{social.name}</span></div>;
+              return (
+                <div key={social.name} className="footer-social-item">
+                  <a
+                    className={className}
+                    href={social.href || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.name}
+                    onClick={(event) => { if (!social.href) event.preventDefault(); }}
+                  >
+                    <SocialIcon name={social.name} />
+                  </a>
+                  <span className="footer-social-name">{social.name}</span>
+                </div>
+              );
             })}
           </div>
         </section>
       </div>
       <div className="footer-bottom">
-        © {new Date().getFullYear()} Mahi's Creation. All Rights Reserved
+        © {new Date().getFullYear()} Mahira's Creation. All Rights Reserved
       </div>
+      {comingSoonPage ? <ComingSoonDialog page={comingSoonPage} onClose={() => setComingSoonPage(null)} /> : null}
     </footer>
   );
 }

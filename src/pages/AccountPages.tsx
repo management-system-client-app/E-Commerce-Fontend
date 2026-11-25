@@ -57,20 +57,18 @@ export function AuthCallbackPage() {
   );
 }
 
-function StandaloneAuthLayout({ activeTab, children }: { activeTab: "login" | "register"; children: ReactNode }) {
+function StandaloneAuthLayout({ activeTab, children, showBrand = true }: { activeTab: "login" | "register"; children: ReactNode; showBrand?: boolean }) {
   return (
     <main className="login-standalone">
       <div className="login-content">
         <Link className="login-back" to="/">
           <ArrowLeft size={14} strokeWidth={1.8} /> Back To Home
         </Link>
-        <div className="login-brand-row" aria-label="SaRa, DHEU, Marketplace">
-          <span className="login-brand-sara"><strong>SaRa <span aria-hidden="true">✿</span></strong><small>LIFESTYLE LTD.</small></span>
-          <span className="login-brand-divider" />
-          <strong className="login-brand-dheu">DHEU</strong>
-          <span className="login-brand-divider" />
-          <strong className="login-brand-marketplace">MARKETPLACE</strong>
-        </div>
+        {showBrand ? (
+          <Link className="login-brand-row" to="/" aria-label="Mahira's Creation home">
+            <span>Mahira's</span> <span>Creation</span>
+          </Link>
+        ) : null}
         <section className="login-card">
           <nav className="login-tabs" aria-label="Account access">
             <Link to="/login" className={`login-tab${activeTab === "login" ? " login-tab-active" : ""}`} aria-current={activeTab === "login" ? "page" : undefined}>Login</Link>
@@ -226,7 +224,7 @@ export function ForgotPage() {
   return (
     <StandaloneAuthLayout activeTab="login">
       <form className="login-form" onSubmit={step === "email" ? sendCode : step === "code" ? confirmCode : changePassword}>
-        <h1 className="login-flow-title">Forgot Password</h1>
+        <h1 className="login-flow-title login-flow-title-compact">Forgot Password</h1>
         <label className="login-field">
           <span>E-mail <b>*</b></span>
           <input type="email" placeholder="Enter Your E-mail address" required value={email} readOnly={step !== "email"} onChange={(event) => setEmail(event.target.value)} />
@@ -279,7 +277,7 @@ export function ResetPage() {
   }
 
   return (
-    <StandaloneAuthLayout activeTab="login">
+    <StandaloneAuthLayout activeTab="login" showBrand={false}>
       <form className="login-form" onSubmit={onSubmit}>
         <h1 className="login-flow-title">Reset Password</h1>
         <label className="login-field"><span>E-mail <b>*</b></span><input type="email" placeholder="Enter Your E-mail address" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
