@@ -84,7 +84,7 @@ function cacheProduct(product: ProductDetail) {
 export function ProductPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, ready: authReady } = useAuth();
   const { add, busy, setDrawer } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(() => readProductCache()[id] ?? null);
   const [related, setRelated] = useState<ProductCardData[]>([]);
@@ -100,7 +100,19 @@ export function ProductPage() {
   const [fabricId, setFabricId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [wishlistState, setWishlistState] = useState<{
+    key: string | null;
+    status: "loading" | "ready" | "error";
+    saved: boolean;
+  }>(() => {
+    const key = user ? `${user.id}:${id}` : null;
+    const cachedIds = user ? api.cachedWishlistProductIds(user.id) : null;
+    return {
+      key,
+      status: !user || cachedIds ? "ready" : "loading",
+      saved: Boolean(cachedIds?.includes(id)),
+    };
+  });
   const [purchaseAction, setPurchaseAction] = useState<"add" | "buy" | null>(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(true);
@@ -115,6 +127,52 @@ export function ProductPage() {
   });
   const [recentIndex, setRecentIndex] = useState(0);
   const [recentLoading, setRecentLoading] = useState(false);
+  const wishlistKey = user ? `${user.id}:${id}` : null;
+  const wishlistReady =
+    wishlistState.key === wishlistKey &&
+    wishlistState.status === "ready";
+  const wishlistPending = Boolean(user) &&
+    (wishlistState.key !== wishlistKey || wishlistState.status === "loading");
+  const wishlistUnavailable = Boolean(user) &&
+    wishlistState.key === wishlistKey &&
+    wishlistState.status === "error";
+  const saved = wishlistReady && wishlistState.saved;
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setWishlistState({ key: null, status: "ready", saved: false });
+      return;
+    }
+
+    let active = true;
+    const key = `${user.id}:${id}`;
+    const cachedIds = api.cachedWishlistProductIds(user.id);
+    if (cachedIds) {
+      setWishlistState({ key, status: "ready", saved: cachedIds.includes(id) });
+    } else {
+      setWishlistState({ key, status: "loading", saved: false });
+    }
+    api.wishlist()
+      .then((items) => {
+        if (active) setWishlistState({
+          key,
+          status: "ready",
+          saved: items.some((item) => item.product.id === id),
+        });
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        if (!cachedIds) {
+          setWishlistState({ key, status: "error", saved: false });
+          setError(reason instanceof Error ? reason.message : "Could not load wishlist");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authReady, id, user]);
 
   useEffect(() => {
     let active = true;
@@ -366,7 +424,7 @@ export function ProductPage() {
   }
 
   async function toggleWish() {
-    if (!user || wishlistLoading) {
+    if (!user || wishlistLoading || !wishlistReady) {
       if (!user) {
         window.location.assign("/login");
       }
@@ -376,10 +434,10 @@ export function ProductPage() {
     try {
       if (saved) {
         await api.removeWishlist(product!.id);
-        setSaved(false);
+        setWishlistState({ key: `${user.id}:${id}`, status: "ready", saved: false });
       } else {
         await api.saveWishlist(product!.id);
-        setSaved(true);
+        setWishlistState({ key: `${user.id}:${id}`, status: "ready", saved: true });
       }
       window.dispatchEvent(new Event("wishlist-updated"));
     } catch (reason) {
@@ -453,7 +511,7 @@ export function ProductPage() {
                 <small>{reviewsLoading ? "Loading rating" : average > 0 ? `${average.toFixed(1)} (${reviews.length} ratings)` : "No ratings yet"}</small>
               </p>
             </div>
-            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
+            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading || wishlistPending || wishlistUnavailable} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : wishlistPending ? "Loading wishlist" : wishlistUnavailable ? "Wishlist unavailable" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
               {wishlistLoading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <Heart size={20} fill={saved ? "currentColor" : "none"} />}
             </button>
           </div>

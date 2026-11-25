@@ -39,6 +39,9 @@ const configuredApiUrl =
 export const API_BASE = `${configuredApiUrl.replace(/\/+$/, "").replace(/\/api\/v1$/i, "")}/api/v1`;
 const TOKEN_KEY = "store_token";
 const SESSION_KEY = "cart_session";
+const WISHLIST_CACHE_KEY = "store_wishlist_product_ids";
+const PUBLIC_GET_CACHE_PREFIX = "store_public_get_cache:";
+const PUBLIC_GET_CACHE_TTL = 60_000;
 export const DATA_REFRESH_INTERVAL = 60_000;
 
 const getCache = new Map<string, Envelope<unknown>>();
@@ -52,6 +55,10 @@ function clearApiCache() {
   getCache.clear();
   pendingGets.clear();
   latestGetRequest.clear();
+  for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith(PUBLIC_GET_CACHE_PREFIX)) sessionStorage.removeItem(key);
+  }
 }
 
 function dispatchToast(type: "success" | "error", message: string) {
@@ -101,6 +108,69 @@ type Envelope<T> = {
   meta?: PageMeta;
   errors?: { path: string; message: string }[];
 };
+
+function readWishlistProductIds(userId: string): string[] | null {
+  try {
+    const stored = localStorage.getItem(`${WISHLIST_CACHE_KEY}:${userId}`);
+    if (!stored) return null;
+    const value: unknown = JSON.parse(stored);
+    if (!Array.isArray(value) || !value.every((id): id is string => typeof id === "string")) {
+      return null;
+    }
+    return value;
+  } catch (reason) {
+    console.warn("Wishlist cache could not be read", reason);
+    return null;
+  }
+}
+
+function writeWishlistProductIds(userId: string, ids: string[]) {
+  try {
+    localStorage.setItem(`${WISHLIST_CACHE_KEY}:${userId}`, JSON.stringify(ids));
+  } catch (reason) {
+    console.warn("Wishlist cache could not be saved", reason);
+  }
+}
+
+function readPublicGetCache<T>(path: string): Envelope<T> | null {
+  try {
+    const key = `${PUBLIC_GET_CACHE_PREFIX}${path}`;
+    const stored = sessionStorage.getItem(key);
+    if (!stored) return null;
+    const cached: unknown = JSON.parse(stored);
+    if (
+      typeof cached !== "object" ||
+      cached === null ||
+      !("expiresAt" in cached) ||
+      typeof cached.expiresAt !== "number" ||
+      cached.expiresAt <= Date.now() ||
+      !("response" in cached) ||
+      typeof cached.response !== "object" ||
+      cached.response === null ||
+      !("success" in cached.response) ||
+      cached.response.success !== true ||
+      !("data" in cached.response)
+    ) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return cached.response as Envelope<T>;
+  } catch (reason) {
+    console.warn("Public API cache could not be read", reason);
+    return null;
+  }
+}
+
+function writePublicGetCache<T>(path: string, response: Envelope<T>) {
+  try {
+    sessionStorage.setItem(
+      `${PUBLIC_GET_CACHE_PREFIX}${path}`,
+      JSON.stringify({ expiresAt: Date.now() + PUBLIC_GET_CACHE_TTL, response }),
+    );
+  } catch (reason) {
+    console.warn("Public API cache could not be saved", reason);
+  }
+}
 
 export const sessionStore = {
   token: () => localStorage.getItem(TOKEN_KEY),
@@ -185,6 +255,13 @@ function request<T>(
     if (cached) return Promise.resolve(cached as Envelope<T>);
     const pending = pendingGets.get(key);
     if (pending) return pending as Promise<Envelope<T>>;
+    if (sessionStore.userSnapshot()?.accountType !== "ADMIN") {
+      const persisted = readPublicGetCache<T>(path);
+      if (persisted) {
+        getCache.set(key, persisted as Envelope<unknown>);
+        return Promise.resolve(persisted);
+      }
+    }
   }
 
   const version = cacheVersion;
@@ -206,6 +283,9 @@ function request<T>(
       latestGetRequest.get(key) === requestId
     ) {
       getCache.set(key, result as Envelope<unknown>);
+      if (sessionStore.userSnapshot()?.accountType !== "ADMIN") {
+        writePublicGetCache(path, result);
+      }
     }
     return result;
   }).catch((reason: unknown) => {
@@ -512,13 +592,29 @@ export const api = {
         id: string;
         product: ProductCardData;
       }[]
-    >("/wishlist").then((res) => res.data),
+    >("/wishlist").then((res) => {
+      const items = res.data;
+      const userId = sessionStore.userSnapshot()?.id;
+      if (userId) writeWishlistProductIds(userId, items.map((item) => item.product.id));
+      return items;
+    }),
+  cachedWishlistProductIds: (userId: string) => readWishlistProductIds(userId),
   saveWishlist: (productId: string) =>
     request<unknown>("/wishlist", { method: "POST", body: JSON.stringify({ productId }) }).then(
-      (res) => res.data,
+      (res) => {
+        const userId = sessionStore.userSnapshot()?.id;
+        const ids = userId ? readWishlistProductIds(userId) : null;
+        if (userId && ids && !ids.includes(productId)) writeWishlistProductIds(userId, [...ids, productId]);
+        return res.data;
+      },
     ),
   removeWishlist: (productId: string) =>
-    request<unknown>(`/wishlist/${productId}`, { method: "DELETE" }).then((res) => res.data),
+    request<unknown>(`/wishlist/${productId}`, { method: "DELETE" }).then((res) => {
+      const userId = sessionStore.userSnapshot()?.id;
+      const ids = userId ? readWishlistProductIds(userId) : null;
+      if (userId && ids) writeWishlistProductIds(userId, ids.filter((id) => id !== productId));
+      return res.data;
+    }),
   subscribe: (email: string) =>
     request<unknown>("/newsletter", { method: "POST", body: JSON.stringify({ email }) }).then(
       (res) => res.data,
