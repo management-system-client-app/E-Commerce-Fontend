@@ -395,7 +395,7 @@ export function CheckoutPage() {
             </label>
           </>
         ) : null}
-        <label className="field">
+        <label className="field checkout-delivery-note">
           <span>Note</span>
           <textarea placeholder="Any delivery instructions? (optional)" value={form.customerNote} onChange={(event) => setForm({ ...form, customerNote: event.target.value })} />
         </label>
@@ -424,8 +424,10 @@ export function CheckoutPage() {
         </div>
         </section>
         {error ? <p className="error">{error}</p> : null}
-        <button className="btn wide checkout-place-order" type="submit" disabled={busy || cartLoading || cart.items.length === 0 || (Boolean(user) && !addressLoaded)}>
-          <span>{busy ? "Placing order..." : "Place your order"}</span><ArrowRight size={17} />
+        <button className="btn wide checkout-place-order" type="submit" disabled={busy || cartLoading || cart.items.length === 0 || (Boolean(user) && !addressLoaded)} aria-busy={busy}>
+          {busy ? <span className="auth-submit-spinner" aria-hidden="true" /> : null}
+          <span>{busy ? "Placing order..." : "Place your order"}</span>
+          {!busy ? <ArrowRight size={17} /> : null}
         </button>
       </div>
       <aside className="summary-box checkout-summary">

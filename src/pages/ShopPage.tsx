@@ -30,7 +30,7 @@ export function ShopPage() {
   const [colors, setColors] = useState<Color[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [sheet, setSheet] = useState(false);
+  const [applyingPrice, setApplyingPrice] = useState(false);
   const [minPrice, setMinPrice] = useState(params.get("minPrice") ?? "");
   const [maxPrice, setMaxPrice] = useState(params.get("maxPrice") ?? "");
 
@@ -135,6 +135,7 @@ export function ShopPage() {
           loadingInitial = false;
           setLoading(false);
         }
+        if (active) setApplyingPrice(false);
         refreshing = false;
         if (active && refreshQueued) {
           refreshQueued = false;
@@ -177,15 +178,15 @@ export function ShopPage() {
     if (maxPrice) next.set("maxPrice", maxPrice);
     else next.delete("maxPrice");
     next.delete("page");
-    setParams(next);
-    setSheet(false);
+    if (next.toString() !== params.toString()) {
+      setApplyingPrice(true);
+      setParams(next);
+    }
   }
 
   const category = catalog.categories.find((item) => item.id === params.get("categoryId"));
   const gender = genders.find((item) => item.id === (params.get("gender") ?? defaultGender));
   const crumb = category?.name ?? gender?.label ?? (params.get("search") ? `Search: ${params.get("search")}` : "Shop");
-  const activeFilterCount = ["categoryId", "brandId", "gender", "sizeId", "colorId", "fabricId", "minPrice", "maxPrice", "inStock"]
-    .filter((key) => params.has(key)).length;
 
   const filterProps = {
     catalog,
@@ -198,12 +199,12 @@ export function ShopPage() {
     setMaxPrice,
     setParam,
     applyPrice,
+    applyingPrice,
     clear: () => {
       const next = new URLSearchParams();
       const search = params.get("search");
       if (search) next.set("search", search);
       setParams(next);
-      setSheet(false);
     },
   };
 
@@ -226,9 +227,6 @@ export function ShopPage() {
         </aside>
         <div className="shop-results">
           <div className="shop-bar">
-            <button type="button" className="btn-line filter-toggle" onClick={() => setSheet(true)}>
-              Filters{activeFilterCount > 0 ? <span>{activeFilterCount}</span> : null}
-            </button>
             <span className="shop-result-count">{meta ? <><strong>{meta.total}</strong> {meta.total === 1 ? "piece" : "pieces"} found</> : "Loading collection"}</span>
             <select
               className="sort"
@@ -263,22 +261,6 @@ export function ShopPage() {
           ) : null}
         </div>
       </div>
-      {sheet ? (
-        <>
-          <button className="sheet-back" aria-label="Close filters" onClick={() => setSheet(false)} />
-          <div className="sheet filters-sheet" role="dialog" aria-label="Filters">
-            <header>
-              Filter
-              <button type="button" onClick={() => setSheet(false)}>
-                Close
-              </button>
-            </header>
-            <div className="sheet-body">
-              <Filters {...filterProps} />
-            </div>
-          </div>
-        </>
-      ) : null}
     </div>
   );
 }
@@ -294,6 +276,7 @@ function Filters({
   setMaxPrice,
   setParam,
   applyPrice,
+  applyingPrice,
   clear,
 }: {
   catalog: ReturnType<typeof useStore>["catalog"];
@@ -306,6 +289,7 @@ function Filters({
   setMaxPrice: (value: string) => void;
   setParam: (key: string, value: string | null) => void;
   applyPrice: (event: FormEvent) => void;
+  applyingPrice: boolean;
   clear: () => void;
 }) {
   const selected = (key: string) => params.get(key) ?? (key === "gender" ? defaultGender ?? null : null);
@@ -389,8 +373,8 @@ function Filters({
           <input value={minPrice} inputMode="decimal" placeholder="Min" aria-label="Minimum price" onChange={(event) => setMinPrice(event.target.value)} />
           <input value={maxPrice} inputMode="decimal" placeholder="Max" aria-label="Maximum price" onChange={(event) => setMaxPrice(event.target.value)} />
         </div>
-        <button className="btn" type="submit" style={{ marginTop: 8 }}>
-          Apply
+        <button className="btn" type="submit" style={{ marginTop: 8 }} disabled={applyingPrice} aria-busy={applyingPrice}>
+          {applyingPrice ? <><span className="auth-submit-spinner" aria-hidden="true" /> Applying…</> : "Apply"}
         </button>
       </form>
       <div className="filter-block">

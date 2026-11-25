@@ -147,6 +147,7 @@ export function Header() {
   const [query, setQuery] = useState("");
   const [searchError, setSearchError] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchFormRef = useRef<HTMLFormElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [suggestions, setSuggestions] = useState<ProductCardData[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -250,6 +251,18 @@ export function Header() {
     };
   }, [query]);
 
+  useEffect(() => {
+    if (!suggestionsOpen) return;
+    function closeSuggestionsOutsideSearch(event: PointerEvent) {
+      if (event.target instanceof Node && !searchFormRef.current?.contains(event.target)) {
+        setSuggestionsOpen(false);
+        setActiveSuggestion(-1);
+      }
+    }
+    document.addEventListener("pointerdown", closeSuggestionsOutsideSearch);
+    return () => document.removeEventListener("pointerdown", closeSuggestionsOutsideSearch);
+  }, [suggestionsOpen]);
+
   function onSearch(event: FormEvent) {
     event.preventDefault();
     if (suggestionsOpen && activeSuggestion >= 0) {
@@ -319,12 +332,13 @@ export function Header() {
               <img src={brandLogo} alt="MC" />
             </Link>
           </div>
-          <form onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
+          <form ref={searchFormRef} onSubmit={onSearch} className={`header-search${searchOpen ? " is-open" : ""}`}>
             <button type="button" className="mobile-search-back" onClick={() => setSearchOpen(false)}><ArrowLeft size={17} />Back</button>
             <input
               ref={searchInputRef}
               id="header-search-input"
               value={query}
+              onFocus={() => { if (query.trim()) setSuggestionsOpen(true); }}
               onChange={(event) => { setQuery(event.target.value); setSearchError(""); setSuggestionsOpen(true); }}
               onKeyDown={onSearchKeyDown}
               placeholder="I'm shopping for ..."
@@ -519,7 +533,7 @@ export function Header() {
           aria-controls="account-menu-panel"
           onClick={() => { setMenuOpen(false); setDrawer(false); setAccountMenuOpen((open) => !open); }}
         >
-          {user ? <UserFace user={user} size={18} /> : <UserRound size={18} strokeWidth={1.7} />}
+          <UserRound size={18} strokeWidth={1.7} />
           Account
         </button>
       </nav>
@@ -718,19 +732,20 @@ export function Footer() {
             {creationSocials.map((social) => {
               const className = `footer-social-icon ${social.className}`;
               return (
-                <div key={social.name} className="footer-social-item">
-                  <a
-                    className={className}
-                    href={social.href || "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={social.name}
-                    onClick={(event) => { if (!social.href) event.preventDefault(); }}
-                  >
+                <a
+                  key={social.name}
+                  className="footer-social-item"
+                  href={social.href || "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={social.name}
+                  onClick={(event) => { if (!social.href) event.preventDefault(); }}
+                >
+                  <span className={className} aria-hidden="true">
                     <SocialIcon name={social.name} />
-                  </a>
+                  </span>
                   <span className="footer-social-name">{social.name}</span>
-                </div>
+                </a>
               );
             })}
           </div>

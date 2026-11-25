@@ -101,6 +101,8 @@ export function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [purchaseAction, setPurchaseAction] = useState<"add" | "buy" | null>(null);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
@@ -335,10 +337,13 @@ export function ProductPage() {
       return;
     }
     setError("");
+    setPurchaseAction("add");
     try {
       await add(selected.id, quantity);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not add to cart");
+    } finally {
+      setPurchaseAction(null);
     }
   }
 
@@ -348,20 +353,26 @@ export function ProductPage() {
       return;
     }
     setError("");
+    setPurchaseAction("buy");
     try {
       await add(selected.id, quantity);
       setDrawer(false);
       navigate("/checkout");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not add to cart");
+    } finally {
+      setPurchaseAction(null);
     }
   }
 
   async function toggleWish() {
-    if (!user) {
-      window.location.assign("/login");
+    if (!user || wishlistLoading) {
+      if (!user) {
+        window.location.assign("/login");
+      }
       return;
     }
+    setWishlistLoading(true);
     try {
       if (saved) {
         await api.removeWishlist(product!.id);
@@ -373,6 +384,8 @@ export function ProductPage() {
       window.dispatchEvent(new Event("wishlist-updated"));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Wishlist failed");
+    } finally {
+      setWishlistLoading(false);
     }
   }
 
@@ -440,8 +453,8 @@ export function ProductPage() {
                 <small>{reviewsLoading ? "Loading rating" : average > 0 ? `${average.toFixed(1)} (${reviews.length} ratings)` : "No ratings yet"}</small>
               </p>
             </div>
-            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
-              <Heart size={20} fill={saved ? "currentColor" : "none"} />
+            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
+              {wishlistLoading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <Heart size={20} fill={saved ? "currentColor" : "none"} />}
             </button>
           </div>
           <p className="product-price">
@@ -551,11 +564,11 @@ export function ProductPage() {
           </div>
           {error ? <p className="error">{error}</p> : null}
           <div className="product-actions">
-            <button className="btn wide" type="button" disabled={busy || available < 1} onClick={onAdd}>
-              Add to cart
+            <button className="btn wide" type="button" disabled={busy || available < 1} aria-busy={purchaseAction === "add"} onClick={onAdd}>
+              {purchaseAction === "add" ? <><span className="auth-submit-spinner" aria-hidden="true" /> Adding…</> : "Add to cart"}
             </button>
-            <button className="btn-line wide product-buy-now" type="button" disabled={busy || available < 1} onClick={onBuyNow}>
-              Buy now <ArrowRight size={16} />
+            <button className="btn-line wide product-buy-now" type="button" disabled={busy || available < 1} aria-busy={purchaseAction === "buy"} onClick={onBuyNow}>
+              {purchaseAction === "buy" ? <><span className="auth-submit-spinner" aria-hidden="true" /> Processing…</> : <>Buy now <ArrowRight size={16} /></>}
             </button>
           </div>
         </div>
@@ -611,7 +624,7 @@ export function ProductPage() {
                 <div className="product-content-heading"><span>SHOP WITH CONFIDENCE</span><h2>Replacement & support</h2></div>
                 <article className="product-policy-card">
                   <span><Clock3 size={20} /></span>
-                  <div><strong>15-day replacement</strong><p>Available only for products manufactured by SaRa Lifestyle.</p></div>
+                  <div><strong>15-day replacement</strong><p>Available only for products manufactured by Mahira's Creation.</p></div>
                 </article>
                 <article className="product-policy-card">
                   <span><PackageCheck size={20} /></span>
@@ -708,7 +721,7 @@ export function ProductPage() {
             <ul>
               <li>
                 <span aria-hidden="true">🚚</span>
-                <p>Free shipping inside dhaka city only for <strong>SaRa Lifestyle</strong> products</p>
+                <p>Free shipping inside dhaka city only for <strong>Mahira's Creation</strong> products</p>
               </li>
               <li>
                 <span aria-hidden="true">🇧🇩</span>
@@ -720,7 +733,7 @@ export function ProductPage() {
               </li>
               <li>
                 <span aria-hidden="true">📦</span>
-                <p><strong>15 Days</strong> replacement policy only for <strong>SaRa Lifestyle</strong> manufacture products</p>
+                <p><strong>15 Days</strong> replacement policy only for <strong>Mahira's Creation</strong> manufacture products</p>
               </li>
               <li>
                 <span aria-hidden="true">🎧</span>

@@ -691,10 +691,8 @@ export function AccountLayout() {
     { label: "My Profile", to: "/account/profile", icon: UserRound },
     { label: "My Orders", to: "/account/orders", icon: PackageOpen },
     { label: "Wishlist", to: "/account/wishlist", icon: Heart },
-    { label: "Coupon", to: "/account/coupons", icon: Ticket },
     { label: "Review", to: "/account/reviews", icon: Star },
     { label: "Address Book", to: "/account/address", icon: MapPin },
-    { label: "Notification", to: "/account/notifications", icon: Bell },
   ];
 
   return (
@@ -742,7 +740,6 @@ export function AccountDashboard() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [wishlistCount, setWishlistCount] = useState(0);
-  const [couponCount, setCouponCount] = useState(0);
   const [hasAddress, setHasAddress] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -751,13 +748,11 @@ export function AccountDashboard() {
     Promise.all([
       api.orders().catch(() => []),
       api.wishlist().catch(() => []),
-      api.coupons().catch(() => []),
       api.defaultAddress().catch(() => null),
-    ]).then(([nextOrders, wishlist, coupons, address]) => {
+    ]).then(([nextOrders, wishlist, address]) => {
       if (!active) return;
       setOrders(nextOrders);
       setWishlistCount(wishlist.length);
-      setCouponCount(coupons.filter((coupon) => coupon.isActive).length);
       setHasAddress(Boolean(address));
     }).finally(() => {
       if (active) setLoading(false);
@@ -835,12 +830,6 @@ export function AccountDashboard() {
             <strong>Wishlist</strong>
             <small>Save the pieces you love</small>
             <span className="customer-feature-count">{loading ? "–" : wishlistCount}</span>
-          </Link>
-          <Link to="/account/coupons" className="customer-feature-tile coupons">
-            <span className="customer-feature-art"><Ticket size={34} /></span>
-            <strong>Coupon</strong>
-            <small>Offers for your next order</small>
-            <span className="customer-feature-count">{loading ? "–" : couponCount}</span>
           </Link>
         </div>
       </div>
@@ -1217,6 +1206,7 @@ export function AccountReturns() {
   const [returnNote, setReturnNote] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingReturn, setSavingReturn] = useState(false);
 
   function load() {
     Promise.all([
@@ -1246,20 +1236,26 @@ export function AccountReturns() {
       ))}
       {returnableOrders.length > 0 ? <form
         className="account-surface account-return-form"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           setNote("");
-          api.createReturn({
-            orderId: returnOrder,
-            type: "RETURN",
-            reason: "CHANGED_MIND",
-            ...(returnNote ? { note: returnNote } : {}),
-            items: [{ orderItemId: returnItem, quantity: 1 }],
-          }).then(() => {
+          setSavingReturn(true);
+          try {
+            await api.createReturn({
+              orderId: returnOrder,
+              type: "RETURN",
+              reason: "CHANGED_MIND",
+              ...(returnNote ? { note: returnNote } : {}),
+              items: [{ orderItemId: returnItem, quantity: 1 }],
+            });
             setReturnNote("");
             setNote("Return request sent");
             load();
-          }).catch((reason: unknown) => setNote(reason instanceof Error ? reason.message : "Could not request the return"));
+          } catch (reason) {
+            setNote(reason instanceof Error ? reason.message : "Could not request the return");
+          } finally {
+            setSavingReturn(false);
+          }
         }}
       >
         <header className="account-surface-heading"><h2>Start a return</h2><span>Choose an eligible order and item.</span></header>
@@ -1276,7 +1272,7 @@ export function AccountReturns() {
         </div>
         <footer className="account-form-footer">
           {note ? <p className="account-form-note" role="status">{note}</p> : <span />}
-          <button className="account-primary-action" type="submit">Request return <ArrowRight size={16} /></button>
+          <AccountActionButton loading={savingReturn}>Request return</AccountActionButton>
         </footer>
       </form> : null}
     </section>
