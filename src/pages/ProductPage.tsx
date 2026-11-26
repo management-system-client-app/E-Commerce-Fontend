@@ -140,7 +140,7 @@ export function ProductPage() {
 
   useEffect(() => {
     if (!authReady) return;
-    if (!user) {
+    if (!user || user.accountType === "ADMIN") {
       setWishlistState({ key: null, status: "ready", saved: false });
       return;
     }
@@ -163,10 +163,8 @@ export function ProductPage() {
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        if (!cachedIds) {
-          setWishlistState({ key, status: "error", saved: false });
-          setError(reason instanceof Error ? reason.message : "Could not load wishlist");
-        }
+        console.warn("Product wishlist state could not be refreshed", reason);
+        if (!cachedIds) setWishlistState({ key, status: "error", saved: false });
       });
 
     return () => {
@@ -511,9 +509,11 @@ export function ProductPage() {
                 <small>{reviewsLoading ? "Loading rating" : average > 0 ? `${average.toFixed(1)} (${reviews.length} ratings)` : "No ratings yet"}</small>
               </p>
             </div>
-            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading || wishlistPending || wishlistUnavailable} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : wishlistPending ? "Loading wishlist" : wishlistUnavailable ? "Wishlist unavailable" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
-              {wishlistLoading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <Heart size={20} fill={saved ? "currentColor" : "none"} />}
-            </button>
+            {user?.accountType !== "ADMIN" ? (
+              <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading || wishlistPending || wishlistUnavailable} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : wishlistPending ? "Loading wishlist" : wishlistUnavailable ? "Wishlist unavailable" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
+                {wishlistLoading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <Heart size={20} fill={saved ? "currentColor" : "none"} />}
+              </button>
+            ) : null}
           </div>
           <p className="product-price">
             <strong>{money(unit)}</strong>

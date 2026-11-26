@@ -536,7 +536,7 @@ export function HomePage() {
               See More
             </Link>
           </div>
-          <ProductCarousel products={deals} showAvailableStock dealCards />
+          <ProductCarousel products={deals} dealCards />
         </section>
       ) : null}
 

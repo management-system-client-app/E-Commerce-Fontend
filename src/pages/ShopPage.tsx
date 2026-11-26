@@ -17,7 +17,6 @@ const genders = [
   { id: "WOMEN", label: "Women" },
   { id: "MEN", label: "Men" },
   { id: "KIDS", label: "Kids" },
-  { id: "UNISEX", label: "Unisex" },
 ];
 
 export function ShopPage() {

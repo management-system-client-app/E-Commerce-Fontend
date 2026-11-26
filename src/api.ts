@@ -40,7 +40,7 @@ export const API_BASE = `${configuredApiUrl.replace(/\/+$/, "").replace(/\/api\/
 const TOKEN_KEY = "store_token";
 const SESSION_KEY = "cart_session";
 const WISHLIST_CACHE_KEY = "store_wishlist_product_ids";
-const PUBLIC_GET_CACHE_PREFIX = "store_public_get_cache:";
+const PAGE_GET_CACHE_PREFIX = "store_page_get_cache:";
 const PUBLIC_GET_CACHE_TTL = 60_000;
 export const DATA_REFRESH_INTERVAL = 60_000;
 
@@ -57,7 +57,9 @@ function clearApiCache() {
   latestGetRequest.clear();
   for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
     const key = sessionStorage.key(index);
-    if (key?.startsWith(PUBLIC_GET_CACHE_PREFIX)) sessionStorage.removeItem(key);
+    if (key?.startsWith(PAGE_GET_CACHE_PREFIX) || key?.startsWith("store_public_get_cache:")) {
+      sessionStorage.removeItem(key);
+    }
   }
 }
 
@@ -79,8 +81,11 @@ function mutationSuccessMessage(path: string, method: string) {
 
 function shouldCacheGet(path: string) {
   const adminSession = sessionStore.userSnapshot()?.accountType === "ADMIN";
-  if (adminSession) return !/^\/(cart|me|wishlist|track)(\/|\?|$)/i.test(path);
-  return !/^\/(cart|me|orders|wishlist|returns|dashboard|users|track|payments|admin)(\/|\?|$)/i.test(path);
+  if (adminSession) return !/^\/track(\/|\?|$)/i.test(path);
+  if (/^\/(cart|orders|wishlist|returns)(\/|\?|$)/i.test(path)) return true;
+  if (/^\/users\/me\/address(?:\?|$)/i.test(path)) return true;
+  if (/^\/users\/me(?:\?|$)/i.test(path)) return true;
+  return !/^\/(me|dashboard|users|track|payments|admin)(\/|\?|$)/i.test(path);
 }
 
 export class ApiError extends Error {
@@ -132,9 +137,15 @@ function writeWishlistProductIds(userId: string, ids: string[]) {
   }
 }
 
-function readPublicGetCache<T>(path: string): Envelope<T> | null {
+function pageGetCacheKey(path: string) {
+  const user = sessionStore.userSnapshot();
+  const identity = `${user ? `${user.accountType}:${user.id}` : "guest"}:cart:${sessionStore.cartSession() ?? "none"}`;
+  return `${PAGE_GET_CACHE_PREFIX}${identity}:${path}`;
+}
+
+function readPageGetCache<T>(path: string): Envelope<T> | null {
   try {
-    const key = `${PUBLIC_GET_CACHE_PREFIX}${path}`;
+    const key = pageGetCacheKey(path);
     const stored = sessionStorage.getItem(key);
     if (!stored) return null;
     const cached: unknown = JSON.parse(stored);
@@ -161,10 +172,10 @@ function readPublicGetCache<T>(path: string): Envelope<T> | null {
   }
 }
 
-function writePublicGetCache<T>(path: string, response: Envelope<T>) {
+function writePageGetCache<T>(path: string, response: Envelope<T>) {
   try {
     sessionStorage.setItem(
-      `${PUBLIC_GET_CACHE_PREFIX}${path}`,
+      pageGetCacheKey(path),
       JSON.stringify({ expiresAt: Date.now() + PUBLIC_GET_CACHE_TTL, response }),
     );
   } catch (reason) {
@@ -255,12 +266,10 @@ function request<T>(
     if (cached) return Promise.resolve(cached as Envelope<T>);
     const pending = pendingGets.get(key);
     if (pending) return pending as Promise<Envelope<T>>;
-    if (sessionStore.userSnapshot()?.accountType !== "ADMIN") {
-      const persisted = readPublicGetCache<T>(path);
-      if (persisted) {
-        getCache.set(key, persisted as Envelope<unknown>);
-        return Promise.resolve(persisted);
-      }
+    const persisted = readPageGetCache<T>(path);
+    if (persisted) {
+      getCache.set(key, persisted as Envelope<unknown>);
+      return Promise.resolve(persisted);
     }
   }
 
@@ -283,9 +292,7 @@ function request<T>(
       latestGetRequest.get(key) === requestId
     ) {
       getCache.set(key, result as Envelope<unknown>);
-      if (sessionStore.userSnapshot()?.accountType !== "ADMIN") {
-        writePublicGetCache(path, result);
-      }
+      writePageGetCache(path, result);
     }
     return result;
   }).catch((reason: unknown) => {

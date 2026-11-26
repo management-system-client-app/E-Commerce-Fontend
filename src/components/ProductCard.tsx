@@ -7,12 +7,10 @@ import type { ProductCardData } from "../types";
 
 export function ProductCard({
   product,
-  showAvailableStock = false,
   dealCard = false,
   shopCard = false,
 }: {
   product: ProductCardData;
-  showAvailableStock?: boolean;
   dealCard?: boolean;
   shopCard?: boolean;
 }) {
@@ -71,7 +69,7 @@ export function ProductCard({
             {flags.compare != null ? <s>{money(flags.compare)}</s> : null}
           </p>
         )}
-        {showAvailableStock ? <p className="stock-count">Available: {availableStock}</p> : null}
+        {product.variants?.length ? <p className="stock-count">Available: {availableStock}</p> : null}
         </div>
       </Link>
     </article>
@@ -80,11 +78,9 @@ export function ProductCard({
 
 export function ProductCarousel({
   products,
-  showAvailableStock = false,
   dealCards = false,
 }: {
   products: ProductCardData[];
-  showAvailableStock?: boolean;
   dealCards?: boolean;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -96,7 +92,6 @@ export function ProductCarousel({
           <ProductCard
             key={product.id}
             product={product}
-            showAvailableStock={showAvailableStock}
             dealCard={dealCards}
             shopCard
           />

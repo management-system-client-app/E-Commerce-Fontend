@@ -381,6 +381,10 @@ export function WishlistPage() {
       setLoading(false);
       return;
     }
+    if (user.accountType === "ADMIN") {
+      setLoading(false);
+      return;
+    }
     api
       .wishlist()
       .then((items) => setProducts(items.map((item) => item.product)))
@@ -390,6 +394,7 @@ export function WishlistPage() {
 
   if (!ready) return <ProductGridSkeleton />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.accountType === "ADMIN") return <Navigate to="/admin" replace />;
   if (loading) return <ProductGridSkeleton />;
 
   return (

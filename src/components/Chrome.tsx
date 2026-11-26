@@ -166,7 +166,7 @@ export function Header() {
 
   useEffect(() => {
     if (!ready) return;
-    if (!user) {
+    if (!user || user.accountType === "ADMIN") {
       setWishlistCount(0);
       return;
     }
@@ -389,10 +389,12 @@ export function Header() {
             >
               <Search size={20} strokeWidth={1.7} />
             </button>
-            <Link to="/wishlist" className="icon-btn header-wishlist" aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} items` : "Wishlist"} title="Wishlist">
-              <Heart size={20} strokeWidth={1.7} />
-              {wishlistCount > 0 ? <span className="badge">{wishlistCount}</span> : null}
-            </Link>
+            {user?.accountType !== "ADMIN" ? (
+              <Link to="/wishlist" className="icon-btn header-wishlist" aria-label={wishlistCount > 0 ? `Wishlist, ${wishlistCount} items` : "Wishlist"} title="Wishlist">
+                <Heart size={20} strokeWidth={1.7} />
+                {wishlistCount > 0 ? <span className="badge">{wishlistCount}</span> : null}
+              </Link>
+            ) : null}
             <button type="button" className="icon-btn header-cart" aria-label="Cart" onClick={() => setDrawer(true)}>
               <ShoppingBag size={20} strokeWidth={1.7} />
               {cart.summary.itemCount > 0 ? <span className="badge">{cart.summary.itemCount}</span> : null}
@@ -513,10 +515,12 @@ export function Header() {
           <LayoutGrid size={18} strokeWidth={1.7} />
           Category
         </button>
-        <NavLink to="/wishlist" className={({ isActive }) => (isActive && !bottomNavOverlayOpen ? "on" : "")} onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(false); }}>
-          <Heart size={18} strokeWidth={1.7} />
-          Wishlist
-        </NavLink>
+        {user?.accountType !== "ADMIN" ? (
+          <NavLink to="/wishlist" className={({ isActive }) => (isActive && !bottomNavOverlayOpen ? "on" : "")} onClick={() => { setMenuOpen(false); setAccountMenuOpen(false); setDrawer(false); }}>
+            <Heart size={18} strokeWidth={1.7} />
+            Wishlist
+          </NavLink>
+        ) : null}
         <button
           type="button"
           className={!menuOpen && !accountMenuOpen && (drawer || location.pathname === "/cart") ? "on" : ""}
