@@ -84,7 +84,7 @@ function cacheProduct(product: ProductDetail) {
 export function ProductPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, ready: authReady } = useAuth();
   const { add, busy, setDrawer } = useCart();
   const [product, setProduct] = useState<ProductDetail | null>(() => readProductCache()[id] ?? null);
   const [related, setRelated] = useState<ProductCardData[]>([]);
@@ -100,7 +100,21 @@ export function ProductPage() {
   const [fabricId, setFabricId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [wishlistState, setWishlistState] = useState<{
+    key: string | null;
+    status: "loading" | "ready" | "error";
+    saved: boolean;
+  }>(() => {
+    const key = user ? `${user.id}:${id}` : null;
+    const cachedIds = user ? api.cachedWishlistProductIds(user.id) : null;
+    return {
+      key,
+      status: !user || cachedIds ? "ready" : "loading",
+      saved: Boolean(cachedIds?.includes(id)),
+    };
+  });
+  const [purchaseAction, setPurchaseAction] = useState<"add" | "buy" | null>(null);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [relatedLoading, setRelatedLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", comment: "" });
@@ -113,6 +127,50 @@ export function ProductPage() {
   });
   const [recentIndex, setRecentIndex] = useState(0);
   const [recentLoading, setRecentLoading] = useState(false);
+  const wishlistKey = user ? `${user.id}:${id}` : null;
+  const wishlistReady =
+    wishlistState.key === wishlistKey &&
+    wishlistState.status === "ready";
+  const wishlistPending = Boolean(user) &&
+    (wishlistState.key !== wishlistKey || wishlistState.status === "loading");
+  const wishlistUnavailable = Boolean(user) &&
+    wishlistState.key === wishlistKey &&
+    wishlistState.status === "error";
+  const saved = wishlistReady && wishlistState.saved;
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!user || user.accountType === "ADMIN") {
+      setWishlistState({ key: null, status: "ready", saved: false });
+      return;
+    }
+
+    let active = true;
+    const key = `${user.id}:${id}`;
+    const cachedIds = api.cachedWishlistProductIds(user.id);
+    if (cachedIds) {
+      setWishlistState({ key, status: "ready", saved: cachedIds.includes(id) });
+    } else {
+      setWishlistState({ key, status: "loading", saved: false });
+    }
+    api.wishlist()
+      .then((items) => {
+        if (active) setWishlistState({
+          key,
+          status: "ready",
+          saved: items.some((item) => item.product.id === id),
+        });
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        console.warn("Product wishlist state could not be refreshed", reason);
+        if (!cachedIds) setWishlistState({ key, status: "error", saved: false });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authReady, id, user]);
 
   useEffect(() => {
     let active = true;
@@ -335,10 +393,13 @@ export function ProductPage() {
       return;
     }
     setError("");
+    setPurchaseAction("add");
     try {
       await add(selected.id, quantity);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not add to cart");
+    } finally {
+      setPurchaseAction(null);
     }
   }
 
@@ -348,31 +409,39 @@ export function ProductPage() {
       return;
     }
     setError("");
+    setPurchaseAction("buy");
     try {
       await add(selected.id, quantity);
       setDrawer(false);
       navigate("/checkout");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not add to cart");
+    } finally {
+      setPurchaseAction(null);
     }
   }
 
   async function toggleWish() {
-    if (!user) {
-      window.location.assign("/login");
+    if (!user || wishlistLoading || !wishlistReady) {
+      if (!user) {
+        window.location.assign("/login");
+      }
       return;
     }
+    setWishlistLoading(true);
     try {
       if (saved) {
         await api.removeWishlist(product!.id);
-        setSaved(false);
+        setWishlistState({ key: `${user.id}:${id}`, status: "ready", saved: false });
       } else {
         await api.saveWishlist(product!.id);
-        setSaved(true);
+        setWishlistState({ key: `${user.id}:${id}`, status: "ready", saved: true });
       }
       window.dispatchEvent(new Event("wishlist-updated"));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Wishlist failed");
+    } finally {
+      setWishlistLoading(false);
     }
   }
 
@@ -440,9 +509,11 @@ export function ProductPage() {
                 <small>{reviewsLoading ? "Loading rating" : average > 0 ? `${average.toFixed(1)} (${reviews.length} ratings)` : "No ratings yet"}</small>
               </p>
             </div>
-            <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
-              <Heart size={20} fill={saved ? "currentColor" : "none"} />
-            </button>
+            {user?.accountType !== "ADMIN" ? (
+              <button type="button" className={`product-wishlist${saved ? " is-saved" : ""}`} onClick={toggleWish} disabled={wishlistLoading || wishlistPending || wishlistUnavailable} aria-busy={wishlistLoading} aria-label={wishlistLoading ? "Updating wishlist" : wishlistPending ? "Loading wishlist" : wishlistUnavailable ? "Wishlist unavailable" : saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved}>
+                {wishlistLoading ? <span className="auth-submit-spinner" aria-hidden="true" /> : <Heart size={20} fill={saved ? "currentColor" : "none"} />}
+              </button>
+            ) : null}
           </div>
           <p className="product-price">
             <strong>{money(unit)}</strong>
@@ -551,11 +622,11 @@ export function ProductPage() {
           </div>
           {error ? <p className="error">{error}</p> : null}
           <div className="product-actions">
-            <button className="btn wide" type="button" disabled={busy || available < 1} onClick={onAdd}>
-              Add to cart
+            <button className="btn wide" type="button" disabled={busy || available < 1} aria-busy={purchaseAction === "add"} onClick={onAdd}>
+              {purchaseAction === "add" ? <><span className="auth-submit-spinner" aria-hidden="true" /> Adding…</> : "Add to cart"}
             </button>
-            <button className="btn-line wide product-buy-now" type="button" disabled={busy || available < 1} onClick={onBuyNow}>
-              Buy now <ArrowRight size={16} />
+            <button className="btn-line wide product-buy-now" type="button" disabled={busy || available < 1} aria-busy={purchaseAction === "buy"} onClick={onBuyNow}>
+              {purchaseAction === "buy" ? <><span className="auth-submit-spinner" aria-hidden="true" /> Processing…</> : <>Buy now <ArrowRight size={16} /></>}
             </button>
           </div>
         </div>
@@ -611,7 +682,7 @@ export function ProductPage() {
                 <div className="product-content-heading"><span>SHOP WITH CONFIDENCE</span><h2>Replacement & support</h2></div>
                 <article className="product-policy-card">
                   <span><Clock3 size={20} /></span>
-                  <div><strong>15-day replacement</strong><p>Available only for products manufactured by SaRa Lifestyle.</p></div>
+                  <div><strong>15-day replacement</strong><p>Available only for products manufactured by Mahira's Creation.</p></div>
                 </article>
                 <article className="product-policy-card">
                   <span><PackageCheck size={20} /></span>
@@ -708,7 +779,7 @@ export function ProductPage() {
             <ul>
               <li>
                 <span aria-hidden="true">🚚</span>
-                <p>Free shipping inside dhaka city only for <strong>SaRa Lifestyle</strong> products</p>
+                <p>Free shipping inside dhaka city only for <strong>Mahira's Creation</strong> products</p>
               </li>
               <li>
                 <span aria-hidden="true">🇧🇩</span>
@@ -720,7 +791,7 @@ export function ProductPage() {
               </li>
               <li>
                 <span aria-hidden="true">📦</span>
-                <p><strong>15 Days</strong> replacement policy only for <strong>SaRa Lifestyle</strong> manufacture products</p>
+                <p><strong>15 Days</strong> replacement policy only for <strong>Mahira's Creation</strong> manufacture products</p>
               </li>
               <li>
                 <span aria-hidden="true">🎧</span>

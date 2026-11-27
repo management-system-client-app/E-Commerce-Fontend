@@ -39,6 +39,9 @@ const configuredApiUrl =
 export const API_BASE = `${configuredApiUrl.replace(/\/+$/, "").replace(/\/api\/v1$/i, "")}/api/v1`;
 const TOKEN_KEY = "store_token";
 const SESSION_KEY = "cart_session";
+const WISHLIST_CACHE_KEY = "store_wishlist_product_ids";
+const PAGE_GET_CACHE_PREFIX = "store_page_get_cache:";
+const PUBLIC_GET_CACHE_TTL = 60_000;
 export const DATA_REFRESH_INTERVAL = 60_000;
 
 const getCache = new Map<string, Envelope<unknown>>();
@@ -52,6 +55,12 @@ function clearApiCache() {
   getCache.clear();
   pendingGets.clear();
   latestGetRequest.clear();
+  for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+    const key = sessionStorage.key(index);
+    if (key?.startsWith(PAGE_GET_CACHE_PREFIX) || key?.startsWith("store_public_get_cache:")) {
+      sessionStorage.removeItem(key);
+    }
+  }
 }
 
 function dispatchToast(type: "success" | "error", message: string) {
@@ -72,8 +81,11 @@ function mutationSuccessMessage(path: string, method: string) {
 
 function shouldCacheGet(path: string) {
   const adminSession = sessionStore.userSnapshot()?.accountType === "ADMIN";
-  if (adminSession) return !/^\/(cart|me|wishlist|track)(\/|\?|$)/i.test(path);
-  return !/^\/(cart|me|orders|wishlist|returns|dashboard|users|track|payments|admin)(\/|\?|$)/i.test(path);
+  if (adminSession) return !/^\/track(\/|\?|$)/i.test(path);
+  if (/^\/(cart|orders|wishlist|returns)(\/|\?|$)/i.test(path)) return true;
+  if (/^\/users\/me\/address(?:\?|$)/i.test(path)) return true;
+  if (/^\/users\/me(?:\?|$)/i.test(path)) return true;
+  return !/^\/(me|dashboard|users|track|payments|admin)(\/|\?|$)/i.test(path);
 }
 
 export class ApiError extends Error {
@@ -101,6 +113,75 @@ type Envelope<T> = {
   meta?: PageMeta;
   errors?: { path: string; message: string }[];
 };
+
+function readWishlistProductIds(userId: string): string[] | null {
+  try {
+    const stored = localStorage.getItem(`${WISHLIST_CACHE_KEY}:${userId}`);
+    if (!stored) return null;
+    const value: unknown = JSON.parse(stored);
+    if (!Array.isArray(value) || !value.every((id): id is string => typeof id === "string")) {
+      return null;
+    }
+    return value;
+  } catch (reason) {
+    console.warn("Wishlist cache could not be read", reason);
+    return null;
+  }
+}
+
+function writeWishlistProductIds(userId: string, ids: string[]) {
+  try {
+    localStorage.setItem(`${WISHLIST_CACHE_KEY}:${userId}`, JSON.stringify(ids));
+  } catch (reason) {
+    console.warn("Wishlist cache could not be saved", reason);
+  }
+}
+
+function pageGetCacheKey(path: string) {
+  const user = sessionStore.userSnapshot();
+  const identity = `${user ? `${user.accountType}:${user.id}` : "guest"}:cart:${sessionStore.cartSession() ?? "none"}`;
+  return `${PAGE_GET_CACHE_PREFIX}${identity}:${path}`;
+}
+
+function readPageGetCache<T>(path: string): Envelope<T> | null {
+  try {
+    const key = pageGetCacheKey(path);
+    const stored = sessionStorage.getItem(key);
+    if (!stored) return null;
+    const cached: unknown = JSON.parse(stored);
+    if (
+      typeof cached !== "object" ||
+      cached === null ||
+      !("expiresAt" in cached) ||
+      typeof cached.expiresAt !== "number" ||
+      cached.expiresAt <= Date.now() ||
+      !("response" in cached) ||
+      typeof cached.response !== "object" ||
+      cached.response === null ||
+      !("success" in cached.response) ||
+      cached.response.success !== true ||
+      !("data" in cached.response)
+    ) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return cached.response as Envelope<T>;
+  } catch (reason) {
+    console.warn("Public API cache could not be read", reason);
+    return null;
+  }
+}
+
+function writePageGetCache<T>(path: string, response: Envelope<T>) {
+  try {
+    sessionStorage.setItem(
+      pageGetCacheKey(path),
+      JSON.stringify({ expiresAt: Date.now() + PUBLIC_GET_CACHE_TTL, response }),
+    );
+  } catch (reason) {
+    console.warn("Public API cache could not be saved", reason);
+  }
+}
 
 export const sessionStore = {
   token: () => localStorage.getItem(TOKEN_KEY),
@@ -185,6 +266,11 @@ function request<T>(
     if (cached) return Promise.resolve(cached as Envelope<T>);
     const pending = pendingGets.get(key);
     if (pending) return pending as Promise<Envelope<T>>;
+    const persisted = readPageGetCache<T>(path);
+    if (persisted) {
+      getCache.set(key, persisted as Envelope<unknown>);
+      return Promise.resolve(persisted);
+    }
   }
 
   const version = cacheVersion;
@@ -206,6 +292,7 @@ function request<T>(
       latestGetRequest.get(key) === requestId
     ) {
       getCache.set(key, result as Envelope<unknown>);
+      writePageGetCache(path, result);
     }
     return result;
   }).catch((reason: unknown) => {
@@ -512,13 +599,29 @@ export const api = {
         id: string;
         product: ProductCardData;
       }[]
-    >("/wishlist").then((res) => res.data),
+    >("/wishlist").then((res) => {
+      const items = res.data;
+      const userId = sessionStore.userSnapshot()?.id;
+      if (userId) writeWishlistProductIds(userId, items.map((item) => item.product.id));
+      return items;
+    }),
+  cachedWishlistProductIds: (userId: string) => readWishlistProductIds(userId),
   saveWishlist: (productId: string) =>
     request<unknown>("/wishlist", { method: "POST", body: JSON.stringify({ productId }) }).then(
-      (res) => res.data,
+      (res) => {
+        const userId = sessionStore.userSnapshot()?.id;
+        const ids = userId ? readWishlistProductIds(userId) : null;
+        if (userId && ids && !ids.includes(productId)) writeWishlistProductIds(userId, [...ids, productId]);
+        return res.data;
+      },
     ),
   removeWishlist: (productId: string) =>
-    request<unknown>(`/wishlist/${productId}`, { method: "DELETE" }).then((res) => res.data),
+    request<unknown>(`/wishlist/${productId}`, { method: "DELETE" }).then((res) => {
+      const userId = sessionStore.userSnapshot()?.id;
+      const ids = userId ? readWishlistProductIds(userId) : null;
+      if (userId && ids) writeWishlistProductIds(userId, ids.filter((id) => id !== productId));
+      return res.data;
+    }),
   subscribe: (email: string) =>
     request<unknown>("/newsletter", { method: "POST", body: JSON.stringify({ email }) }).then(
       (res) => res.data,

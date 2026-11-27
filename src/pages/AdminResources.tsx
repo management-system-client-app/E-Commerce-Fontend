@@ -1565,6 +1565,21 @@ export function AdminVariants() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [busyVariantId, setBusyVariantId] = useState<string | null>(null);
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  function clearVariantForm() {
+    setEditingVariantId(null);
+    setProductId("");
+    setSizeId("");
+    setFabricId("");
+    setColorId("");
+    setColorQuery("");
+    setSelectedColor(null);
+    setColorResults([]);
+    setSku("");
+    setStock("0");
+    setError("");
+    setNote("");
+  }
   function load() {
     setLoading(true);
     api.variants({ limit: 50, page: 1 }).then(setItems).catch((reason) => setError(messageOf(reason, "Could not load variants"))).finally(() => setLoading(false));
@@ -1651,15 +1666,23 @@ export function AdminVariants() {
           setError("");
           setNote("");
           try {
-            await api.saveVariant({ productId, sizeId, fabricId, colorId: colorId || null, sku, stock: Number(stock) });
-            setSku("");
-            setColorId("");
-            setColorQuery("");
-            setSelectedColor(null);
-            setNote("Variant added successfully.");
+            const variantData = {
+              sizeId,
+              fabricId,
+              colorId: colorId || null,
+              sku,
+              stock: Number(stock),
+            };
+            await api.saveVariant(
+              editingVariantId ? variantData : { productId, ...variantData },
+              editingVariantId ?? undefined,
+            );
+            const wasEditing = Boolean(editingVariantId);
+            clearVariantForm();
+            setNote(wasEditing ? "Variant updated successfully." : "Variant added successfully.");
             load();
           } catch (reason) {
-            setError(messageOf(reason, "Could not save the variant"));
+            setError(messageOf(reason, editingVariantId ? "Could not update the variant" : "Could not save the variant"));
           } finally {
             setSaving(false);
           }
@@ -1668,13 +1691,13 @@ export function AdminVariants() {
         <div className="flex items-center gap-3 border-b border-slate-700 pb-4">
           <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-800/60 bg-amber-950/25 text-xs font-semibold text-amber-200">01</span>
           <div>
-            <h2 className="text-sm font-semibold text-slate-100">Create variant</h2>
-            <p className="text-xs text-slate-400">Product, options and inventory</p>
+            <h2 className="text-sm font-semibold text-slate-100">{editingVariantId ? "Edit variant" : "Create variant"}</h2>
+            <p className="text-xs text-slate-400">{editingVariantId ? "Update product options and inventory" : "Product, options and inventory"}</p>
           </div>
         </div>
         <label className="block text-xs font-medium text-slate-300">
-          Product ID
-          <input className={`${variantFieldClass} mt-1.5 placeholder:text-slate-500`} required placeholder="Enter product ID" value={productId} onChange={(event) => setProductId(event.target.value)} />
+          Product ID{editingVariantId ? <span className="ml-1 font-normal text-slate-500">(cannot change while editing)</span> : null}
+          <input className={`${variantFieldClass} mt-1.5 placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60`} required placeholder="Enter product ID" value={productId} disabled={Boolean(editingVariantId)} onChange={(event) => setProductId(event.target.value)} />
         </label>
         <label className="block text-xs font-medium text-slate-300">
           Size
@@ -1714,10 +1737,11 @@ export function AdminVariants() {
           {!colorLoading && !colorError && colorQuery.trim() && !colorId && colorResults.length === 0
             ? <p className="mt-1.5 text-xs text-slate-400">No colors found.</p>
             : null}
-          {colorId && selectedColor ? (
+          {colorId ? (
             <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-amber-800/50 bg-amber-950/20 px-2.5 py-1.5 text-xs text-amber-100">
-              <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: selectedColor.hexCode }} />
-              Selected {colorQuery}<span className="text-slate-500">{selectedColor.hexCode}</span>
+              {selectedColor ? <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: selectedColor.hexCode }} /> : null}
+              Selected {(selectedColor?.name ?? colorQuery) || "current color"}
+              {selectedColor ? <span className="text-slate-500">{selectedColor.hexCode}</span> : null}
             </p>
           ) : null}
           {!colorId && colorResults.length > 0 ? (
@@ -1767,8 +1791,13 @@ export function AdminVariants() {
             {selectedColor ? <span className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-[#202630] px-2 py-1 text-[10px] text-slate-300"><span className="h-2 w-2 rounded-full border border-white/20" style={{ backgroundColor: selectedColor.hexCode }} />{selectedColor.name}</span> : null}
           </div>
         </div>
+        {editingVariantId ? (
+          <button type="button" disabled={saving} className="w-full rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-700/40 disabled:opacity-60" onClick={clearVariantForm}>
+            Cancel edit
+          </button>
+        ) : null}
         <button disabled={saving} className="w-full rounded-xl bg-amber-700 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:bg-amber-600 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-wait disabled:opacity-60">
-          {saving ? "Adding variant…" : "Add variant"}
+          {saving ? editingVariantId ? "Saving changes…" : "Adding variant…" : editingVariantId ? "Save changes" : "Add variant"}
         </button>
       </form>
       <section className="overflow-hidden rounded-2xl border border-slate-700 border-t-2 border-t-amber-600 bg-[#202630] shadow-sm">
@@ -1831,6 +1860,27 @@ export function AdminVariants() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={busyVariantId === item.id || saving}
+                            className="rounded-lg border border-slate-600 bg-[#202630] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors duration-200 hover:border-amber-700 hover:bg-amber-950/40 hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50"
+                            onClick={() => {
+                              setEditingVariantId(item.id);
+                              setProductId(item.productId);
+                              setSizeId(item.sizeId);
+                              setFabricId(item.fabricId);
+                              setColorId(item.colorId ?? "");
+                              setColorQuery(item.colorId ? "Current color" : "");
+                              setSelectedColor(null);
+                              setColorResults([]);
+                              setSku(item.sku);
+                              setStock(String(item.stock));
+                              setError("");
+                              setNote("");
+                            }}
+                          >
+                            Edit
+                          </button>
                           <button
                             type="button"
                             disabled={busyVariantId === item.id}
